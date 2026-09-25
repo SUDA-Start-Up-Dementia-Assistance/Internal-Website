@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { DriveFile, FeedItem, Meeting } from './drive'
 import { parseLocalDate, toDateKey } from './drive/parse'
-import { filterMeetings, meetingMonths, splitMeetings } from './selectors'
+import { filterMeetings, meetingMonths, selectLatestFourUp, splitMeetings } from './selectors'
 
 const TODAY = parseLocalDate('2026-09-29')!
 const NOON_TODAY = new Date(2026, 8, 29, 12, 30)
@@ -78,5 +78,25 @@ describe('filterMeetings', () => {
 describe('meetingMonths', () => {
   it('lists distinct months, newest first', () => {
     expect(meetingMonths(MEETINGS).map((m) => m.key)).toEqual(['2026-10', '2026-09', '2026-08'])
+  })
+})
+
+describe('selectLatestFourUp', () => {
+  it('picks the most recent past 4Up, not one posted for an upcoming meeting', () => {
+    const meetings = [meeting('2026-09-22'), meeting('2026-10-06'), meeting('2026-09-15')]
+    expect(toDateKey(selectLatestFourUp(meetings, TODAY)!.date)).toBe('2026-09-22')
+  })
+
+  it("counts today's meeting as the latest", () => {
+    expect(toDateKey(selectLatestFourUp(MEETINGS, NOON_TODAY)!.date)).toBe('2026-09-29')
+  })
+
+  it('skips past meetings without a 4Up', () => {
+    const meetings = [meeting('2026-09-22', { fourUp: false }), meeting('2026-09-15')]
+    expect(toDateKey(selectLatestFourUp(meetings, TODAY)!.date)).toBe('2026-09-15')
+  })
+
+  it('returns undefined when every 4Up is for a future meeting', () => {
+    expect(selectLatestFourUp([meeting('2026-10-06')], TODAY)).toBeUndefined()
   })
 })
