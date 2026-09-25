@@ -1,0 +1,133 @@
+@import 'tailwindcss';
+
+/* "First Light" design tokens. Use via utilities (bg-night, text-dusk, font-heading, …). */
+@theme {
+  --color-night: #1e2140;
+  --color-cream: #fff8ef;
+  --color-surface: #ffffff;
+  --color-dusk: #5b6091;
+  --color-ember: #b4533a;
+  --color-apricot: #e07a5f;
+  --color-gold: #f2b84b;
+  --color-lavender: #8a8fb5;
+
+  --font-heading: 'Fraunces', ui-serif, Georgia, serif;
+  --font-body: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-body);
+
+  --shadow-card: 0 1px 2px rgb(30 33 64 / 0.06), 0 8px 24px -8px rgb(180 83 58 / 0.18);
+  --shadow-card-hover: 0 2px 4px rgb(30 33 64 / 0.06), 0 14px 32px -10px rgb(180 83 58 / 0.24);
+  --shadow-photo: 0 4px 10px rgb(30 33 64 / 0.18), 0 28px 56px -18px rgb(120 50 30 / 0.5);
+  --shadow-glow: 0 0 14px rgb(242 184 75 / 0.25);
+  --shadow-glow-strong: 0 0 26px 4px rgb(242 184 75 / 0.5);
+
+  --animate-sun-rise: sun-rise 1.8s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-hill-rise: hill-rise 1.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-panel-in: panel-in 220ms cubic-bezier(0.22, 1, 0.36, 1) both;
+
+  @keyframes sun-rise {
+    from {
+      transform: translateY(60%);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  @keyframes panel-in {
+    from {
+      transform: translateX(100%);
+    }
+    to {
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes hill-rise {
+    from {
+      transform: translateY(35%);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+}
+
+/* Dark surfaces (navbar, hero, footer): switch the focus ring to gold (8.7:1 on night). */
+@utility on-night {
+  --focus-ring: var(--color-gold);
+}
+
+/* Thin gold→apricot divider. */
+@utility horizon-line {
+  height: 2px;
+  border: 0;
+  background-image: linear-gradient(to right, var(--color-gold), var(--color-apricot));
+}
+
+/* Sunrise hero gradient, top to bottom: brief night, then lavender → apricot → gold. */
+@utility bg-dawn {
+  background-image: linear-gradient(
+    to bottom,
+    var(--color-night) 0%,
+    var(--color-night) 15%,
+    var(--color-lavender) 40%,
+    var(--color-apricot) 70%,
+    var(--color-gold) 100%
+  );
+}
+
+/*
+ * Hero-only "deep dawn": the same sunrise built from the darker tokens, so cream text
+ * passes AA without an overlay (cream is 5.65:1 on dusk, 4.7:1 on ember, and their blends
+ * stay above 4.5). Apricot and gold only appear in the bottom band, below the text.
+ */
+@utility bg-dawn-deep {
+  background-image: linear-gradient(
+    to bottom,
+    var(--color-night) 0%,
+    var(--color-night) 12%,
+    var(--color-dusk) 42%,
+    var(--color-ember) 86%,
+    var(--color-apricot) 94%,
+    var(--color-gold) 100%
+  );
+}
+
+@layer base {
+  html {
+    /* Keep in-page anchor targets clear of the sticky navbar. */
+    scroll-padding-top: 5rem;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    html {
+      scroll-behavior: smooth;
+    }
+  }
+
+  /* Don't let the page scroll behind an open modal (e.g. the document panel). */
+  html:has(dialog[open]:modal) {
+    overflow: hidden;
+  }
+
+  body {
+    @apply bg-cream font-body text-night antialiased;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply font-heading;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--focus-ring, var(--color-ember));
+    outline-offset: 2px;
+  }
+}
