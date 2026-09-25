@@ -10,7 +10,7 @@ export interface ExternalLinkConfig {
 export const links = {
   repo: {
     label: 'GitHub repo',
-    href: 'https://github.com/SUDA-Start-Up-Dementia-Assistance/Internal-Website',
+    href: 'https://github.com/SUDA-Start-Up-Dementia-Assistance/StartUp',
   },
   taskBoard: { label: 'Task board', href: '' },
   teamChat: { label: 'Team chat', href: '' },
