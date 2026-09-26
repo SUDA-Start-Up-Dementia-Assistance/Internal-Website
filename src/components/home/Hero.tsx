@@ -1,5 +1,6 @@
 import { ArrowRight } from 'lucide-react'
-import heroPhoto from '../../assets/hero.png'
+import hero1280 from '../../assets/hero-1280.webp'
+import hero640 from '../../assets/hero-640.webp'
 import SunArc from '../SunArc'
 import Foliage from './Foliage'
 import Hills from './Hills'
@@ -43,7 +44,7 @@ export default function Hero() {
           </p>
           <a
             href="#about"
-            className="mt-7 inline-flex items-center gap-2 rounded-full border border-gold bg-night px-7 py-2.5 font-heading text-lg text-cream shadow-glow transition-shadow hover:shadow-glow-strong focus-visible:shadow-glow-strong"
+            className="mt-7 inline-flex items-center gap-2 rounded-full border border-gold bg-night px-7 py-2.5 font-heading text-lg text-cream shadow-glow focus-ring-contrast transition-shadow hover:shadow-glow-strong"
           >
             Learn More
             <ArrowRight aria-hidden="true" className="size-5" />
@@ -51,11 +52,16 @@ export default function Hero() {
         </div>
 
         <div className="relative z-0 hidden lg:order-1 lg:block">
+          {/* The photo column is at most ~612px wide (only shown at lg and up), so 640w covers
+              1x screens and 1280w covers 2x. hero.png is the full-size original, not bundled. */}
           <img
-            src={heroPhoto}
-            alt="An older woman and a younger woman smile together on a sofa, looking at a tablet in a sunlit living room."
-            width={620}
-            height={459}
+            src={hero1280}
+            srcSet={`${hero640} 640w, ${hero1280} 1280w`}
+            sizes="(min-width: 1400px) 612px, 45vw"
+            fetchPriority="high"
+            alt="An older woman smiles from her bed at a wall-mounted tablet running D.A.W.N. It greets her by name and shows a video message from her daughter, the people caring for her, and her plan for the day."
+            width={1280}
+            height={960}
             className="aspect-[4/3] w-full rounded-2xl object-cover shadow-photo"
           />
         </div>

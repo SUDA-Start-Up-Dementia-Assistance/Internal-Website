@@ -7,6 +7,7 @@ import TeamStrip from '../components/home/TeamStrip'
 import { isSourceConfigured } from '../config/sources'
 import { useMeetings, usePublishedCategories } from '../lib/drive'
 import { ABOUT, CURRENT_STATE } from '../../CONTENT'
+import PageTitle from '../components/PageTitle'
 
 // Sources without a folder ID are hidden rather than shown as errors.
 const SHOW_AGENDAS = isSourceConfigured('agendas')
@@ -19,6 +20,7 @@ export default function Home() {
 
   return (
     <>
+      <PageTitle />
       <Hero />
       <div className="mx-auto max-w-5xl space-y-20 px-6 py-16 sm:py-20">
         {(SHOW_AGENDAS || SHOW_FOUR_UPS) && (

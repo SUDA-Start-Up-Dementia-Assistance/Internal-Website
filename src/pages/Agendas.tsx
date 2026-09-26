@@ -8,6 +8,7 @@ import PreviewPanel, { type PreviewDocument } from '../components/PreviewPanel'
 import EmptyState from '../components/EmptyState'
 import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
+import PageTitle from '../components/PageTitle'
 import Skeleton from '../components/Skeleton'
 import { isSourceConfigured } from '../config/sources'
 import { formatCardDate, isSameDay } from '../lib/dates'
@@ -36,6 +37,7 @@ const CONFIGURED = isSourceConfigured('agendas') || isSourceConfigured('fourUps'
 export default function Agendas() {
   return (
     <div className="mx-auto max-w-5xl px-6 py-12 sm:py-16">
+      <PageTitle title="Agendas" />
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
         <h1 className="text-4xl font-semibold">Agendas</h1>
         {CONFIGURED && <AutoUpdatedChip />}

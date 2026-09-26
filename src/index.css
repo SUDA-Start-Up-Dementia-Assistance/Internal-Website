@@ -62,6 +62,20 @@
   --focus-ring: var(--color-gold);
 }
 
+/*
+ * Focus ring for controls on busy backgrounds (the hero gradient): a cream ring between two
+ * night bands, so some part of it is at least 3:1 against whatever color is behind it.
+ */
+@utility focus-ring-contrast {
+  &:focus-visible {
+    outline: 2px solid var(--color-cream);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 6px var(--color-night);
+    /* Show the ring instantly instead of fading it in with the hover-glow transition. */
+    transition: none;
+  }
+}
+
 /* Thin gold→apricot divider. */
 @utility horizon-line {
   height: 2px;
@@ -124,6 +138,16 @@
   h3,
   h4 {
     @apply font-heading;
+  }
+
+  /*
+   * Keep outline-color on the ring color at rest too. Otherwise transition-colors animates
+   * the ring in from the text color (cream on a white card = briefly invisible).
+   */
+  *,
+  ::before,
+  ::after {
+    outline-color: var(--focus-ring, var(--color-ember));
   }
 
   :focus-visible {

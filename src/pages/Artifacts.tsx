@@ -9,10 +9,12 @@ import { usePreviewPanel } from '../components/usePreviewPanel'
 import { isSourceConfigured } from '../config/sources'
 import { usePublishedCategories } from '../lib/drive'
 import { searchPublished } from '../lib/selectors'
+import PageTitle from '../components/PageTitle'
 
 export default function Artifacts() {
   return (
     <div className="mx-auto max-w-5xl px-6 py-12 sm:py-16">
+      <PageTitle title="Artifacts" />
       <h1 className="text-4xl font-semibold">Artifacts</h1>
       <p className="mt-3 max-w-prose text-dusk">
         The team&apos;s published deliverables, organized by category.

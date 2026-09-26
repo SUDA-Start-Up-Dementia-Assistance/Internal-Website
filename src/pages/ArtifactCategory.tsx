@@ -16,6 +16,7 @@ import { usePublishedCategory } from '../lib/drive'
 import { artifactDisplayName } from '../lib/files'
 import { categoryLastUpdated } from '../lib/selectors'
 import { readPreference, writePreference } from '../lib/storage'
+import PageTitle from '../components/PageTitle'
 
 const VIEW_KEY = 'dawn:artifact-view'
 const VIEWS = ['list', 'cards'] as const
@@ -47,6 +48,7 @@ function CategoryView({ slug }: { slug: string }) {
   if (query.loading) {
     return (
       <LoadingState>
+        <PageTitle title="Artifacts" />
         <Skeleton className="h-4 w-40" />
         <Skeleton className="mt-5 h-10 w-72" />
         <Skeleton className="mt-3 h-4 w-48" />
@@ -61,6 +63,7 @@ function CategoryView({ slug }: { slug: string }) {
   if (query.error) {
     return (
       <>
+        <PageTitle title="Artifacts" />
         <Breadcrumb items={[{ label: 'Artifacts', to: '/artifacts' }, { label: 'Category' }]} />
         <div className="mt-8">
           <ErrorState message="We couldn't load this category right now." onRetry={query.refetch} />
@@ -80,6 +83,7 @@ function CategoryView({ slug }: { slug: string }) {
 
   return (
     <>
+      <PageTitle title={category.displayName} />
       <Breadcrumb
         items={[{ label: 'Artifacts', to: '/artifacts' }, { label: category.displayName }]}
       />
@@ -128,6 +132,7 @@ function CategoryView({ slug }: { slug: string }) {
 function NotFound({ message }: { message: string }) {
   return (
     <div className="flex flex-col items-start">
+      <PageTitle title="Category not found" />
       <Breadcrumb items={[{ label: 'Artifacts', to: '/artifacts' }, { label: 'Not found' }]} />
       <h1 className="mt-5 text-4xl font-semibold">Category not found</h1>
       <p className="mt-3 max-w-prose text-dusk">{message}</p>

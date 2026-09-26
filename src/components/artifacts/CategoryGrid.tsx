@@ -19,9 +19,7 @@ export default function CategoryGrid({
       <h2 id="published-title" className="text-2xl font-semibold">
         Published artifacts
       </h2>
-      <p className="mt-1 text-sm text-dusk">
-        Final deliverables from each phase of the project.
-      </p>
+      <p className="mt-1 text-sm text-dusk">Final deliverables from each phase of the project.</p>
       <div className="mt-5">
         <CategoryGridBody categories={categories} />
       </div>

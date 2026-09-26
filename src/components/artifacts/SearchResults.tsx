@@ -40,7 +40,7 @@ export default function SearchResults({ query, results, onPreview }: SearchResul
                   <p className="text-sm text-dusk">
                     <Link
                       to={`/artifacts/${category.slug}`}
-                      className="rounded-sm text-ember hover:underline hover:underline-offset-4"
+                      className="rounded-sm text-ember underline decoration-ember/40 underline-offset-2 hover:decoration-ember"
                     >
                       {category.displayName}
                     </Link>
