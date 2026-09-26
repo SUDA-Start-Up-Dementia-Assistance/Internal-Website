@@ -1,6 +1,7 @@
 import { Menu, X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { Link, NavLink } from 'react-router-dom'
+import { useAuth } from '../lib/auth'
 import AuthControl from './AuthControl'
 import SunArc from './SunArc'
 
@@ -8,7 +9,8 @@ const NAV_ITEMS = [
   { to: '/', label: 'Home', end: true },
   { to: '/agendas', label: 'Agendas', end: false },
   { to: '/artifacts', label: 'Artifacts', end: false },
-  { to: '/tasks', label: 'Tasks', end: false },
+  // Team-only. The /tasks route still exists: sign-in (and its errors) land there.
+  { to: '/tasks', label: 'Tasks', end: false, signedInOnly: true },
 ]
 
 // Active underline is gold, not ember: gold is 8.7:1 on night, ember only 3.15:1.
@@ -23,6 +25,9 @@ function linkClass({ isActive }: { isActive: boolean }) {
 
 export default function Navbar() {
   const [open, setOpen] = useState(false)
+  const { user } = useAuth()
+  // Hidden while auth is still loading too, so the link never flashes in and out.
+  const navItems = NAV_ITEMS.filter((item) => !item.signedInOnly || user)
   const buttonRef = useRef<HTMLButtonElement>(null)
   const menuRef = useRef<HTMLDivElement>(null)
 
@@ -53,7 +58,7 @@ export default function Navbar() {
 
         <div className="flex items-center gap-4 md:gap-7 lg:gap-8">
           <ul className="hidden items-center gap-6 md:flex lg:gap-8">
-            {NAV_ITEMS.map((item) => (
+            {navItems.map((item) => (
               <li key={item.to}>
                 <NavLink to={item.to} end={item.end} className={linkClass}>
                   {item.label}
@@ -81,7 +86,7 @@ export default function Navbar() {
       {open && (
         <div id="mobile-nav" ref={menuRef} className="border-t border-cream/10 md:hidden">
           <ul className="mx-auto flex max-w-5xl flex-col gap-1 px-6 py-4">
-            {NAV_ITEMS.map((item) => (
+            {navItems.map((item) => (
               <li key={item.to}>
                 <NavLink
                   to={item.to}
