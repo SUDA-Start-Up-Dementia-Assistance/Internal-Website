@@ -1,5 +1,5 @@
 import { ArrowRight } from 'lucide-react'
-import heroPhoto from '../../assets/hero.jpg'
+import heroPhoto from '../../assets/hero.png'
 import SunArc from '../SunArc'
 import Foliage from './Foliage'
 import Hills from './Hills'
