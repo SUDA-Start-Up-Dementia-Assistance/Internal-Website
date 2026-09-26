@@ -1,6 +1,7 @@
 import Hero from '../components/home/Hero'
 import LatestFourUpCard from '../components/home/LatestFourUpCard'
 import NextMeetingCard from '../components/home/NextMeetingCard'
+import NextUpCard from '../components/home/NextUpCard'
 import QuickLinks from '../components/home/QuickLinks'
 import RecentlyPublished from '../components/home/RecentlyPublished'
 import TeamStrip from '../components/home/TeamStrip'
@@ -23,12 +24,17 @@ export default function Home() {
       <PageTitle />
       <Hero />
       <div className="mx-auto max-w-5xl space-y-20 px-6 py-16 sm:py-20">
-        {(SHOW_AGENDAS || SHOW_FOUR_UPS) && (
-          <div className="grid gap-6 md:grid-cols-2">
-            {SHOW_AGENDAS && <NextMeetingCard meetings={meetings} />}
-            {SHOW_FOUR_UPS && <LatestFourUpCard meetings={meetings} />}
-          </div>
-        )}
+        {/* space-y-6 (not the page's 20) keeps "Your next up" with the meeting cards. An empty
+            div (signed out, no Drive sources) collapses to nothing. */}
+        <div className="space-y-6 empty:hidden">
+          {(SHOW_AGENDAS || SHOW_FOUR_UPS) && (
+            <div className="grid gap-6 md:grid-cols-2">
+              {SHOW_AGENDAS && <NextMeetingCard meetings={meetings} />}
+              {SHOW_FOUR_UPS && <LatestFourUpCard meetings={meetings} />}
+            </div>
+          )}
+          <NextUpCard />
+        </div>
         <section id="about" aria-labelledby="about-title">
           <h2 id="about-title" className="text-2xl font-semibold">
             About D.A.W.N.

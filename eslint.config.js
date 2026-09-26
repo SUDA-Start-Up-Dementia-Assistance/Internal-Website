@@ -21,5 +21,10 @@ export default defineConfig([
       globals: globals.browser,
     },
   },
+  {
+    // Vercel functions run on Node, not in the browser.
+    files: ['api/**/*.ts'],
+    languageOptions: { globals: globals.node },
+  },
   prettier,
 ])

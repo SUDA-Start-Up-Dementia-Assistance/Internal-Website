@@ -11,6 +11,28 @@
   --color-gold: #f2b84b;
   --color-lavender: #8a8fb5;
 
+  /*
+   * Task status badges: GitHub's single-select option colors, harmonized with First Light.
+   * Each text color is at least 5.4:1 on its background (WCAG AA). Use via
+   * statusColorTokens in src/lib/tasks, not directly.
+   */
+  --color-status-gray-bg: #eeedf2;
+  --color-status-gray-text: #4a4e6e;
+  --color-status-blue-bg: #e4e8f7;
+  --color-status-blue-text: #34427a;
+  --color-status-green-bg: #e3f1e6;
+  --color-status-green-text: #2f6b3f;
+  --color-status-yellow-bg: #fbf0d2;
+  --color-status-yellow-text: #7a5a0e;
+  --color-status-purple-bg: #ece6f6;
+  --color-status-purple-text: #5a3f86;
+  --color-status-orange-bg: #fbe6dc;
+  --color-status-orange-text: #9a4426;
+  --color-status-red-bg: #fbe1e1;
+  --color-status-red-text: #9b2c2c;
+  --color-status-pink-bg: #fbe4ee;
+  --color-status-pink-text: #93325c;
+
   --font-heading: 'Fraunces', ui-serif, Georgia, serif;
   --font-body: 'Inter', ui-sans-serif, system-ui, sans-serif;
   --font-sans: var(--font-body);

@@ -1,12 +1,14 @@
 import { Menu, X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { Link, NavLink } from 'react-router-dom'
+import AuthControl from './AuthControl'
 import SunArc from './SunArc'
 
 const NAV_ITEMS = [
   { to: '/', label: 'Home', end: true },
   { to: '/agendas', label: 'Agendas', end: false },
   { to: '/artifacts', label: 'Artifacts', end: false },
+  { to: '/tasks', label: 'Tasks', end: false },
 ]
 
 // Active underline is gold, not ember: gold is 8.7:1 on night, ember only 3.15:1.
@@ -49,27 +51,31 @@ export default function Navbar() {
           <span className="font-heading text-xl font-semibold tracking-tight">D.A.W.N.</span>
         </Link>
 
-        <ul className="hidden items-center gap-8 md:flex">
-          {NAV_ITEMS.map((item) => (
-            <li key={item.to}>
-              <NavLink to={item.to} end={item.end} className={linkClass}>
-                {item.label}
-              </NavLink>
-            </li>
-          ))}
-        </ul>
+        <div className="flex items-center gap-4 md:gap-7 lg:gap-8">
+          <ul className="hidden items-center gap-6 md:flex lg:gap-8">
+            {NAV_ITEMS.map((item) => (
+              <li key={item.to}>
+                <NavLink to={item.to} end={item.end} className={linkClass}>
+                  {item.label}
+                </NavLink>
+              </li>
+            ))}
+          </ul>
 
-        <button
-          ref={buttonRef}
-          type="button"
-          className="-mr-2 rounded-md p-2 text-cream md:hidden"
-          aria-expanded={open}
-          aria-controls="mobile-nav"
-          onClick={() => setOpen((o) => !o)}
-        >
-          {open ? <X aria-hidden="true" /> : <Menu aria-hidden="true" />}
-          <span className="sr-only">Menu</span>
-        </button>
+          <AuthControl />
+
+          <button
+            ref={buttonRef}
+            type="button"
+            className="-mr-2 rounded-md p-2 text-cream md:hidden"
+            aria-expanded={open}
+            aria-controls="mobile-nav"
+            onClick={() => setOpen((o) => !o)}
+          >
+            {open ? <X aria-hidden="true" /> : <Menu aria-hidden="true" />}
+            <span className="sr-only">Menu</span>
+          </button>
+        </div>
       </nav>
 
       {open && (
