@@ -1,7 +1,7 @@
 import type { ArtifactCategory, DriveFile, FeedItem, Meeting } from './types'
 
 const FEED_FILENAME = /^(\d{4}-\d{2}-\d{2})\s+(.+?)\s*$/
-const CATEGORY_PREFIX = /^(\d+)\s+/
+const ORDER_PREFIX = /^(\d+)\s+/
 
 /**
  * Parses "YYYY-MM-DD" as a local calendar date (midnight local time), so it never shifts
@@ -90,14 +90,26 @@ export function parseCategory(
   folder: Pick<DriveFile, 'id' | 'name'>,
   files: DriveFile[] = [],
 ): ArtifactCategory {
-  const name = folder.name.trim()
-  const prefix = CATEGORY_PREFIX.exec(name)
-  const displayName = prefix ? name.slice(prefix[0].length).trim() : name
-  return {
-    id: folder.id,
-    slug: slugify(displayName),
-    displayName,
-    order: prefix ? Number(prefix[1]) : Number.POSITIVE_INFINITY,
-    files,
-  }
+  const { order, name: displayName } = parseOrderedName(folder.name)
+  return { id: folder.id, slug: slugify(displayName), displayName, order, files }
+}
+
+/**
+ * Published subfolders and files use an optional "NN " prefix for ordering:
+ * "02 Requirements" → { order: 2, name: "Requirements" }. Unprefixed names get
+ * order Infinity so they sort after prefixed ones.
+ */
+export function parseOrderedName(raw: string): { order: number; name: string } {
+  const trimmed = raw.trim()
+  const prefix = ORDER_PREFIX.exec(trimmed)
+  if (!prefix) return { order: Number.POSITIVE_INFINITY, name: trimmed }
+  return { order: Number(prefix[1]), name: trimmed.slice(prefix[0].length).trim() }
+}
+
+/** Sort comparator for "NN "-prefixed names: by prefix number, then by name. */
+export function compareOrderedNames(a: string, b: string): number {
+  const x = parseOrderedName(a)
+  const y = parseOrderedName(b)
+  if (x.order !== y.order) return x.order < y.order ? -1 : 1
+  return x.name.localeCompare(y.name, undefined, { numeric: true })
 }

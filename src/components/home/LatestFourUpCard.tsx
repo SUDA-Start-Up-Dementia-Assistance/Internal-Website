@@ -8,7 +8,7 @@ import Card from '../Card'
 import EmptyState from '../EmptyState'
 import ErrorState from '../ErrorState'
 import ExternalLinkLabel from '../ExternalLinkLabel'
-import DocumentPanel from '../DocumentPanel'
+import PreviewPanel from '../PreviewPanel'
 import LoadingState from '../LoadingState'
 import Skeleton from '../Skeleton'
 
@@ -69,7 +69,7 @@ function FourUpSummary({ date, file }: { date: Date; file: DriveFile }) {
         </a>
       </div>
       {previewOpen && (
-        <DocumentPanel
+        <PreviewPanel
           title={`4Up · ${formatCardDate(date)}`}
           documents={[{ id: 'fourUp', label: '4Up', file }]}
           onClose={() => setPreviewOpen(false)}

@@ -10,7 +10,6 @@ import type { DriveFile } from './types'
 
 const DOC = 'application/vnd.google-apps.document'
 const SLIDES = 'application/vnd.google-apps.presentation'
-const SHEET = 'application/vnd.google-apps.spreadsheet'
 const PDF = 'application/pdf'
 
 const MEETING_WEEKDAY = 2 // Tuesday
@@ -70,47 +69,50 @@ function agendasFolder(): DriveFile[] {
   return files
 }
 
-const CATEGORIES: { id: string; name: string; files: [string, string, number][] }[] = [
+// Each subfolder of the Artifacts folder is a category; every artifact is a PDF. Folders
+// and files use an optional "NN " prefix for ordering ("Usability Study Results" has none,
+// so it sorts last in its folder).
+const CATEGORIES: { id: string; name: string; files: [string, number][] }[] = [
   {
-    id: 'cat-01',
+    id: 'cat-pm',
     name: '01 Project Management',
     files: [
-      ['Team Charter', DOC, -40],
-      ['Project Plan', DOC, -9],
-      ['Risk Register', SHEET, -12],
+      ['01 Team Charter.pdf', -40],
+      ['02 Project Plan.pdf', -9],
+      ['03 Risk Register.pdf', -12],
     ],
   },
   {
-    id: 'cat-02',
+    id: 'cat-req',
     name: '02 Requirements',
     files: [
-      ['Software Requirements Specification', DOC, -2],
-      ['User Personas', PDF, -21],
+      ['01 Software Requirements Specification.pdf', -2],
+      ['02 User Personas.pdf', -21],
     ],
   },
   {
-    id: 'cat-03',
-    name: '03 Design',
+    id: 'cat-design',
+    name: '03 Architecture & Design',
     files: [
-      ['Architecture Overview', DOC, -5],
-      ['UI Mockups', PDF, -16],
-      ['Data Model', DOC, -24],
+      ['01 Architecture Overview.pdf', -5],
+      ['03 UI Mockups.pdf', -16],
+      ['02 Data Model.pdf', -24],
     ],
   },
   {
-    id: 'cat-04',
+    id: 'cat-test',
     name: '04 Testing',
     files: [
-      ['Test Plan', DOC, -14],
-      ['Usability Study Results', SHEET, -30],
+      ['01 Test Plan.pdf', -14],
+      ['Usability Study Results.pdf', -30],
     ],
   },
   {
-    id: 'cat-05',
+    id: 'cat-pres',
     name: '05 Presentations',
     files: [
-      ['Kickoff Presentation', SLIDES, -45],
-      ['Midterm Review', SLIDES, -7],
+      ['01 Kickoff Presentation.pdf', -45],
+      ['02 Midterm Review.pdf', -7],
     ],
   },
 ]
@@ -122,8 +124,8 @@ function folderContents(folderId: string): DriveFile[] {
   }
   const category = CATEGORIES.find((c) => `mock-${c.id}` === folderId)
   if (!category) return []
-  return category.files.map(([name, mimeType, days]) =>
-    mockFile(`${category.id}-${slugify(name)}`, name, mimeType, daysFromToday(days)),
+  return category.files.map(([name, days]) =>
+    mockFile(`${category.id}-${slugify(name)}`, name, PDF, daysFromToday(days)),
   )
 }
 

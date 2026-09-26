@@ -2,6 +2,7 @@ import { ArrowRight, FileText } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { formatShortDate } from '../../lib/dates'
 import type { ArtifactCategory, DriveQuery } from '../../lib/drive'
+import { artifactDisplayName } from '../../lib/files'
 import { selectRecentlyPublished } from '../../lib/selectors'
 import EmptyState from '../EmptyState'
 import ErrorState from '../ErrorState'
@@ -81,7 +82,7 @@ function RecentlyPublishedBody({ categories }: { categories: DriveQuery<Artifact
               {category.displayName}
             </span>
             <span className="mt-2 font-heading text-lg leading-snug font-semibold group-hover:text-ember">
-              {file.name}
+              {artifactDisplayName(file.name)}
             </span>
             <span className="mt-auto flex items-center gap-1.5 pt-4 text-sm text-dusk">
               Updated {formatShortDate(file.modifiedTime)}

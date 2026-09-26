@@ -3,9 +3,11 @@ import { MOCK_AGENDAS_FOLDER_ID } from '../../config/sources'
 import { mockListFolder } from './mock'
 import {
   classifyFeedFile,
+  compareOrderedNames,
   groupMeetings,
   parseCategory,
   parseLocalDate,
+  parseOrderedName,
   toDateKey,
   type FeedMatcher,
 } from './parse'
@@ -194,5 +196,44 @@ describe('parseCategory', () => {
   it('attaches the given files', () => {
     const files = [file('Test Plan')]
     expect(parseCategory({ id: 'f4', name: '04 Testing' }, files).files).toBe(files)
+  })
+})
+
+describe('parseOrderedName', () => {
+  it('splits off the "NN " prefix as the order', () => {
+    expect(parseOrderedName('02 Requirements')).toEqual({ order: 2, name: 'Requirements' })
+    expect(parseOrderedName(' 10   Final Report.pdf ')).toEqual({
+      order: 10,
+      name: 'Final Report.pdf',
+    })
+  })
+
+  it('gives unprefixed names order Infinity', () => {
+    expect(parseOrderedName('Misc')).toEqual({ order: Number.POSITIVE_INFINITY, name: 'Misc' })
+  })
+
+  it('needs whitespace after the number', () => {
+    expect(parseOrderedName('3D Models').order).toBe(Number.POSITIVE_INFINITY)
+  })
+})
+
+describe('compareOrderedNames', () => {
+  it('orders by prefix number (numerically), then name, with unprefixed names last', () => {
+    const names = [
+      'Zeta.pdf',
+      '10 Ten.pdf',
+      '02 Two.pdf',
+      'Alpha.pdf',
+      '01 One.pdf',
+      '02 Also Two.pdf',
+    ]
+    expect([...names].sort(compareOrderedNames)).toEqual([
+      '01 One.pdf',
+      '02 Also Two.pdf',
+      '02 Two.pdf',
+      '10 Ten.pdf',
+      'Alpha.pdf',
+      'Zeta.pdf',
+    ])
   })
 })

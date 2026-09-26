@@ -4,16 +4,18 @@ import { USE_MOCK_DATA } from '../config/sources'
 import { getEmbedUrl, type DriveFile } from '../lib/drive'
 import ExternalLinkLabel from './ExternalLinkLabel'
 
-export interface PanelDocument {
+export interface PreviewDocument {
   id: string
   label: string
   file: DriveFile
+  /** Shown instead of the raw file name (e.g. an artifact without "NN " and ".pdf"). */
+  name?: string
 }
 
-interface DocumentPanelProps {
+interface PreviewPanelProps {
   title: string
   /** One or more documents; with more than one, the panel shows tabs to switch between them. */
-  documents: PanelDocument[]
+  documents: PreviewDocument[]
   initialId?: string
   onClose: () => void
 }
@@ -23,12 +25,7 @@ interface DocumentPanelProps {
  * and unmount it in onClose. A native modal <dialog> provides the focus trap, Esc to close,
  * and makes the page behind it inert.
  */
-export default function DocumentPanel({
-  title,
-  documents,
-  initialId,
-  onClose,
-}: DocumentPanelProps) {
+export default function PreviewPanel({ title, documents, initialId, onClose }: PreviewPanelProps) {
   const ref = useRef<HTMLDialogElement>(null)
   const baseId = useId()
   const [activeId, setActiveId] = useState(initialId ?? documents[0]?.id)
@@ -74,6 +71,7 @@ export default function DocumentPanel({
     document.getElementById(tabId(documents[next].id))?.focus()
   }
 
+  const displayName = active.name ?? active.file.name
   // Mock files have fake IDs that Drive can't embed.
   const src = USE_MOCK_DATA ? undefined : getEmbedUrl(active.file)
 
@@ -94,7 +92,7 @@ export default function DocumentPanel({
             <h2 id={titleId} className="truncate text-xl font-semibold">
               {title}
             </h2>
-            <p className="truncate text-sm text-dusk">{active.file.name}</p>
+            <p className="truncate text-sm text-dusk">{displayName}</p>
           </div>
           <button
             type="button"
@@ -160,14 +158,14 @@ export default function DocumentPanel({
           <iframe
             key={active.file.id}
             src={src}
-            title={`Preview of ${active.file.name}`}
+            title={`Preview of ${displayName}`}
             className="size-full"
           />
         ) : (
           <div className="flex h-full flex-col items-center justify-center gap-2 px-6 text-center">
             <p className="font-heading text-lg">Preview unavailable for sample data</p>
             <p className="max-w-sm text-dusk">
-              Once Drive is connected, &ldquo;{active.file.name}&rdquo; will appear here.
+              Once Drive is connected, &ldquo;{displayName}&rdquo; will appear here.
             </p>
           </div>
         )}

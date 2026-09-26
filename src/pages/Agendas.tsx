@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import AgendaFilters from '../components/agendas/AgendaFilters'
+import AutoUpdatedChip from '../components/AutoUpdatedChip'
 import MeetingCard, { type MeetingDoc } from '../components/agendas/MeetingCard'
 import { buttonClasses } from '../components/buttonStyles'
-import DocumentPanel, { type PanelDocument } from '../components/DocumentPanel'
+import PreviewPanel, { type PreviewDocument } from '../components/PreviewPanel'
 import EmptyState from '../components/EmptyState'
 import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
@@ -35,7 +36,10 @@ const CONFIGURED = isSourceConfigured('agendas') || isSourceConfigured('fourUps'
 export default function Agendas() {
   return (
     <div className="mx-auto max-w-5xl px-6 py-12 sm:py-16">
-      <h1 className="text-4xl font-semibold">Agendas</h1>
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+        <h1 className="text-4xl font-semibold">Agendas</h1>
+        {CONFIGURED && <AutoUpdatedChip />}
+      </div>
       <p className="mt-3 max-w-prose text-dusk">
         Meeting agendas and 4Up status reports, straight from the team&apos;s Drive folder.
       </p>
@@ -137,7 +141,7 @@ function MeetingsView() {
       </div>
 
       {preview && (
-        <DocumentPanel
+        <PreviewPanel
           key={`${monthKey(preview.meeting.date)}-${preview.meeting.date.getDate()}-${preview.doc}`}
           title={`Meeting · ${formatCardDate(preview.meeting.date)}`}
           documents={panelDocuments(preview.meeting)}
@@ -149,8 +153,8 @@ function MeetingsView() {
   )
 }
 
-function panelDocuments(meeting: Meeting): PanelDocument[] {
-  const docs: PanelDocument[] = []
+function panelDocuments(meeting: Meeting): PreviewDocument[] {
+  const docs: PreviewDocument[] = []
   if (meeting.agenda) docs.push({ id: 'agenda', label: 'Agenda', file: meeting.agenda.file })
   if (meeting.fourUp) docs.push({ id: 'fourUp', label: '4Up', file: meeting.fourUp.file })
   return docs

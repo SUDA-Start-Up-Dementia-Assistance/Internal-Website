@@ -7,7 +7,7 @@ import {
 } from '../../config/sources'
 import { listFolder, type ListFolderOptions } from './client'
 import { mockListFolder } from './mock'
-import { classifyFeedFile, groupMeetings, parseCategory } from './parse'
+import { classifyFeedFile, compareOrderedNames, groupMeetings, parseCategory } from './parse'
 import type { ArtifactCategory, DriveFile, FeedItem, Meeting } from './types'
 
 /*
@@ -85,10 +85,7 @@ export async function loadMeetings(): Promise<Meeting[]> {
   return groupMeetings(agendas, fourUps)
 }
 
-const byName = (a: DriveFile, b: DriveFile) =>
-  a.name.localeCompare(b.name, undefined, { numeric: true })
-
-/** Categories in "NN" order, each with its files sorted by name. */
+/** Categories in "NN" order, each with its files in "NN" order too. */
 export async function loadPublishedCategories(
   sourceKey: LibraryKey = 'publishedArtifacts',
 ): Promise<ArtifactCategory[]> {
@@ -99,7 +96,10 @@ export async function loadPublishedCategories(
   const categories = await Promise.all(
     folders.map(async (folder) => {
       const files = await listFolderCached(folder.id, { filesOnly: true })
-      return parseCategory(folder, [...files].sort(byName))
+      return parseCategory(
+        folder,
+        [...files].sort((a, b) => compareOrderedNames(a.name, b.name)),
+      )
     }),
   )
   return categories.sort((a, b) => a.order - b.order || a.displayName.localeCompare(b.displayName))

@@ -1,5 +1,6 @@
 import { startOfDay } from './dates'
 import type { ArtifactCategory, DriveFile, Meeting } from './drive'
+import { artifactDisplayName } from './files'
 
 /** The soonest meeting dated today or later, or undefined if none. */
 export function selectNextMeeting(meetings: Meeting[], today = new Date()): Meeting | undefined {
@@ -88,4 +89,28 @@ export function meetingMonths(meetings: Meeting[]): { key: string; date: Date }[
   return [...byKey.entries()]
     .map(([key, date]) => ({ key, date }))
     .sort((a, b) => b.date.getTime() - a.date.getTime())
+}
+
+/** The most recent modifiedTime among a category's files, or undefined if it's empty. */
+export function categoryLastUpdated(category: ArtifactCategory): string | undefined {
+  return category.files.reduce<string | undefined>(
+    (latest, f) => (!latest || f.modifiedTime > latest ? f.modifiedTime : latest),
+    undefined,
+  )
+}
+
+/**
+ * Searches published file names (as displayed: no "NN " prefix or .pdf) and category names.
+ * Every word in the query must match. Most recently modified first.
+ */
+export function searchPublished(query: string, categories: ArtifactCategory[]): PublishedFileRef[] {
+  const terms = query.toLowerCase().split(/\s+/).filter(Boolean)
+  if (terms.length === 0) return []
+  return categories
+    .flatMap((category) => category.files.map((file) => ({ file, category })))
+    .filter(({ file, category }) => {
+      const haystack = `${artifactDisplayName(file.name)} ${category.displayName}`.toLowerCase()
+      return terms.every((term) => haystack.includes(term))
+    })
+    .sort((a, b) => b.file.modifiedTime.localeCompare(a.file.modifiedTime))
 }

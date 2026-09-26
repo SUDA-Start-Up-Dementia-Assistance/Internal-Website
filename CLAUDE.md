@@ -24,8 +24,9 @@ and browse project artifacts. Content lives in Google Drive; the site only reads
     can share one folder. Current: agendas (suffix "Agenda") and fourUps (suffix
     "4Up"), both in the Agendas folder. Planned later: sprintArtifacts (do NOT build
     yet, but adding it must only require a new config entry).
-  - "published-library": a curated folder with "NN Category Name" subfolders that the
-    team manually uploads final artifacts into. Current: publishedArtifacts.
+  - "published-library": a curated folder whose subfolders are categories; the team
+    manually uploads final artifacts into them. Current: publishedArtifacts. The
+    Artifacts pages show only this library (agendas and 4Ups live on /agendas).
 - Env vars (Vite): VITE_GOOGLE_API_KEY, VITE_AGENDAS_FOLDER_ID, VITE_PUBLISHED_FOLDER_ID
 - If VITE_GOOGLE_API_KEY is missing, use mock data from src/lib/drive/mock.ts so the
   site runs locally without credentials. If one source's folder ID is missing, hide
@@ -35,8 +36,12 @@ and browse project artifacts. Content lives in Google Drive; the site only reads
   (suffix match is case-insensitive, whitespace-tolerant). Files matching neither are
   ignored, with a console.warn in dev only. An Agenda and a 4Up with the same date
   form one "meeting".
-- Published subfolders: "NN Category Name" (strip the numeric prefix for display, use
-  it for ordering).
+- Published library: each subfolder is a category; files directly in the root folder are
+  ignored. Subfolders and files both use an optional "NN " prefix for ordering (e.g.
+  "02 Requirements", "01 Project Plan.pdf"): sort by the number, strip it for display.
+  Unprefixed items sort after prefixed ones, by name.
+- Every published artifact is a PDF, so artifact names are displayed without ".pdf".
+  This applies only to artifacts: agendas and 4Ups are not PDFs and keep their names.
 
 ## Design system: "First Light"
 Tokens (define in @theme, use via Tailwind utilities; no raw hex in components):
