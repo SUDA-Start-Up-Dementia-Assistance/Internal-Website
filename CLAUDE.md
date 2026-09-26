@@ -67,7 +67,8 @@ GitHub Project; the site reads and writes them through GitHub's API.
   `npx vercel env pull .env.local`. .env.local is never committed.
 
 ## Auth: Sign in with GitHub
-- GitHub OAuth App, scopes: "read:user read:org project".
+- GitHub OAuth App, scopes: "read:user read:org project repo". `repo` is required because
+  the team repo is private: without it GitHub redacts those issues/PRs in project items.
 - Flow: /api/auth/login sets a random `state` in a short-lived HttpOnly cookie and
   redirects to GitHub; /api/auth/callback verifies state, exchanges the code, checks the
   user is an ACTIVE member of GITHUB_ORG (GET /user/memberships/orgs/{org}), then sets
@@ -119,6 +120,8 @@ GitHub Project; the site reads and writes them through GitHub's API.
   line-through.
 - New items created on the site get Status "Sprint Backlog" if an iteration is set,
   otherwise "Product Backlog", unless the user picks a status explicitly.
+- Items GitHub returns redacted (content the user's token can't read) are skipped but
+  counted; /tasks shows how many are hidden, with a "Sign in again" button.
 - Items can be draft issues, issues, or PRs. The site creates DRAFT issues only. It can
   edit fields on any item, title/assignees on drafts and issues, and links out to GitHub
   for everything else. Archived items are excluded.

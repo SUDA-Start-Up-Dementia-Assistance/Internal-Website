@@ -86,6 +86,8 @@ export interface TeamMember {
 
 export interface TasksResponse {
   tasks: Task[]
+  /** Items GitHub hid from this user (e.g. issues in a private repo they can't read). */
+  hiddenCount: number
   meta: TaskMeta
   team: TeamMember[]
 }

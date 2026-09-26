@@ -98,7 +98,7 @@ describe('/api/auth/login', () => {
     expect(res.statusCode).toBe(302)
     const location = new URL(String(res.headers.location))
     expect(location.origin + location.pathname).toBe('https://github.com/login/oauth/authorize')
-    expect(location.searchParams.get('scope')).toBe('read:user read:org project')
+    expect(location.searchParams.get('scope')).toBe('read:user read:org project repo')
     expect(location.searchParams.get('redirect_uri')).toBe(`${ORIGIN}/api/auth/callback`)
     expect(location.searchParams.get('state')).toBeTruthy()
     const cookie = cookies(res).find((c) => c.startsWith('dawn_oauth_state='))!

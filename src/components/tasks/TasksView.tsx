@@ -14,6 +14,7 @@ import {
   type TaskMeta,
 } from '../../lib/tasks'
 import ErrorState from '../ErrorState'
+import HiddenItemsNotice from './HiddenItemsNotice'
 import LoadingState from '../LoadingState'
 import Skeleton from '../Skeleton'
 import MyTasks from './MyTasks'
@@ -51,7 +52,7 @@ export default function TasksView({ login }: { login: string }) {
   }
   if (!data) return null
 
-  const { tasks, meta, team } = data
+  const { tasks, hiddenCount, meta, team } = data
   const filtered = applyFilters(tasks, filters, meta)
   // Inside one sprint, every row would repeat its name.
   const showIteration = !(filters.currentSprintOnly && meta.currentIterationId)
@@ -60,6 +61,7 @@ export default function TasksView({ login }: { login: string }) {
 
   return (
     <div className="space-y-8">
+      <HiddenItemsNotice count={hiddenCount} />
       <UnscheduledNotice
         tasks={selectSprintBacklogWithoutIteration(tasks)}
         projectUrl={meta.projectUrl}

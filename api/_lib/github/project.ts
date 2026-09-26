@@ -424,17 +424,32 @@ interface ItemsPage {
 /** Guard against a runaway cursor: 50 pages is 5,000 items, far past any sprint board. */
 const MAX_PAGES = 50
 
+export interface ItemList {
+  tasks: Task[]
+  /**
+   * Non-archived items GitHub wouldn't show this user (content redacted: e.g. an issue in a
+   * private repo the token can't read). Counted so the UI can say so instead of dropping
+   * them silently.
+   */
+  hiddenCount: number
+}
+
 /** Every non-archived item, normalized, 100 per page. */
-export async function listItems(token: string): Promise<Task[]> {
+export async function listItems(token: string): Promise<ItemList> {
   const { org, projectNumber } = getProjectConfig()
   const [meta, raw] = await Promise.all([
     getProjectMeta(token),
     fetchAllItems(token, org, projectNumber),
   ])
-  return raw.flatMap((item) => {
+  const tasks: Task[] = []
+  let hiddenCount = 0
+  for (const item of raw) {
+    if (item.isArchived) continue
     const task = normalizeItem(item, meta)
-    return task ? [task] : []
-  })
+    if (task) tasks.push(task)
+    else if (!item.content) hiddenCount += 1
+  }
+  return { tasks, hiddenCount }
 }
 
 async function fetchAllItems(token: string, org: string, number: number): Promise<RawItem[]> {

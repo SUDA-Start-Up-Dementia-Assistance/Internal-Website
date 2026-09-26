@@ -190,16 +190,25 @@ describe('GET /api/tasks', () => {
     })
     const fetchMock = stubGraphQL(undefined, [
       [draft('a'), draft('b')],
-      [draft('c'), { ...draft('d'), isArchived: true }],
+      [
+        draft('c'),
+        { ...draft('d'), isArchived: true },
+        // Redacted: an issue in a private repo the token can't read.
+        { ...draft('e'), content: null },
+        { ...draft('f'), content: null, isArchived: true },
+      ],
     ])
     const res = await call()
     expect(res.statusCode).toBe(200)
     const body = res.body as {
       tasks: { itemId: string }[]
+      hiddenCount: number
       meta: Record<string, unknown>
       team: unknown[]
     }
     expect(body.tasks.map((t) => t.itemId)).toEqual(['a', 'b', 'c'])
+    // Archived items don't count as hidden, even when redacted.
+    expect(body.hiddenCount).toBe(1)
     expect(body.meta).toMatchObject({
       projectUrl: 'https://github.com/orgs/dawn/projects/1',
       statuses: [{ id: 'S_done', name: 'Done', key: 'done' }],

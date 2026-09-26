@@ -18,14 +18,19 @@ export default withErrors(async (req, res) => {
   }
 })
 
-/** GET /api/tasks → { tasks, meta, team } */
+/** GET /api/tasks → { tasks, hiddenCount, meta, team } */
 async function getTasks(req: VercelRequest, res: VercelResponse): Promise<void> {
   const session = await requireSession(req, res)
   if (!session) return
-  const [meta, tasks, team] = await Promise.all([
+  const [meta, { tasks, hiddenCount }, team] = await Promise.all([
     getProjectMeta(session.token),
     listItems(session.token),
     listTeam(session.token),
   ])
-  sendJson(res, 200, { tasks, meta: toClientMeta(meta), team } satisfies TasksResponse)
+  sendJson(res, 200, {
+    tasks,
+    hiddenCount,
+    meta: toClientMeta(meta),
+    team,
+  } satisfies TasksResponse)
 }

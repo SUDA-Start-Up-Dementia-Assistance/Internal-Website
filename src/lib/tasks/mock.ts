@@ -298,5 +298,5 @@ export function createMockTasks(today = new Date()): TasksResponse {
     iterations,
     currentIterationId: current.id,
   }
-  return { tasks, meta, team: TEAM }
+  return { tasks, hiddenCount: 0, meta, team: TEAM }
 }

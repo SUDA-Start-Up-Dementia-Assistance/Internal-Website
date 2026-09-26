@@ -1,6 +1,11 @@
 import { GitHubError } from './errors.js'
 
-export const OAUTH_SCOPES = 'read:user read:org project'
+/**
+ * `repo` is needed to read (and later edit) issues and PRs in PRIVATE repos: without it,
+ * GitHub returns those project items with their content redacted. OAuth apps have no
+ * read-only variant.
+ */
+export const OAUTH_SCOPES = 'read:user read:org project repo'
 export const USER_AGENT = 'dawn-team-site'
 
 interface OAuthApp {
