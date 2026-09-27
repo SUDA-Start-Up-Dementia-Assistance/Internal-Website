@@ -19,6 +19,13 @@ export interface Assignee {
   avatarUrl: string
 }
 
+/** An issue or PR label. */
+export interface Label {
+  name: string
+  /** GitHub's hex color, lowercase and without "#" (e.g. "d73a4a"); "" if unusable. */
+  color: string
+}
+
 export interface Task {
   /** The project item id (what field edits target). */
   itemId: string
@@ -44,6 +51,8 @@ export interface Task {
   doneBy?: string
   type?: string
   iteration?: Iteration
+  /** Issues and PRs only (drafts can't have labels), sorted by name. Absent when none. */
+  labels?: Label[]
   updatedAt: string
 }
 
@@ -90,4 +99,48 @@ export interface TasksResponse {
   hiddenCount: number
   meta: TaskMeta
   team: TeamMember[]
+}
+
+/** POST /api/tasks body. Option and iteration ids come from TaskMeta. */
+export interface NewTaskRequest {
+  title: string
+  body?: string
+  assigneeIds?: string[]
+  storyPointsOptionId?: string
+  estimateHours?: number
+  priorityOptionId?: string
+  sizeOptionId?: string
+  /** "YYYY-MM-DD". */
+  doneBy?: string
+  typeOptionId?: string
+  iterationId?: string
+  /** Omit for the default: Sprint Backlog with an iteration, else Product Backlog. */
+  statusOptionId?: string
+}
+
+/**
+ * PATCH /api/tasks/:itemId body. Every key is optional; null clears a field. Title, body,
+ * and assignees apply to drafts; assignees also to issues; pull requests take fields only.
+ * `assigneeIds` is the complete new set.
+ */
+export interface TaskPatch {
+  title?: string
+  body?: string
+  assigneeIds?: string[]
+  storyPointsOptionId?: string | null
+  estimateHours?: number | null
+  priorityOptionId?: string | null
+  sizeOptionId?: string | null
+  doneBy?: string | null
+  typeOptionId?: string | null
+  iterationId?: string | null
+  statusOptionId?: string | null
+}
+
+/** The response to a write: the item as GitHub now has it, and anything that didn't stick. */
+export interface WriteResult {
+  /** Null if the item couldn't be re-read after writing (the writes still happened). */
+  task: Task | null
+  /** Display names ("Priority", "Assignees", …) of changes GitHub rejected. */
+  failedFields: string[]
 }

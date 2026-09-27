@@ -358,6 +358,6 @@ describe('GET /api/tasks', () => {
   it('rejects other methods', async () => {
     const res = await call({ method: 'DELETE' })
     expect(res.statusCode).toBe(405)
-    expect(res.headers.allow).toBe('GET')
+    expect(res.headers.allow).toBe('GET, POST')
   })
 })

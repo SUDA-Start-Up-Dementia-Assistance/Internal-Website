@@ -1,19 +1,20 @@
 import { CircleAlert, type LucideIcon } from 'lucide-react'
 import { useId } from 'react'
-import { groupByDue, type Task, type TaskMeta } from '../../lib/tasks'
+import { groupByDue, type Task, type TaskMeta, type TeamMember } from '../../lib/tasks'
 import EmptyState from '../EmptyState'
 import TaskRow from './TaskRow'
 
 interface MyTasksProps {
   tasks: Task[]
   meta: TaskMeta
+  team: TeamMember[]
   /** Filters narrowed the list (for a more helpful empty message). */
   filtered: boolean
   showIteration: boolean
 }
 
 /** The signed-in user's tasks: Overdue / Due this week / Later / No date, then Done. */
-export default function MyTasks({ tasks, meta, filtered, showIteration }: MyTasksProps) {
+export default function MyTasks({ tasks, meta, team, filtered, showIteration }: MyTasksProps) {
   if (tasks.length === 0) {
     return (
       <EmptyState>
@@ -25,7 +26,7 @@ export default function MyTasks({ tasks, meta, filtered, showIteration }: MyTask
   }
 
   const groups = groupByDue(tasks)
-  const rowProps = { meta, showIteration }
+  const rowProps = { meta, team, showIteration }
   return (
     <div className="space-y-10">
       <Group title="Overdue" tasks={groups.overdue} icon={CircleAlert} accent {...rowProps} />
@@ -53,14 +54,14 @@ function Group({
   tasks,
   icon: Icon,
   accent = false,
-  meta,
-  showIteration,
+  ...rowProps
 }: {
   title: string
   tasks: Task[]
   icon?: LucideIcon
   accent?: boolean
   meta: TaskMeta
+  team: TeamMember[]
   showIteration: boolean
 }) {
   const headingId = useId()
@@ -77,7 +78,7 @@ function Group({
       </h2>
       <ul className="mt-4 space-y-3">
         {tasks.map((task) => (
-          <TaskRow key={task.itemId} task={task} meta={meta} showIteration={showIteration} />
+          <TaskRow key={task.itemId} task={task} {...rowProps} />
         ))}
       </ul>
     </section>

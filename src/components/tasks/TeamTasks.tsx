@@ -29,6 +29,7 @@ export default function TeamTasks({ tasks, team, meta, showIteration }: TeamTask
           key={group.member?.login ?? '(unassigned)'}
           group={group}
           meta={meta}
+          team={team}
           showIteration={showIteration}
         />
       ))}
@@ -39,10 +40,12 @@ export default function TeamTasks({ tasks, team, meta, showIteration }: TeamTask
 function MemberSection({
   group,
   meta,
+  team,
   showIteration,
 }: {
   group: AssigneeGroup
   meta: TaskMeta
+  team: TeamMember[]
   showIteration: boolean
 }) {
   const headingId = useId()
@@ -79,7 +82,13 @@ function MemberSection({
       ) : (
         <ul className="mt-4 space-y-3">
           {tasks.map((task) => (
-            <TaskRow key={task.itemId} task={task} meta={meta} showIteration={showIteration} />
+            <TaskRow
+              key={task.itemId}
+              task={task}
+              meta={meta}
+              team={team}
+              showIteration={showIteration}
+            />
           ))}
         </ul>
       )}

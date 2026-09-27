@@ -14,6 +14,7 @@ import { graphql } from './graphql.js'
 import type {
   Assignee,
   IterationOption,
+  Label,
   Option,
   StatusOption,
   Task,
@@ -317,13 +318,18 @@ export type RawFieldValue =
     }
   | { __typename: string; field?: RawFieldRef }
 
+/** The node id is only needed server-side (to diff assignees); it's not sent to the browser. */
+export interface RawAssignee extends Assignee {
+  id?: string
+}
+
 export type RawContent =
   | {
       __typename: 'DraftIssue'
       id: string
       title: string
       updatedAt: string
-      assignees: { nodes: (Assignee | null)[] }
+      assignees: { nodes: (RawAssignee | null)[] }
     }
   | {
       __typename: 'Issue' | 'PullRequest'
@@ -333,7 +339,9 @@ export type RawContent =
       number: number
       updatedAt: string
       repository: { nameWithOwner: string }
-      assignees: { nodes: (Assignee | null)[] }
+      assignees: { nodes: (RawAssignee | null)[] }
+      /** Drafts can't have labels: they belong to the issue or PR. */
+      labels?: { nodes: ({ name: string; color: string } | null)[] }
     }
 
 export interface RawItem {
@@ -346,7 +354,60 @@ export interface RawItem {
 }
 
 const FIELD_REF = 'field { ... on ProjectV2FieldCommon { id } }'
-const ASSIGNEES = 'assignees(first: 20) { nodes { login avatarUrl } }'
+const ASSIGNEES = 'assignees(first: 20) { nodes { id login avatarUrl } }'
+const LABELS =
+  'labels(first: 20, orderBy: { field: NAME, direction: ASC }) { nodes { name color } }'
+
+/** Everything the site reads from one project item. Shared by the list and single-item reads. */
+const ITEM_SELECTION = /* GraphQL */ `
+  id
+  isArchived
+  updatedAt
+  content {
+    __typename
+    ... on DraftIssue {
+      id
+      title
+      updatedAt
+      ${ASSIGNEES}
+    }
+    ... on Issue {
+      id
+      title
+      url
+      number
+      updatedAt
+      repository { nameWithOwner }
+      ${ASSIGNEES}
+      ${LABELS}
+    }
+    ... on PullRequest {
+      id
+      title
+      url
+      number
+      updatedAt
+      repository { nameWithOwner }
+      ${ASSIGNEES}
+      ${LABELS}
+    }
+  }
+  fieldValues(first: 50) {
+    nodes {
+      __typename
+      ... on ProjectV2ItemFieldSingleSelectValue { optionId name ${FIELD_REF} }
+      ... on ProjectV2ItemFieldNumberValue { number ${FIELD_REF} }
+      ... on ProjectV2ItemFieldDateValue { date ${FIELD_REF} }
+      ... on ProjectV2ItemFieldIterationValue {
+        iterationId
+        title
+        startDate
+        duration
+        ${FIELD_REF}
+      }
+    }
+  }
+`
 
 const ITEMS_QUERY = /* GraphQL */ `
   query ProjectItems($org: String!, $number: Int!, $after: String) {
@@ -358,51 +419,7 @@ const ITEMS_QUERY = /* GraphQL */ `
             endCursor
           }
           nodes {
-            id
-            isArchived
-            updatedAt
-            content {
-              __typename
-              ... on DraftIssue {
-                id
-                title
-                updatedAt
-                ${ASSIGNEES}
-              }
-              ... on Issue {
-                id
-                title
-                url
-                number
-                updatedAt
-                repository { nameWithOwner }
-                ${ASSIGNEES}
-              }
-              ... on PullRequest {
-                id
-                title
-                url
-                number
-                updatedAt
-                repository { nameWithOwner }
-                ${ASSIGNEES}
-              }
-            }
-            fieldValues(first: 50) {
-              nodes {
-                __typename
-                ... on ProjectV2ItemFieldSingleSelectValue { optionId name ${FIELD_REF} }
-                ... on ProjectV2ItemFieldNumberValue { number ${FIELD_REF} }
-                ... on ProjectV2ItemFieldDateValue { date ${FIELD_REF} }
-                ... on ProjectV2ItemFieldIterationValue {
-                  iterationId
-                  title
-                  startDate
-                  duration
-                  ${FIELD_REF}
-                }
-              }
-            }
+            ${ITEM_SELECTION}
           }
         }
       }
@@ -468,6 +485,38 @@ async function fetchAllItems(token: string, org: string, number: number): Promis
   return items
 }
 
+const ITEM_QUERY = /* GraphQL */ `
+  query ProjectItem($id: ID!) {
+    node(id: $id) {
+      ... on ProjectV2Item {
+        project { id }
+        ${ITEM_SELECTION}
+      }
+    }
+  }
+`
+
+interface ItemData {
+  node: (RawItem & { project?: { id: string } }) | null
+}
+
+/**
+ * One item of THIS project (the project id is checked, so an id from another project the
+ * user can see is treated as not found). Null when it doesn't exist, isn't visible, or is
+ * archived.
+ */
+export async function getItem(
+  token: string,
+  itemId: string,
+  meta: ProjectMeta,
+): Promise<{ raw: RawItem; task: Task } | null> {
+  const data = await graphql<ItemData>(token, ITEM_QUERY, { id: itemId })
+  const raw = data.node
+  if (!raw || raw.project?.id !== meta.projectId) return null
+  const task = normalizeItem(raw, meta)
+  return task ? { raw, task } : null
+}
+
 const KINDS = { DraftIssue: 'draft', Issue: 'issue', PullRequest: 'pr' } as const
 
 /**
@@ -505,7 +554,7 @@ export function normalizeItem(item: RawItem, meta: ProjectMeta): Task | null {
     kind: KINDS[content.__typename],
     title: content.title,
     assignees: content.assignees.nodes
-      .filter((a): a is Assignee => a !== null)
+      .filter((a): a is RawAssignee => a !== null)
       .map((a) => ({ login: a.login, avatarUrl: a.avatarUrl })),
     status,
     statusKey: statusKeyOf(status),
@@ -530,8 +579,23 @@ export function normalizeItem(item: RawItem, meta: ProjectMeta): Task | null {
     task.url = content.url
     task.repo = content.repository.nameWithOwner
     task.number = content.number
+    const labels = labelsOf(content.labels?.nodes)
+    if (labels.length > 0) task.labels = labels
   }
   return dropUndefined(task)
+}
+
+/**
+ * Labels with a usable color. GitHub sends colors as 6-digit hex without "#"; anything else
+ * is dropped to "" (shown without a swatch) so it can never reach a style attribute as-is.
+ */
+export function labelsOf(nodes: ({ name: string; color: string } | null)[] | undefined): Label[] {
+  return (nodes ?? [])
+    .filter((l): l is { name: string; color: string } => Boolean(l?.name))
+    .map((l) => ({
+      name: l.name,
+      color: /^[0-9a-f]{6}$/i.test(l.color) ? l.color.toLowerCase() : '',
+    }))
 }
 
 /** Story Points option name → number; unset or non-numeric ("?", "XL") → undefined. */

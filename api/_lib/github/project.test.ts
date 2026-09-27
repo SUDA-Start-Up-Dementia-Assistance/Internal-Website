@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { ProjectSetupError } from './errors.js'
 import {
+  labelsOf,
   normalizeItem,
   parsePoints,
   resolveFields,
@@ -175,6 +176,18 @@ describe('normalizeItem', () => {
     })
   })
 
+  it('adds issue labels, and leaves them out when there are none', () => {
+    const labelled: RawContent = {
+      ...issue,
+      labels: { nodes: [{ name: 'bug', color: 'D73A4A' }, null] },
+    }
+    expect(normalizeItem(item(labelled), META)?.labels).toEqual([{ name: 'bug', color: 'd73a4a' }])
+    expect(normalizeItem(item(issue), META)).not.toHaveProperty('labels')
+    expect(normalizeItem(item({ ...issue, labels: { nodes: [] } }), META)).not.toHaveProperty(
+      'labels',
+    )
+  })
+
   it('normalizes pull requests', () => {
     expect(normalizeItem(item(pr), META)).toMatchObject({
       kind: 'pr',
@@ -221,6 +234,23 @@ describe('normalizeItem', () => {
       { __typename: 'ProjectV2ItemFieldDateValue', date: '2026-02-30', field: { id: 'F_done' } },
     ]
     expect(normalizeItem(item(draft, values), META)).not.toHaveProperty('doneBy')
+  })
+})
+
+describe('labelsOf', () => {
+  it('keeps only 6-digit hex colors, so nothing else can reach a style attribute', () => {
+    expect(
+      labelsOf([
+        { name: 'ok', color: 'a2eeef' },
+        { name: 'css', color: 'red;background:url(x)' },
+        { name: 'short', color: 'fff' },
+        { name: '', color: 'a2eeef' },
+      ]),
+    ).toEqual([
+      { name: 'ok', color: 'a2eeef' },
+      { name: 'css', color: '' },
+      { name: 'short', color: '' },
+    ])
   })
 })
 

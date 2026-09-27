@@ -21,6 +21,8 @@ interface Snapshot {
  */
 let snapshot: Snapshot = { data: undefined, error: null, fetching: false, fetchedAt: 0 }
 let inFlight: Promise<void> | null = null
+/** Bumped by every local write, so a read that started before it can't undo it on screen. */
+let writeGeneration = 0
 const listeners = new Set<() => void>()
 
 function update(next: Partial<Snapshot>): void {
@@ -35,20 +37,42 @@ function subscribe(listener: () => void): () => void {
 
 const getSnapshot = () => snapshot
 
+/** The cached tasks response, if loaded. */
+export function peekTasks(): TasksResponse | undefined {
+  return snapshot.data
+}
+
+/**
+ * Rewrites the cached response in place (for optimistic writes). A no-op until data has
+ * loaded. Doesn't touch fetchedAt: an edit isn't a fresh read from GitHub.
+ */
+export function mutateTasks(fn: (data: TasksResponse) => TasksResponse): void {
+  if (!snapshot.data) return
+  writeGeneration += 1
+  update({ data: fn(snapshot.data) })
+}
+
 function isStale(now = Date.now()): boolean {
   return !snapshot.data || now - snapshot.fetchedAt > STALE_AFTER_MS
 }
 
-const load = TASKS_MOCK ? () => Promise.resolve(createMockTasks()) : fetchTasks
+// Mock writes only live in memory, so a mock "refetch" keeps them.
+const load = TASKS_MOCK ? () => Promise.resolve(snapshot.data ?? createMockTasks()) : fetchTasks
 
 /** Fetches (or joins the request already in flight). Never rejects: errors land in state. */
 export function loadTasks(): Promise<void> {
   if (inFlight) return inFlight
   // Keep showing data we already have; only a first load clears an old error.
   update({ fetching: true, error: snapshot.data ? snapshot.error : null })
+  const generation = writeGeneration
   inFlight = load()
     .then(
-      (data) => update({ data, error: null, fetching: false, fetchedAt: Date.now() }),
+      (data) =>
+        generation === writeGeneration
+          ? update({ data, error: null, fetching: false, fetchedAt: Date.now() })
+          : // Read before a local edit landed: keep what's shown, and stay stale so the next
+            // focus or mount reads again.
+            update({ fetching: false }),
       (err: unknown) => {
         const error =
           err instanceof TasksError ? err : new TasksError('unknown', "We couldn't load tasks.")
@@ -66,6 +90,7 @@ export function loadTasks(): Promise<void> {
 export function resetTasksCache(): void {
   snapshot = { data: undefined, error: null, fetching: false, fetchedAt: 0 }
   inFlight = null
+  writeGeneration = 0
 }
 
 export interface TasksQuery {

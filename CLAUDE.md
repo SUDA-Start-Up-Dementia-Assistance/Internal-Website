@@ -104,7 +104,9 @@ GitHub Project; the site reads and writes them through GitHub's API.
   - Estimated done date (project DATE field): overdue/due-soon logic. In code, call
     this `doneBy`; in the UI label it "Done by".
   - Type (single select: Dev, Docs, Admin).
-  - Ignore "Sub-issues progress" and any issue-level fields.
+  - Ignore "Sub-issues progress" and any other issue-level fields, except labels: issue/PR
+    labels are shown read-only on task rows (drafts can't have labels). The site never
+    edits labels.
   The team hasn't finalized sizing fields. The burndown unit is a single config value,
   BURNDOWN_UNIT: "storyPoints" (default) | "estimateHours". Never mix units in one chart.
   Required fields: Status, Iteration, Estimated done date, plus whichever field

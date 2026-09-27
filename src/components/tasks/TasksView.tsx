@@ -1,5 +1,5 @@
-import { ChartNoAxesColumnDecreasing } from 'lucide-react'
-import { useRef, useState, type KeyboardEvent } from 'react'
+import { ChartNoAxesColumnDecreasing, Plus } from 'lucide-react'
+import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { formatDayMonth } from '../../lib/dates'
 import { parseLocalDate } from '../../lib/drive/parse'
@@ -8,20 +8,23 @@ import {
   DEFAULT_FILTERS,
   isOpen,
   selectMine,
-  selectSprintBacklogWithoutIteration,
   useTasks,
+  type Task,
   type TaskFilters as Filters,
   type TaskMeta,
 } from '../../lib/tasks'
+import { showToast } from '../../lib/toast'
+import { buttonClasses } from '../buttonStyles'
 import ErrorState from '../ErrorState'
-import HiddenItemsNotice from './HiddenItemsNotice'
 import LoadingState from '../LoadingState'
 import Skeleton from '../Skeleton'
 import MyTasks from './MyTasks'
+import NewTaskDialog from './NewTaskDialog'
+import { listNames, SAVED_MESSAGE } from './saveTask'
 import SignInPanel from './SignInPanel'
 import TaskFilters from './TaskFilters'
 import TeamTasks from './TeamTasks'
-import UnscheduledNotice from './UnscheduledNotice'
+import Toaster from '../Toaster'
 
 const TABS = [
   { id: 'mine', label: 'My tasks' },
@@ -37,10 +40,25 @@ export default function TasksView({ login }: { login: string }) {
   const [params, setParams] = useSearchParams()
   const tab: TabId = TABS.find((t) => t.id === params.get('tab'))?.id ?? 'mine'
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS)
+  const [creating, setCreating] = useState(false)
+  const ready = Boolean(data)
 
   function selectTab(id: TabId) {
     setParams(id === 'mine' ? {} : { tab: id }, { replace: true })
   }
+
+  // "n" opens New task, unless the user is typing or another dialog is open.
+  useEffect(() => {
+    if (!ready) return
+    function onKeyDown(e: globalThis.KeyboardEvent) {
+      if (e.key !== 'n' || e.metaKey || e.ctrlKey || e.altKey || e.repeat) return
+      if (isTypingTarget(e.target) || document.querySelector('dialog[open]')) return
+      e.preventDefault()
+      setCreating(true)
+    }
+    document.addEventListener('keydown', onKeyDown)
+    return () => document.removeEventListener('keydown', onKeyDown)
+  }, [ready])
 
   if (loading) return <TasksSkeleton />
   if (error) {
@@ -52,21 +70,68 @@ export default function TasksView({ login }: { login: string }) {
   }
   if (!data) return null
 
-  const { tasks, hiddenCount, meta, team } = data
+  const { tasks, meta, team } = data
   const filtered = applyFilters(tasks, filters, meta)
   // Inside one sprint, every row would repeat its name.
   const showIteration = !(filters.currentSprintOnly && meta.currentIterationId)
   // Filters (including the default "current sprint only") hid every one of the user's tasks.
   const hasAnyOfMine = selectMine(tasks, login).length > 0
 
+  function onCreated(task: Task | null, failedFields: string[]) {
+    setCreating(false)
+    if (failedFields.length > 0) {
+      showToast(
+        'error',
+        `Task created, but GitHub didn't set ${listNames(failedFields)}. Set ${failedFields.length === 1 ? 'it' : 'them'} on the task.`,
+      )
+      return
+    }
+    // A new task can land outside the current view (e.g. no sprint, "current sprint only").
+    const visible =
+      !task ||
+      (applyFilters([task], filters, meta).length > 0 &&
+        (tab !== 'mine' || selectMine([task], login).length > 0))
+    showToast(
+      'success',
+      visible ? SAVED_MESSAGE : `${SAVED_MESSAGE}. The current filters or tab hide the new task.`,
+    )
+  }
+
   return (
     <div className="space-y-8">
-      <HiddenItemsNotice count={hiddenCount} />
-      <UnscheduledNotice
+      {/* <HiddenItemsNotice count={hiddenCount} /> */}
+      {/* <UnscheduledNotice
         tasks={selectSprintBacklogWithoutIteration(tasks)}
         projectUrl={meta.projectUrl}
-      />
-      <Tabs selected={tab} onSelect={selectTab} />
+      /> */}
+      <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-3 border-b border-night/10">
+        <Tabs selected={tab} onSelect={selectTab} />
+        <button
+          type="button"
+          onClick={() => setCreating(true)}
+          aria-keyshortcuts="n"
+          className={`mb-2 ${buttonClasses('primary', 'sm')}`}
+        >
+          <Plus aria-hidden="true" className="size-4" />
+          New task
+          <kbd
+            aria-hidden="true"
+            className="ml-1 hidden rounded border border-night/20 px-1 font-body text-xs sm:inline"
+          >
+            N
+          </kbd>
+        </button>
+      </div>
+      {creating && (
+        <NewTaskDialog
+          meta={meta}
+          team={team}
+          login={login}
+          onClose={() => setCreating(false)}
+          onCreated={onCreated}
+        />
+      )}
+      <Toaster />
 
       <div
         id={`panel-${tab}`}
@@ -87,6 +152,7 @@ export default function TasksView({ login }: { login: string }) {
           <MyTasks
             tasks={selectMine(filtered, login)}
             meta={meta}
+            team={team}
             filtered={hasAnyOfMine}
             showIteration={showIteration}
           />
@@ -103,6 +169,11 @@ export default function TasksView({ login }: { login: string }) {
       </div>
     </div>
   )
+}
+
+function isTypingTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false
+  return target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)
 }
 
 /** WAI-ARIA tabs: arrow keys, Home and End move between tabs (and select them). */
@@ -124,12 +195,7 @@ function Tabs({ selected, onSelect }: { selected: TabId; onSelect: (id: TabId) =
   }
 
   return (
-    <div
-      role="tablist"
-      aria-label="Task views"
-      onKeyDown={onKeyDown}
-      className="flex gap-1 border-b border-night/10"
-    >
+    <div role="tablist" aria-label="Task views" onKeyDown={onKeyDown} className="flex gap-1">
       {TABS.map((t) => {
         const active = t.id === selected
         return (

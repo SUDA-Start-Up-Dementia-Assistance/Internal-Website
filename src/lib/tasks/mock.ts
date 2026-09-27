@@ -96,6 +96,10 @@ export function createMockTasks(today = new Date()): TasksResponse {
     task({
       title: 'Wire the morning greeting to the caregiver schedule',
       kind: 'issue',
+      labels: [
+        { name: 'enhancement', color: 'a2eeef' },
+        { name: 'greeting', color: 'f2b84b' },
+      ],
       key: 'inProgress',
       assignees: [person(ME)],
       type: 'Dev',
@@ -109,6 +113,10 @@ export function createMockTasks(today = new Date()): TasksResponse {
     task({
       title: 'Large-print weather card: contrast pass',
       kind: 'issue',
+      labels: [
+        { name: 'accessibility', color: '5319e7' },
+        { name: 'blocked-by-design', color: 'd73a4a' },
+      ],
       key: 'blocked',
       assignees: [person(ME), person('priya-n')],
       type: 'Dev',
@@ -154,6 +162,7 @@ export function createMockTasks(today = new Date()): TasksResponse {
     task({
       title: 'Add “today is” date banner',
       kind: 'pr',
+      labels: [{ name: 'ui', color: 'ffffff' }],
       key: 'done',
       assignees: [person(ME)],
       type: 'Dev',

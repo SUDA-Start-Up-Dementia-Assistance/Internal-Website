@@ -2,6 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { ConfigError } from './env.js'
 import { GitHubApiError, ProjectSetupError, toClientError } from './github/errors.js'
 import { firstHeader, requestOrigin } from './request.js'
+import { InputError } from './taskInput.js'
 import { clearSession, getSession, type Session } from './session.js'
 
 export interface ErrorBody {
@@ -64,7 +65,9 @@ export function withErrors(handler: Handler): Handler {
       await handler(req, res)
     } catch (err) {
       if (res.headersSent) return
-      if (err instanceof GitHubApiError) {
+      if (err instanceof InputError) {
+        sendError(res, 400, 'invalid-input', err.message)
+      } else if (err instanceof GitHubApiError) {
         // Status and GitHub's error code only; never tokens or raw bodies.
         console.error(`[github] ${err.kind} (${err.status}) ${err.detail}`)
         // The token is dead: drop the cookie so the site shows "Sign in" again.

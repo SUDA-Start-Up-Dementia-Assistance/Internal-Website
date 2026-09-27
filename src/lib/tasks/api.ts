@@ -1,4 +1,4 @@
-import type { TasksResponse } from './types'
+import type { NewTaskRequest, TaskPatch, TasksResponse, WriteResult } from './types'
 
 /** A failed /api/tasks call, carrying the server's { code, message }. */
 export class TasksError extends Error {
@@ -16,11 +16,27 @@ export class TasksError extends Error {
   }
 }
 
-export async function fetchTasks(): Promise<TasksResponse> {
+type ErrorBody = { error?: { code?: string; message?: string } }
+
+/**
+ * Calls /api and returns its JSON, or throws a TasksError with the server's message. Writes
+ * are same-origin fetches, so the browser sends the Origin header the server checks.
+ */
+async function request<T>(
+  path: string,
+  init: { method?: string; body?: unknown },
+  isValid: (body: unknown) => boolean,
+  fallbackMessage: string,
+): Promise<T> {
   let res: Response
   try {
-    res = await fetch('/api/tasks', {
-      headers: { Accept: 'application/json' },
+    res = await fetch(path, {
+      method: init.method ?? 'GET',
+      headers: {
+        Accept: 'application/json',
+        ...(init.body !== undefined && { 'Content-Type': 'application/json' }),
+      },
+      body: init.body === undefined ? undefined : JSON.stringify(init.body),
       credentials: 'same-origin',
     })
   } catch {
@@ -30,13 +46,35 @@ export async function fetchTasks(): Promise<TasksResponse> {
   // No /api at all, e.g. `npm run dev` (use `npx vercel dev`, or VITE_TASKS_MOCK=true).
   if (!isJson)
     throw new TasksError('api-unavailable', "Tasks aren't available on this version of the site.")
-  const body = (await res.json()) as TasksResponse | { error?: { code?: string; message?: string } }
-  if (!res.ok || !('tasks' in body)) {
-    const error = 'error' in body ? body.error : undefined
-    throw new TasksError(
-      error?.code ?? 'unknown',
-      error?.message ?? "We couldn't load tasks right now.",
-    )
+  const body = (await res.json()) as unknown
+  if (!res.ok || !isValid(body)) {
+    const error = (body as ErrorBody | null)?.error
+    throw new TasksError(error?.code ?? 'unknown', error?.message ?? fallbackMessage)
   }
-  return body
+  return body as T
+}
+
+const hasKey = (key: string) => (body: unknown) =>
+  typeof body === 'object' && body !== null && key in body
+
+export function fetchTasks(): Promise<TasksResponse> {
+  return request('/api/tasks', {}, hasKey('tasks'), "We couldn't load tasks right now.")
+}
+
+export function createTask(input: NewTaskRequest): Promise<WriteResult> {
+  return request(
+    '/api/tasks',
+    { method: 'POST', body: input },
+    hasKey('failedFields'),
+    "We couldn't create the task.",
+  )
+}
+
+export function updateTask(itemId: string, patch: TaskPatch): Promise<WriteResult> {
+  return request(
+    `/api/tasks/${encodeURIComponent(itemId)}`,
+    { method: 'PATCH', body: patch },
+    hasKey('failedFields'),
+    "We couldn't save that change.",
+  )
 }
