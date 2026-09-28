@@ -13,7 +13,8 @@ import { BURNDOWN_UNIT } from './_lib/config.js'
 import { findCurrentIteration, todayKey } from './_lib/dates.js'
 import { getProjectMeta } from './_lib/github/project.js'
 import type { Iteration } from './_lib/github/types.js'
-import { requireSession, sendError, sendJson, withErrors } from './_lib/http.js'
+import { sendError, sendJson, withErrors } from './_lib/http.js'
+import { getValidToken } from './_lib/session.js'
 import { InputError } from './_lib/taskInput.js'
 
 /** GET /api/burndown?iteration=<id>. Mirrored for the browser in src/lib/burndown/types.ts. */
@@ -41,12 +42,11 @@ export default withErrors(async (req, res) => {
 })
 
 async function getBurndown(req: VercelRequest, res: VercelResponse): Promise<void> {
-  const session = await requireSession(req, res)
-  if (!session) return
+  const token = await getValidToken(req, res)
 
   const now = new Date()
   const today = todayKey(now)
-  const meta = await getProjectMeta(session.token)
+  const meta = await getProjectMeta(token)
   const iterations = meta.iteration.iterations
   const current = findCurrentIteration(iterations, today)
 
@@ -98,7 +98,7 @@ async function getBurndown(req: VercelRequest, res: VercelResponse): Promise<voi
   let days: BurndownDay[]
 
   // Only the current iteration is ever written; past ones are read-only.
-  const snapshot = isCurrent ? await computeSnapshot(session.token, now) : null
+  const snapshot = isCurrent ? await computeSnapshot(token, now) : null
   if (snapshot && snapshot.iteration.id === iteration.id) {
     const saved = await storage('saving today’s snapshot', null, () =>
       upsertDay(iteration, snapshot.day),

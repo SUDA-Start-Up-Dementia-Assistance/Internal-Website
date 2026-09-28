@@ -8,7 +8,7 @@ import {
 } from './github/errors.js'
 import { firstHeader, requestOrigin } from './request.js'
 import { InputError } from './taskInput.js'
-import { clearSession, getSession, type Session } from './session.js'
+import { AuthError, clearSession } from './session.js'
 
 export interface ErrorBody {
   error: { code: string; message: string }
@@ -35,19 +35,6 @@ export function redirect(res: VercelResponse, location: string, status = 302): v
   res.status(status).end()
 }
 
-/** Returns the session, or sends 401 and returns null. */
-export async function requireSession(
-  req: VercelRequest,
-  res: VercelResponse,
-): Promise<Session | null> {
-  const session = await getSession(req)
-  if (!session) {
-    sendError(res, 401, 'unauthenticated', 'Sign in with GitHub to continue.')
-    return null
-  }
-  return session
-}
-
 /**
  * For mutating requests (POST/PATCH/DELETE): the Origin header must be this site's origin.
  * Sends 403 and returns false otherwise.
@@ -70,7 +57,10 @@ export function withErrors(handler: Handler): Handler {
       await handler(req, res)
     } catch (err) {
       if (res.headersSent) return
-      if (err instanceof InputError) {
+      if (err instanceof AuthError) {
+        // getValidToken has already cleared the cookie when the session expired.
+        sendError(res, 401, err.code, err.message)
+      } else if (err instanceof InputError) {
         sendError(res, 400, 'invalid-input', err.message)
       } else if (err instanceof IssueNotAddedError) {
         console.error(`[github] ${err.message}`)

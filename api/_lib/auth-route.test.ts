@@ -58,19 +58,32 @@ const cookieValue = (res: FakeRes, name: string) =>
     ?.split(';')[0]
     .slice(name.length + 1)
 
-/** Stubs GitHub: token exchange, /user, org membership, and grant revocation. */
-function stubGitHub(membershipState: 'active' | 'pending' | null) {
+/** Stubs GitHub: token exchange, /user, org membership, and token revocation. */
+function stubGitHub(
+  membershipState: 'active' | 'pending' | null,
+  { membershipStatus = 404, installedOn = ['dawn-team'] } = {},
+) {
   const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
     if (url.includes('/login/oauth/access_token'))
-      return Response.json({ access_token: 'gho_test' })
+      return Response.json({
+        access_token: 'ghu_test',
+        expires_in: 28800,
+        refresh_token: 'ghr_test',
+        refresh_token_expires_in: 15897600,
+      })
     if (url.endsWith('/user'))
       return Response.json({ login: 'octocat', name: 'Octo Cat', avatar_url: 'https://a/b.png' })
     if (url.includes('/user/memberships/orgs/')) {
       return membershipState
         ? Response.json({ state: membershipState })
-        : new Response('{}', { status: 404 })
+        : Response.json(
+            { message: 'Resource not accessible by integration' },
+            { status: membershipStatus },
+          )
     }
-    if (url.includes('/grant') && init?.method === 'DELETE')
+    if (url.includes('/user/installations'))
+      return Response.json({ installations: installedOn.map((login) => ({ account: { login } })) })
+    if (url.endsWith('/applications/client-id/token') && init?.method === 'DELETE')
       return new Response(null, { status: 204 })
     return new Response('unexpected', { status: 500 })
   })
@@ -98,7 +111,7 @@ describe('/api/auth/login', () => {
     expect(res.statusCode).toBe(302)
     const location = new URL(String(res.headers.location))
     expect(location.origin + location.pathname).toBe('https://github.com/login/oauth/authorize')
-    expect(location.searchParams.get('scope')).toBe('read:user read:org project repo')
+    expect(location.searchParams.get('client_id')).toBe('client-id')
     expect(location.searchParams.get('redirect_uri')).toBe(`${ORIGIN}/api/auth/callback`)
     expect(location.searchParams.get('state')).toBeTruthy()
     const cookie = cookies(res).find((c) => c.startsWith('dawn_oauth_state='))!
@@ -107,14 +120,30 @@ describe('/api/auth/login', () => {
     expect(cookie).not.toMatch(/Secure/) // localhost
   })
 
+  it.each([
+    [{ host: 'localhost:3000' }, 'http://localhost:3000/api/auth/callback'],
+    [{ host: '127.0.0.1:3000' }, 'http://127.0.0.1:3000/api/auth/callback'],
+    [
+      { host: 'dawn.vercel.app', 'x-forwarded-proto': 'https' },
+      'https://dawn.vercel.app/api/auth/callback',
+    ],
+    // Vercel's proxy: the public host arrives in x-forwarded-host.
+    [
+      { host: 'internal', 'x-forwarded-host': 'dawn.vercel.app', 'x-forwarded-proto': 'https' },
+      'https://dawn.vercel.app/api/auth/callback',
+    ],
+  ])('sends no scope and redirect_uri from the request origin (%j)', async (headers, expected) => {
+    const res = await call('login', { headers })
+    const params = new URL(String(res.headers.location)).searchParams
+    expect(params.has('scope')).toBe(false)
+    expect(params.get('redirect_uri')).toBe(expected)
+  })
+
   it('marks cookies Secure off localhost', async () => {
     const res = await call('login', {
       headers: { host: 'dawn.vercel.app', 'x-forwarded-proto': 'https' },
     })
     expect(cookies(res)[0]).toMatch(/Secure/)
-    expect(new URL(String(res.headers.location)).searchParams.get('redirect_uri')).toBe(
-      'https://dawn.vercel.app/api/auth/callback',
-    )
   })
 })
 
@@ -123,8 +152,9 @@ describe('/api/auth/callback', () => {
     return { dawn_oauth_state: await sealState({ state, returnTo }, SECRET) }
   }
 
-  it('signs in an active org member and returns them to returnTo', async () => {
-    stubGitHub('active')
+  it('signs in an active org member, storing both tokens and their expiries', async () => {
+    const fetchMock = stubGitHub('active')
+    const before = Math.floor(Date.now() / 1000)
     const res = await call('callback', {
       query: { state: 'the-state', code: 'abc' },
       cookies: await stateCookie(),
@@ -133,8 +163,20 @@ describe('/api/auth/callback', () => {
     expect(res.headers.location).toBe('/agendas')
     const session = await decryptSession(cookieValue(res, 'dawn_session')!, SECRET)
     expect(session).toEqual({
-      token: 'gho_test',
+      accessToken: 'ghu_test',
+      accessTokenExpiresAt: expect.any(Number),
+      refreshToken: 'ghr_test',
+      refreshTokenExpiresAt: expect.any(Number),
       user: { login: 'octocat', name: 'Octo Cat', avatarUrl: 'https://a/b.png' },
+    })
+    expect(session!.accessTokenExpiresAt! - before).toBeGreaterThanOrEqual(28800)
+    expect(session!.accessTokenExpiresAt! - before).toBeLessThan(28805)
+    expect(session!.refreshTokenExpiresAt! - before).toBeGreaterThanOrEqual(15897600)
+    // The code exchange sends the same redirect_uri the authorize step used.
+    const exchange = fetchMock.mock.calls.find(([url]) => url.includes('access_token'))!
+    expect(JSON.parse(String(exchange[1]?.body))).toMatchObject({
+      code: 'abc',
+      redirect_uri: `${ORIGIN}/api/auth/callback`,
     })
     expect(cookies(res).some((c) => c.startsWith('dawn_oauth_state=;'))).toBe(true) // single-use
   })
@@ -186,7 +228,7 @@ describe('/api/auth/callback', () => {
   })
 
   it.each(['pending', null] as const)(
-    'turns away non-active members (%s) and revokes the grant',
+    'turns away non-active members (%s) and revokes the token',
     async (state) => {
       const fetchMock = stubGitHub(state)
       const res = await call('callback', {
@@ -197,9 +239,31 @@ describe('/api/auth/callback', () => {
       expect(cookieValue(res, 'dawn_session')).toBeUndefined()
       expect(
         fetchMock.mock.calls.some(
-          ([url, init]) => String(url).includes('/grant') && init?.method === 'DELETE',
+          ([url, init]) => String(url).endsWith('/token') && init?.method === 'DELETE',
         ),
       ).toBe(true)
+    },
+  )
+
+  it('reports a missing Members permission instead of "not a member"', async () => {
+    stubGitHub(null, { membershipStatus: 403 })
+    const res = await call('callback', {
+      query: { state: 'the-state', code: 'abc' },
+      cookies: await stateCookie(),
+    })
+    expect(res.headers.location).toBe('/tasks?error=app-missing-permission')
+    expect(cookieValue(res, 'dawn_session')).toBeUndefined()
+  })
+
+  it.each([403, 404])(
+    'reports an app not installed on the org (GitHub %i) instead of "not a member"',
+    async (membershipStatus) => {
+      stubGitHub(null, { membershipStatus, installedOn: ['some-other-org'] })
+      const res = await call('callback', {
+        query: { state: 'the-state', code: 'abc' },
+        cookies: await stateCookie(),
+      })
+      expect(res.headers.location).toBe('/tasks?error=app-not-installed')
     },
   )
 
@@ -215,7 +279,7 @@ describe('/api/auth/callback', () => {
 describe('/api/auth/me', () => {
   it('returns the signed-in user, never the token', async () => {
     const value = await encryptSession(
-      { token: 'gho_secret', user: { login: 'octocat', name: 'Octo', avatarUrl: '' } },
+      { accessToken: 'gho_secret', user: { login: 'octocat', name: 'Octo', avatarUrl: '' } },
       SECRET,
     )
     const res = await call('me', { cookies: { dawn_session: value } })
@@ -231,7 +295,7 @@ describe('/api/auth/me', () => {
 
   it('rejects a tampered session cookie (one flipped character) and clears it', async () => {
     const value = await encryptSession(
-      { token: 'gho_secret', user: { login: 'octocat', name: 'Octo', avatarUrl: '' } },
+      { accessToken: 'gho_secret', user: { login: 'octocat', name: 'Octo', avatarUrl: '' } },
       SECRET,
     )
     // Flip a character inside the ciphertext segment of the compact JWE.
@@ -245,7 +309,7 @@ describe('/api/auth/me', () => {
 
   it('rejects a session sealed with a different secret', async () => {
     const value = await encryptSession(
-      { token: 'gho_secret', user: { login: 'octocat', name: 'Octo', avatarUrl: '' } },
+      { accessToken: 'gho_secret', user: { login: 'octocat', name: 'Octo', avatarUrl: '' } },
       'another-secret-that-is-also-32-characters!',
     )
     const res = await call('me', { cookies: { dawn_session: value } })
@@ -298,10 +362,10 @@ describe('/api/auth/logout', () => {
     expect(res.body).toMatchObject({ error: { code: 'bad-origin' } })
   })
 
-  it('revokes the grant, clears the cookie, and redirects home', async () => {
+  it('revokes the token, clears the cookie, and redirects home', async () => {
     const fetchMock = stubGitHub('active')
     const value = await encryptSession(
-      { token: 'gho_test', user: { login: 'octocat', name: 'Octo', avatarUrl: '' } },
+      { accessToken: 'ghu_test', user: { login: 'octocat', name: 'Octo', avatarUrl: '' } },
       SECRET,
     )
     const res = await call('logout', {
@@ -315,8 +379,11 @@ describe('/api/auth/logout', () => {
       cookies(res).some((c) => c.startsWith('dawn_session=;') && c.includes('Max-Age=0')),
     ).toBe(true)
     expect(fetchMock).toHaveBeenCalledWith(
-      'https://api.github.com/applications/client-id/grant',
-      expect.objectContaining({ method: 'DELETE' }),
+      'https://api.github.com/applications/client-id/token',
+      expect.objectContaining({
+        method: 'DELETE',
+        body: JSON.stringify({ access_token: 'ghu_test' }),
+      }),
     )
   })
 
@@ -326,7 +393,7 @@ describe('/api/auth/logout', () => {
       vi.fn(async () => new Response('boom', { status: 500 })),
     )
     const value = await encryptSession(
-      { token: 'gho_test', user: { login: 'octocat', name: 'Octo', avatarUrl: '' } },
+      { accessToken: 'ghu_test', user: { login: 'octocat', name: 'Octo', avatarUrl: '' } },
       SECRET,
     )
     const res = await call('logout', {

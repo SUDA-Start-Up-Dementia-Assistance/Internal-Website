@@ -2,7 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import handler from '../tasks.js'
 import { clearProjectMetaCache } from './github/project.js'
-import { encryptSession } from './session.js'
+import { clearRefreshCache, decryptSession, encryptSession, type Session } from './session.js'
 
 const SECRET = 'test-secret-that-is-definitely-32-chars-long!'
 
@@ -12,11 +12,17 @@ interface FakeRes {
   body: unknown
 }
 
-async function call(init: { method?: string; signedIn?: boolean } = {}): Promise<FakeRes> {
+async function call(
+  init: { method?: string; signedIn?: boolean; session?: Partial<Session> } = {},
+): Promise<FakeRes> {
   const cookies: Record<string, string> = {}
   if (init.signedIn ?? true) {
     cookies.dawn_session = await encryptSession(
-      { token: 'gho_test', user: { login: 'ada', name: 'Ada', avatarUrl: '' } },
+      {
+        accessToken: 'gho_test',
+        user: { login: 'ada', name: 'Ada', avatarUrl: '' },
+        ...init.session,
+      },
       SECRET,
     )
   }
@@ -153,7 +159,9 @@ beforeEach(() => {
   vi.stubEnv('GITHUB_PROJECT_NUMBER', '1')
   vi.spyOn(console, 'error').mockImplementation(() => {})
   vi.spyOn(console, 'warn').mockImplementation(() => {})
+  vi.spyOn(console, 'info').mockImplementation(() => {})
   clearProjectMetaCache()
+  clearRefreshCache()
 })
 
 afterEach(() => {
@@ -223,6 +231,62 @@ describe('GET /api/tasks', () => {
     expect(JSON.stringify(body)).not.toContain('gho_test')
   })
 
+  it('refreshes a token that is about to expire, then uses the new one', async () => {
+    const graphqlFetch = stubGraphQL()
+    const fetchMock = vi.fn(async (url: string, init?: RequestInit) =>
+      url.includes('/login/oauth/access_token')
+        ? Response.json({
+            access_token: 'ghu_new',
+            expires_in: 28800,
+            refresh_token: 'ghr_new',
+            refresh_token_expires_in: 15897600,
+          })
+        : graphqlFetch(url, init),
+    )
+    vi.stubGlobal('fetch', fetchMock)
+    const now = Math.floor(Date.now() / 1000)
+    const res = await call({
+      session: { accessTokenExpiresAt: now + 60, refreshToken: 'ghr_old' },
+    })
+    expect(res.statusCode).toBe(200)
+    const refreshCalls = fetchMock.mock.calls.filter(([url]) => url.includes('access_token'))
+    expect(refreshCalls).toHaveLength(1)
+    expect(JSON.parse(String(refreshCalls[0][1]?.body))).toMatchObject({
+      grant_type: 'refresh_token',
+      refresh_token: 'ghr_old',
+    })
+    for (const [url, init] of graphqlFetch.mock.calls) {
+      expect(url).toBe('https://api.github.com/graphql')
+      expect((init?.headers as Record<string, string>).Authorization).toBe('Bearer ghu_new')
+    }
+    const setCookies = cookies(res).filter((c) => c.startsWith('dawn_session='))
+    expect(setCookies).toHaveLength(1)
+    const saved = await decryptSession(setCookies[0].split(';')[0].slice(13), SECRET)
+    expect(saved).toMatchObject({ accessToken: 'ghu_new', refreshToken: 'ghr_new' })
+  })
+
+  it('answers 401 session-expired and clears the cookie when refresh fails', async () => {
+    const graphqlFetch = stubGraphQL()
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url: string, init?: RequestInit) =>
+        url.includes('/login/oauth/access_token')
+          ? Response.json({ error: 'bad_refresh_token' })
+          : graphqlFetch(url, init),
+      ),
+    )
+    const res = await call({
+      session: {
+        accessTokenExpiresAt: Math.floor(Date.now() / 1000) + 60,
+        refreshToken: 'ghr_used',
+      },
+    })
+    expect(res.statusCode).toBe(401)
+    expect(res.body).toMatchObject({ error: { code: 'session-expired' } })
+    expect(cookies(res)).toEqual([expect.stringMatching(/^dawn_session=;.*Max-Age=0/)])
+    expect(graphqlFetch).not.toHaveBeenCalled()
+  })
+
   it('maps a GitHub 401 to session-expired and clears the cookie', async () => {
     stubGraphQL(() => Response.json({ message: 'Bad credentials' }, { status: 401 }))
     const res = await call()
@@ -237,22 +301,39 @@ describe('GET /api/tasks', () => {
     stubGraphQL(() =>
       Response.json({
         data: { organization: null },
-        errors: [
-          {
-            type: 'FORBIDDEN',
-            path: ['organization'],
-            message:
-              'Although you appear to have the correct authorization credentials, the `dawn` organization has enabled OAuth App access restrictions',
-          },
-        ],
+        errors: [{ type: 'FORBIDDEN', path: ['organization'], message: 'Secret internal wording' }],
       }),
     )
     const res = await call()
     expect(res.statusCode).toBe(403)
     const body = res.body as { error: { code: string; message: string } }
     expect(body.error.code).toBe('no-project-access')
-    expect(body.error.message).toMatch(/hasn't approved this app/)
-    expect(body.error.message).not.toMatch(/Although/)
+    expect(body.error.message).toMatch(/don't have access/)
+    expect(body.error.message).not.toMatch(/Secret/)
+  })
+
+  it('maps "not accessible by integration" to app-not-installed', async () => {
+    stubGraphQL(() =>
+      Response.json({
+        data: null,
+        errors: [
+          {
+            type: 'FORBIDDEN',
+            path: ['organization', 'projectV2'],
+            message: 'Resource not accessible by integration',
+          },
+        ],
+      }),
+    )
+    const res = await call()
+    expect(res.statusCode).toBe(403)
+    expect(res.body).toEqual({
+      error: {
+        code: 'app-not-installed',
+        message:
+          "The DAWN Team Site app isn't installed on that repository. Ask an org owner to add it.",
+      },
+    })
   })
 
   it('treats a project the user cannot see as no-access', async () => {

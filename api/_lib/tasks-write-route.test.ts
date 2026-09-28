@@ -26,7 +26,7 @@ async function call(init: CallInit): Promise<FakeRes> {
   const cookies: Record<string, string> = {}
   if (init.signedIn ?? true) {
     cookies.dawn_session = await encryptSession(
-      { token: 'gho_test', user: { login: 'ada', name: 'Ada', avatarUrl: '' } },
+      { accessToken: 'gho_test', user: { login: 'ada', name: 'Ada', avatarUrl: '' } },
       SECRET,
     )
   }

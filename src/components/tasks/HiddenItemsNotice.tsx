@@ -4,8 +4,8 @@ import { buttonClasses } from '../buttonStyles'
 
 /**
  * Some project items came back redacted: GitHub didn't let this user's sign-in read them.
- * Usually an issue in a private repo, either one they can't access or (for sessions from
- * before the site asked for `repo` access) one their old sign-in can't read.
+ * Usually an issue in a repo the DAWN Team Site app isn't installed on, or one the user
+ * can't access.
  */
 export default function HiddenItemsNotice({ count }: { count: number }) {
   const { signIn } = useAuth()
@@ -22,9 +22,9 @@ export default function HiddenItemsNotice({ count }: { count: number }) {
           {items} hidden because GitHub didn&apos;t share {count === 1 ? 'it' : 'them'}
         </h2>
         <p className="mt-1 text-sm text-dusk">
-          These are usually issues in a private repository. If you signed in before the site asked
-          for repository access, sign in again and approve it on GitHub. Otherwise, you may not have
-          access to that repository.
+          These are usually issues in a repository the DAWN Team Site app isn&apos;t installed on
+          (ask an org owner to add it) or one you can&apos;t access. If you signed in before the app
+          was added, sign in again.
         </p>
         <button
           type="button"

@@ -1,6 +1,6 @@
 /**
  * Server env vars. Never prefixed VITE_ and never sent to the browser.
- * Missing OAuth credentials mean "auth unavailable" (e.g. preview deployments), not a crash;
+ * Missing GitHub App credentials mean "auth unavailable" (e.g. preview deployments), not a crash;
  * a partial setup fails with an error naming what's missing.
  */
 
@@ -23,7 +23,7 @@ function read(name: string): string | undefined {
   return value ? value : undefined
 }
 
-/** OAuth settings, or null when sign-in isn't configured for this deployment. */
+/** GitHub App sign-in settings, or null when sign-in isn't configured for this deployment. */
 export function getAuthConfig(): AuthConfig | null {
   const clientId = read('GITHUB_CLIENT_ID')
   const clientSecret = read('GITHUB_CLIENT_SECRET')
@@ -79,4 +79,26 @@ export function requireAuthConfig(): AuthConfig {
     )
   }
   return config
+}
+
+/** True everywhere except real deployments (local `vercel dev`, tests). */
+export function isDevEnvironment(): boolean {
+  const env = read('VERCEL_ENV')
+  return env !== 'production' && env !== 'preview'
+}
+
+/**
+ * Dev-only testing aid: DEV_TOKEN_REFRESH_AFTER_SECONDS=10 pretends every new GitHub
+ * access token is due for refresh 10 seconds after it was issued, so the refresh path can
+ * be exercised without waiting ~8 hours. Ignored on production and preview deployments.
+ */
+export function devRefreshAfterSeconds(): number | undefined {
+  if (!isDevEnvironment()) return undefined
+  const raw = read('DEV_TOKEN_REFRESH_AFTER_SECONDS')
+  if (raw === undefined) return undefined
+  const seconds = Number(raw)
+  if (!Number.isFinite(seconds) || seconds < 0) {
+    throw new ConfigError('DEV_TOKEN_REFRESH_AFTER_SECONDS must be a number of seconds.')
+  }
+  return seconds
 }

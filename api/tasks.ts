@@ -2,7 +2,8 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { createTask } from './_lib/github/mutations.js'
 import { getProjectMeta, listItems, listTeam, toClientMeta } from './_lib/github/project.js'
 import type { TasksResponse, WriteResult } from './_lib/github/types.js'
-import { requireSameOrigin, requireSession, sendError, sendJson, withErrors } from './_lib/http.js'
+import { requireSameOrigin, sendError, sendJson, withErrors } from './_lib/http.js'
+import { getValidToken } from './_lib/session.js'
 import { parseCreateTask } from './_lib/taskInput.js'
 
 /**
@@ -24,12 +25,11 @@ export default withErrors(async (req, res) => {
 
 /** GET /api/tasks → { tasks, hiddenCount, meta, team } */
 async function getTasks(req: VercelRequest, res: VercelResponse): Promise<void> {
-  const session = await requireSession(req, res)
-  if (!session) return
+  const token = await getValidToken(req, res)
   const [meta, { tasks, hiddenCount }, team] = await Promise.all([
-    getProjectMeta(session.token),
-    listItems(session.token),
-    listTeam(session.token),
+    getProjectMeta(token),
+    listItems(token),
+    listTeam(token),
   ])
   sendJson(res, 200, {
     tasks,
@@ -42,10 +42,9 @@ async function getTasks(req: VercelRequest, res: VercelResponse): Promise<void> 
 /** POST /api/tasks → 201 { task, failedFields }. Creates a draft issue, then sets its fields. */
 async function postTask(req: VercelRequest, res: VercelResponse): Promise<void> {
   if (!requireSameOrigin(req, res)) return
-  const session = await requireSession(req, res)
-  if (!session) return
-  const meta = await getProjectMeta(session.token)
+  const token = await getValidToken(req, res)
+  const meta = await getProjectMeta(token)
   const input = parseCreateTask(req.body, meta)
-  const { task, failedFields } = await createTask(session.token, meta, input)
+  const { task, failedFields } = await createTask(token, meta, input)
   sendJson(res, 201, { task, failedFields } satisfies WriteResult)
 }

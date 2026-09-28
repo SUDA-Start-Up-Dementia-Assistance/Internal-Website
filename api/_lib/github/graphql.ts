@@ -1,4 +1,4 @@
-import { GitHubApiError, type GitHubErrorKind } from './errors.js'
+import { GitHubApiError, isNotAccessibleByIntegration, type GitHubErrorKind } from './errors.js'
 import { USER_AGENT } from './oauth.js'
 
 const ENDPOINT = 'https://api.github.com/graphql'
@@ -25,14 +25,21 @@ const NO_ACCESS_TYPES = new Set(['FORBIDDEN', 'NOT_FOUND', 'INSUFFICIENT_SCOPES'
  */
 const TOLERATED_ERROR_DEPTH = 5
 
+export interface GraphQLContext {
+  /** "owner/name" of the repo a query or mutation is about, named in app-not-installed errors. */
+  repo?: string
+}
+
 /**
  * Runs a GraphQL query as the signed-in user. Failures become typed GitHubApiErrors:
- * 401 → session-expired, permission problems → no-access, rate limits → rate-limited.
+ * 401 → session-expired, the app missing from a repo → app-not-installed, other permission
+ * problems → no-access, rate limits → rate-limited.
  */
 export async function graphql<T>(
   token: string,
   query: string,
   variables: Record<string, unknown> = {},
+  context: GraphQLContext = {},
 ): Promise<T> {
   let res: Response
   try {
@@ -54,7 +61,13 @@ export async function graphql<T>(
 
   if (!res.ok) {
     const kind = httpErrorKind(res, body)
-    throw new GitHubApiError(kind, res.status, body.message ?? '', retryAfterSeconds(res))
+    throw new GitHubApiError(
+      kind,
+      res.status,
+      body.message ?? '',
+      retryAfterSeconds(res),
+      context.repo,
+    )
   }
 
   const errors = body.errors ?? []
@@ -69,6 +82,7 @@ export async function graphql<T>(
       res.status,
       first ? `${first.type ?? 'ERROR'}: ${first.message ?? ''}` : 'empty response',
       retryAfterSeconds(res),
+      context.repo,
     )
   }
   if (errors.length > 0) {
@@ -82,6 +96,7 @@ export async function graphql<T>(
 function httpErrorKind(res: Response, body: GraphQLBody<unknown>): GitHubErrorKind {
   if (res.status === 401) return 'session-expired'
   if (isRateLimited(res, body)) return 'rate-limited'
+  if (res.status === 403 && isNotAccessibleByIntegration(body.message)) return 'app-not-installed'
   if (res.status === 403 || res.status === 404) return 'no-access'
   return 'upstream'
 }
@@ -98,11 +113,8 @@ function isRateLimited(res: Response, body: GraphQLBody<unknown>): boolean {
 
 function graphqlErrorKind(errors: GraphQLErrorEntry[]): GitHubErrorKind {
   if (errors.some((e) => e.type === 'RATE_LIMITED')) return 'rate-limited'
+  if (errors.some((e) => isNotAccessibleByIntegration(e.message))) return 'app-not-installed'
   if (errors.some((e) => e.type && NO_ACCESS_TYPES.has(e.type))) return 'no-access'
-  // OAuth App access restrictions come back as an untyped error with this wording.
-  if (errors.some((e) => /OAuth App access restrictions/i.test(e.message ?? ''))) {
-    return 'no-access'
-  }
   return 'upstream'
 }
 

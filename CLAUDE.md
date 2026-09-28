@@ -7,8 +7,10 @@ Faculty coach: Drew Saur.
 
 ## Purpose
 A lightweight hub for the team, sponsor, and coach: see upcoming/past meeting agendas,
-browse project artifacts, and (team only) manage tasks and track sprint progress.
-Agendas and artifacts live in Google Drive; the site only reads them. Tasks live in our
+browse project artifacts, and (team only) manage tasks, track sprint progress, see a
+personal developer dashboard, and view the team's meeting calendar.
+Agendas and artifacts live in Google Drive; the site only reads them. Meetings live in
+the shared "DAWN Team" Google Calendar; the site only reads it. Tasks live in our
 GitHub Project; the site reads and writes them through GitHub's API.
 
 ## Stack (do not add to this without asking)
@@ -17,11 +19,13 @@ GitHub Project; the site reads and writes them through GitHub's API.
 - react-router-dom (BrowserRouter)
 - lucide-react for icons
 - Vercel serverless functions (Node.js runtime) in /api for everything that needs a secret
-- jose (session cookie encryption), @vercel/blob (burndown snapshots)
+- jose (session cookie encryption + Google service-account JWTs), @vercel/blob
+  (burndown snapshots)
 - No state library. No UI component library. No chart library (charts are hand-built SVG).
+  No googleapis package.
 - No database. GitHub Projects is the task store; Vercel Blob holds only daily snapshot totals.
 
-## Public data: Google Drive (unchanged from Phase 1)
+## Public data: Google Drive
 - Google Drive API v3, called from the browser with an API key.
 - Content comes from *sources*, declared in src/config/sources.ts. Two source kinds:
   - "dated-feed": recurring files named "YYYY-MM-DD <Suffix>" in a working folder,
@@ -41,6 +45,9 @@ GitHub Project; the site reads and writes them through GitHub's API.
   (suffix match is case-insensitive, whitespace-tolerant). Files matching neither are
   ignored, with a console.warn in dev only. An Agenda and a 4Up with the same date
   form one "meeting".
+- Agenda docs for official meetings are auto-created in Drive by a Google Apps Script
+  outside this repo (it reads the DAWN Team calendar and copies a template). The site
+  never creates, edits, or deletes Drive files.
 - Published library: each subfolder is a category; files directly in the root folder are
   ignored. Subfolders and files both use an optional "NN " prefix for ordering (e.g.
   "02 Requirements", "01 Project Plan.pdf"): sort by the number, strip it for display.
@@ -52,39 +59,65 @@ GitHub Project; the site reads and writes them through GitHub's API.
 - Route files live in /api. Shared server code lives in /api/_lib (underscore = not a
   route). Server code has its own tsconfig (Node target) separate from the Vite app.
 - Vercel Hobby allows at most 12 functions per deployment. Consolidate with dynamic
-  routes (e.g. /api/auth/[action].ts handles login, callback, logout, me).
-- vercel.json SPA rewrite must exclude /api: source "/((?!api/).*)" → "/index.html".
+  routes (e.g. /api/auth/[action].ts handles login, callback, logout, me). Report the
+  function count whenever you add a route.
+- vercel.json SPA rewrite: source "/((?!api/|@)[^.]*)" → "/index.html". It only rewrites
+  extensionless paths that don't start with api/ or @, so `vercel dev` still serves
+  Vite's module requests (/src/*.tsx, /@vite/client, /node_modules/...). Do not
+  "simplify" it to "/(.*)"; that breaks local dev.
 - Server env vars (never prefixed VITE_, never sent to the browser):
   GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET, SESSION_SECRET, GITHUB_ORG,
-  GITHUB_PROJECT_NUMBER, BLOB_READ_WRITE_TOKEN. (GITHUB_SNAPSHOT_TOKEN and CRON_SECRET
-  are reserved for an optional future scheduled snapshot job; don't require them.)
-- Server code must fail with a clear error naming any missing required env var, except
-  that missing OAuth vars mean "auth unavailable" (preview deployments), not a crash.
+  GITHUB_PROJECT_NUMBER, BLOB_READ_WRITE_TOKEN, GOOGLE_CALENDAR_ID, GOOGLE_SA_EMAIL,
+  GOOGLE_SA_PRIVATE_KEY. (GITHUB_SNAPSHOT_TOKEN and CRON_SECRET are reserved for an
+  optional future scheduled snapshot job; don't require them.)
+- Server code must fail with a clear error naming any missing required env var, except:
+  missing GitHub App vars mean "auth unavailable" (preview deployments), and missing
+  Google calendar vars mean "calendar not connected". Neither is a crash.
 - Every endpoint returns JSON { error: { code, message } } on failure with a correct
-  status code. Never return raw GitHub error bodies or tokens to the client.
+  status code. Never return raw GitHub/Google error bodies or tokens to the client.
 - Local dev with the API: `npx vercel dev` (port 3000). `npm run dev` runs the frontend only.
   Local env vars come from Vercel's Development environment via
-  `npx vercel env pull .env.local`. .env.local is never committed.
+  `npx vercel env pull .env.local`. .env.local is never committed. Development points
+  GITHUB_PROJECT_NUMBER at the SANDBOX project, not the real one.
 
-## Auth: Sign in with GitHub
-- GitHub OAuth App, scopes: "read:user read:org project repo". `repo` is required because
-  the team repo is private: without it GitHub redacts those issues/PRs in project items.
+## Auth: Sign in with GitHub (GitHub App)
+- A GitHub App (not an OAuth App) provides sign-in. Permissions are configured on the
+  app, not requested via scopes: repo Metadata/Pull requests/Checks/Commit statuses
+  read, Issues read & write; org Projects read & write, Members read. The app is
+  installed on the org, including the private D.A.W.N. repos. Do not add a `scope`
+  param to the authorize URL.
+- One app serves both environments. It has two registered callback URLs; always send
+  an explicit redirect_uri built from the request's own origin + /api/auth/callback.
 - Flow: /api/auth/login sets a random `state` in a short-lived HttpOnly cookie and
   redirects to GitHub; /api/auth/callback verifies state, exchanges the code, checks the
   user is an ACTIVE member of GITHUB_ORG (GET /user/memberships/orgs/{org}), then sets
   the session cookie. Non-members get redirected to /tasks?error=not-a-member.
-- Session: the GitHub access token + { login, name, avatarUrl } encrypted with jose (JWE,
-  key derived from SESSION_SECRET) in one cookie: HttpOnly, Secure (except localhost),
-  SameSite=Lax, Path=/, Max-Age 7 days. The token never reaches browser JavaScript.
+  returnTo only accepts relative paths starting with "/"; default after sign-in is
+  /dashboard.
+- User tokens EXPIRE (~8h) and come with a refresh token (~6 months). The session cookie
+  (JWE via jose, key from SESSION_SECRET; HttpOnly, Secure except localhost,
+  SameSite=Lax, Path=/, Max-Age 7 days) stores access token, its expiry, refresh token,
+  and { login, name, avatarUrl }. Tokens never reach browser JavaScript. Keep the
+  cookie under 4KB.
+- /api/_lib/session.ts exposes getValidToken(req, res): if the access token expires
+  within 5 minutes, refresh it (POST https://github.com/login/oauth/access_token with
+  grant_type=refresh_token), re-set the cookie, and return the new token. Concurrent
+  refreshes in one request share a single promise. If refresh fails, clear the session
+  and respond 401 with code "session-expired". Every endpoint gets tokens ONLY via
+  getValidToken. The frontend handles "session-expired" by signing out locally with a
+  friendly "sign in again" message.
+- Sign-out revokes the token (DELETE /applications/{client_id}/token, basic auth with
+  client id/secret) and then clears the cookie. If revocation fails, still clear it.
 - /api/auth/me returns { user } or { user: null, authAvailable } (authAvailable is false
-  when OAuth env vars are missing, e.g. on preview deployments).
-- Sign-out revokes the GitHub grant (DELETE /applications/{client_id}/grant, basic
-  auth with client id/secret) and then clears the cookie. If revocation fails, still
-  clear the cookie.
+  when GITHUB_CLIENT_ID / GITHUB_CLIENT_SECRET / SESSION_SECRET are missing, e.g. on
+  preview deployments).
 - Mutating endpoints (POST/PATCH/DELETE) also require the Origin header to match the
   site's own origin.
-- Frontend: src/lib/auth (AuthProvider + useAuth). Navbar shows "Sign in with GitHub"
-  or the user's avatar with a menu (My tasks, Sign out).
+- When a GitHub call fails because the app isn't installed on a repo, show: "The DAWN
+  Team Site app isn't installed on <repo>. Ask an org owner to add it."
+- Frontend: src/lib/auth (AuthProvider + useAuth). Signed in: nav order is Dashboard,
+  Meetings, then the public pages and Tasks; avatar menu has Dashboard, My tasks,
+  Sign out. Signed out: "Sign in with GitHub" button.
 
 ## Tasks: GitHub Projects v2
 - All task reads/writes go through /api/tasks* using the SIGNED-IN USER'S token, so
@@ -133,19 +166,32 @@ GitHub Project; the site reads and writes them through GitHub's API.
   retries into a duplicate). The site can edit fields on any item, title/notes on drafts
   (existing ones; drafts can still be made on the GitHub board), assignees on drafts and
   issues, and links out to GitHub for everything else. Archived items are excluded.
+- Write safety:
+  - Never call GitHub's API directly (gh CLI, curl, scripts) to create, edit, or delete
+    project items. Test writes only through mocks or against the sandbox project that
+    the Development env points to.
+  - PATCH requests send only fields the user actually changed. A field is cleared only
+    when the user explicitly clears it, never because it was absent or unchanged.
+  - The site never deletes or archives items.
+- A failed /api/tasks request (401/404/500) shows an error with retry, never the
+  "no tasks" empty state. When a view is empty because of filters, say so (e.g. "12
+  tasks hidden by filters") with a way to show them.
 - "Current iteration" = the iteration where startDate <= today < startDate + duration.
 - Dates: GitHub date fields are calendar dates. Parse them as local dates
-  (America/New_York), never as UTC midnight. Overdue = Estimated done date before today and not Done.
-- Frontend mock: when VITE_TASKS_MOCK=true, the Tasks UI uses src/lib/tasks/mock.ts and
-  a fake signed-in user, and writes only update in-memory state. Never used in production.
+  (America/New_York), never as UTC midnight. Overdue = Estimated done date before today
+  and not Done.
+- Frontend mock: when VITE_TASKS_MOCK=true, the Tasks, Dashboard, and Meetings UIs use
+  mock data and a fake signed-in user, and writes only update in-memory state. Show a
+  "Sample data" banner whenever mock mode is on. Never used in production.
 - Preview mode: when /api/auth/me says authAvailable: false (a preview deployment without
-  OAuth vars), the Tasks UI runs on the same sample data (src/lib/sampleMode.ts) under a
-  "Preview: sample data" banner. A failing /api is NOT a preview. On VERCEL_ENV=production,
-  missing OAuth vars are a config error, so production can never show sample data.
+  GitHub App vars), the Tasks UI runs on the same sample data (src/lib/sampleMode.ts) under
+  a "Preview: sample data" banner. A failing /api is NOT a preview. On
+  VERCEL_ENV=production, missing GitHub App vars are a config error, so production can
+  never show sample data.
 - An expired/revoked session (401 session-expired or unauthenticated from any /api call)
   signs the user out app-wide (src/lib/auth/sessionEvents.ts) with a friendly message.
 
-## Burndown (built in Prompt 11)
+## Burndown
 - Snapshots are VIEW-TRIGGERED: there is no scheduled job and no server-owned GitHub
   token. When a signed-in user loads /api/burndown for the CURRENT iteration, the server
   computes today's totals with that user's token and upserts today's entry
@@ -164,6 +210,57 @@ GitHub Project; the site reads and writes them through GitHub's API.
   token, so a scheduled job (cron + a read-only token) can reuse it later if the gaps
   become a problem.
 
+## Developer dashboard (/dashboard, signed-in only)
+- One endpoint, GET /api/dashboard, returns every widget's data in one response:
+  { me, sprint, tasks, reviewQueue, myPrs, meetings, generatedAt }. Each widget is
+  computed independently: if one source fails (e.g. PR search), that widget gets
+  { error } and the others still return. The UI renders per-widget errors.
+- PRs come from GitHub GraphQL `search` (type: ISSUE) scoped to `org:GITHUB_ORG`:
+  review queue = `is:pr is:open review-requested:@me`, mine = `is:pr is:open author:@me`.
+  For each PR: title, url, repo, number, isDraft, createdAt, baseRefName, requested
+  reviewers, submitted reviews, and the head commit's statusCheckRollup state.
+- Team process rules the dashboard checks (keep them in src/config/process.ts):
+  2 required reviewers per PR; reviews due within 1 business day (Mon–Fri,
+  America/New_York); PR descriptions must include a demo video (detect a video link or
+  GitHub video attachment in the body: .mp4/.mov/.webm, youtube, loom, drive, or
+  github.com/user-attachments); PR flow is feature branch → canary → main.
+- meetings = the next 5 calendar events (now through +14 days), from the same calendar
+  code as /api/meetings; the client joins agendas.
+- Cache /api/dashboard responses per user for 60s in memory. Never share cached data
+  across users.
+
+## Meetings (Google Calendar)
+- The shared "DAWN Team" Google Calendar is the ONLY source of meetings:
+  - Official: "Team Meeting", Tue & Thu 17:00–18:15 America/New_York (have agendas)
+  - Retro: "Sprint Retro", Mon 20:00 (no agenda)
+  - Ad hoc: anything else on the calendar (no agenda)
+  The site never stores a schedule of its own and never writes to the calendar.
+- Server reads it with a Google service account (GOOGLE_SA_EMAIL,
+  GOOGLE_SA_PRIVATE_KEY, GOOGLE_CALENDAR_ID): sign a JWT with jose (RS256, scope
+  https://www.googleapis.com/auth/calendar.readonly), exchange it at
+  https://oauth2.googleapis.com/token, cache the access token until 5 min before expiry.
+  The private key env var may contain literal "\n": replace with real newlines.
+  Code lives in /api/_lib/google/calendar.ts.
+- Always call events.list with singleEvents=true, orderBy=startTime,
+  timeZone=America/New_York so Google expands recurrences and applies cancellations.
+- Normalize each event to Meeting { id, title, start, end, allDay, kind:
+  "official" | "retro" | "adhoc", joinUrl?, htmlLink }. kind: title contains
+  OFFICIAL_MEETING_KEYWORD ("Team Meeting") → official; contains RETRO_KEYWORD ("Retro")
+  → retro; else adhoc (keywords in src/config/meetings.ts, case-insensitive).
+  joinUrl from hangoutLink / conferenceData / a URL in location.
+- NEVER return attendee emails, descriptions, or organizer info to the client (they can
+  contain private notes/links). "Details" links to htmlLink in Google Calendar.
+- Only official meetings are joined to the Agendas feed item with the same date
+  (America/New_York): agenda link if it exists, otherwise "Agenda not posted yet".
+  Retro and ad hoc meetings never show agenda state.
+- GET /api/meetings?from=YYYY-MM-DD&to=YYYY-MM-DD (signed-in only; max range 62 days).
+  Cache per range for 5 minutes in memory (calendar data is team-wide, not per-user).
+- /meetings page (signed-in only): 3-week list + week grid, past 2 weeks of official
+  meetings with agenda links, "Add a meeting" opens Google Calendar (the site never
+  creates events), "Subscribe" → CALENDAR_URL.
+- Missing calendar env vars: meetings UI shows "Calendar not connected" (mock meetings
+  when VITE_TASKS_MOCK=true), never a crash.
+
 ## Design system: "First Light"
 Tokens (define in @theme, use via Tailwind utilities; no raw hex in components):
 night #1E2140, cream #FFF8EF, surface #FFFFFF, dusk #5B6091, ember #B4533A,
@@ -176,11 +273,14 @@ apricot #E07A5F, gold #F2B84B, lavender #8A8FB5.
 - Signature motifs: sunrise hero gradient (night → lavender → apricot → gold),
   thin gold→apricot "horizon line" dividers, sun-arc SVG behind the wordmark.
 - Respect prefers-reduced-motion. Meet WCAG AA. Fully keyboard navigable, visible focus rings.
+- Color is never the only signal: every badge/tag also has a text label.
 
 ## Conventions
 - src/pages/* for routes, src/components/* for shared UI, src/lib/* for non-UI logic.
 - Keep Drive API code isolated in src/lib/drive so it can be swapped for a build-time
   manifest later without touching pages.
-- Keep all GitHub API code server-side in /api/_lib/github. The browser only talks to /api.
+- Keep all GitHub API code server-side in /api/_lib/github and all Google Calendar code
+  in /api/_lib/google. The browser only talks to /api (and the public Drive API).
 - Every data view handles loading (skeletons), error (friendly message + retry), and empty.
-- Run `npm run build` and `npm run lint` before declaring a task done.
+- Run `npm run build` and `npm run lint` before declaring a task done. At the end of a
+  task, list every file created or changed.

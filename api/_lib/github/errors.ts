@@ -17,22 +17,34 @@ export class GitHubError extends Error {
 /**
  * What went wrong, from the user's point of view:
  * - session-expired: the token was revoked or expired (the session cookie should be cleared)
- * - no-access: the org hasn't approved this OAuth app, or the user can't see the project
+ * - no-access: the user can't see the org or the project
+ * - app-not-installed: the GitHub App isn't installed on a repo the call touched (user tokens
+ *   from a GitHub App only reach repos where the app is installed)
  * - rate-limited: GitHub's rate limit; retry later
  * - upstream: anything else GitHub got wrong
  */
-export type GitHubErrorKind = 'session-expired' | 'no-access' | 'rate-limited' | 'upstream'
+export type GitHubErrorKind =
+  'session-expired' | 'no-access' | 'app-not-installed' | 'rate-limited' | 'upstream'
 
 export class GitHubApiError extends GitHubError {
   readonly kind: GitHubErrorKind
   /** Seconds until GitHub will accept requests again, when it told us. */
   readonly retryAfter?: number
+  /** "owner/name" of the repo the call was about, when the caller knew it. */
+  readonly repo?: string
 
-  constructor(kind: GitHubErrorKind, status: number, detail = '', retryAfter?: number) {
+  constructor(
+    kind: GitHubErrorKind,
+    status: number,
+    detail = '',
+    retryAfter?: number,
+    repo?: string,
+  ) {
     super(CLIENT_ERRORS[kind].message, status, detail)
     this.name = 'GitHubApiError'
     this.kind = kind
     this.retryAfter = retryAfter
+    this.repo = repo
   }
 }
 
@@ -78,8 +90,12 @@ const CLIENT_ERRORS: Record<GitHubErrorKind, ClientError> = {
   'no-access': {
     status: 403,
     code: 'no-project-access',
-    message:
-      "GitHub denied access: the organization hasn't approved this app, or you lack access to the team's project.",
+    message: "GitHub denied access: you don't have access to the team's project.",
+  },
+  'app-not-installed': {
+    status: 403,
+    code: 'app-not-installed',
+    message: appNotInstalledMessage(),
   },
   'rate-limited': {
     status: 429,
@@ -93,7 +109,22 @@ const CLIENT_ERRORS: Record<GitHubErrorKind, ClientError> = {
   },
 }
 
+export function appNotInstalledMessage(repo?: string): string {
+  return `The DAWN Team Site app isn't installed on ${repo ?? 'that repository'}. Ask an org owner to add it.`
+}
+
+/**
+ * GitHub's wording when a GitHub App user token reaches a repo the app isn't installed on
+ * (or lacks a permission there). REST sends it as a 403 message, GraphQL as a FORBIDDEN error.
+ */
+export function isNotAccessibleByIntegration(message: string | undefined): boolean {
+  return /Resource not accessible by integration/i.test(message ?? '')
+}
+
 /** The safe, client-facing version of a GitHub failure. */
 export function toClientError(err: GitHubApiError): ClientError {
+  if (err.kind === 'app-not-installed') {
+    return { ...CLIENT_ERRORS[err.kind], message: appNotInstalledMessage(err.repo) }
+  }
   return CLIENT_ERRORS[err.kind]
 }

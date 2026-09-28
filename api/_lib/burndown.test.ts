@@ -320,7 +320,7 @@ async function call(query: Record<string, string> = {}, signedIn = true): Promis
   const cookies: Record<string, string> = {}
   if (signedIn) {
     cookies.dawn_session = await encryptSession(
-      { token: 'gho_test', user: { login: 'ada', name: 'Ada', avatarUrl: '' } },
+      { accessToken: 'gho_test', user: { login: 'ada', name: 'Ada', avatarUrl: '' } },
       SECRET,
     )
   }

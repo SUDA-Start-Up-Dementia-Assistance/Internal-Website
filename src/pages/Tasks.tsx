@@ -10,6 +10,10 @@ const ERROR_MESSAGES: Record<string, string> = {
   'not-a-member':
     "That GitHub account isn't an active member of the team's GitHub organization. If you were just invited, accept the invitation on GitHub, then sign in again.",
   'signin-failed': "Signing in with GitHub didn't work. Please try again.",
+  'app-not-installed':
+    "The DAWN Team Site app isn't installed on the team's GitHub organization, so we can't confirm you're a member. Ask an org owner to install it.",
+  'app-missing-permission':
+    "The DAWN Team Site app can't read the organization's members yet. An org owner needs to grant (or approve) its \"Members: read\" permission in the organization's GitHub App settings.",
 }
 
 export default function Tasks() {
