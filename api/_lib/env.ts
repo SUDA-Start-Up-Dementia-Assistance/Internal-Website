@@ -102,3 +102,44 @@ export function devRefreshAfterSeconds(): number | undefined {
   }
   return seconds
 }
+
+export interface CalendarConfig {
+  calendarId: string
+  serviceAccountEmail: string
+  /** PEM (PKCS#8), with real newlines. */
+  privateKey: string
+}
+
+/**
+ * The Google service account that reads the team calendar, or null when none of its
+ * variables are set ("calendar not connected", e.g. previews). A partial setup names what's
+ * missing. Env UIs often store the key with literal "\n": those become real newlines.
+ */
+export function getCalendarConfig(): CalendarConfig | null {
+  const values = {
+    GOOGLE_CALENDAR_ID: read('GOOGLE_CALENDAR_ID'),
+    GOOGLE_SA_EMAIL: read('GOOGLE_SA_EMAIL'),
+    GOOGLE_SA_PRIVATE_KEY: read('GOOGLE_SA_PRIVATE_KEY'),
+  }
+  if (Object.values(values).every((v) => !v)) return null
+  const missing = Object.entries(values)
+    .filter(([, v]) => !v)
+    .map(([k]) => k)
+  if (missing.length > 0) {
+    throw new ConfigError(`Missing required environment variable(s): ${missing.join(', ')}.`)
+  }
+  return {
+    calendarId: values.GOOGLE_CALENDAR_ID!,
+    serviceAccountEmail: values.GOOGLE_SA_EMAIL!,
+    privateKey: normalizePrivateKey(values.GOOGLE_SA_PRIVATE_KEY!),
+  }
+}
+
+/** Literal "\n" (and "\r\n") → newlines; surrounding quotes from copy-paste are dropped. */
+export function normalizePrivateKey(raw: string): string {
+  let key = raw.trim()
+  if ((key.startsWith('"') && key.endsWith('"')) || (key.startsWith("'") && key.endsWith("'"))) {
+    key = key.slice(1, -1)
+  }
+  return key.replace(/\\r\\n|\\n/g, '\n').replace(/\r\n/g, '\n')
+}

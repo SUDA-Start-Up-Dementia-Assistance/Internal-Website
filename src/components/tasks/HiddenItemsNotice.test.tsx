@@ -36,6 +36,6 @@ describe('HiddenItemsNotice', () => {
     const signIn = renderNotice(3)
     expect(screen.getByRole('heading').textContent).toMatch(/3 project items are hidden/)
     fireEvent.click(screen.getByRole('button', { name: 'Sign in again' }))
-    expect(signIn).toHaveBeenCalledWith('/tasks')
+    expect(signIn).toHaveBeenCalledWith()
   })
 })

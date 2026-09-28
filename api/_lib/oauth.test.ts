@@ -31,13 +31,13 @@ describe('sanitizeReturnTo', () => {
     '/a/..//evil.example',
     '/..//evil.example',
   ])('rejects %j', (input) => {
-    expect(sanitizeReturnTo(input)).toBe('/tasks')
+    expect(sanitizeReturnTo(input)).toBe('/dashboard')
   })
 
   it.each([undefined, null, 42, ['/tasks', '/admin']])(
-    'defaults non-strings (%j) to /tasks',
+    'defaults non-strings (%j) to /dashboard',
     (input) => {
-      expect(sanitizeReturnTo(input)).toBe('/tasks')
+      expect(sanitizeReturnTo(input)).toBe('/dashboard')
     },
   )
 })
@@ -77,7 +77,7 @@ describe('state cookie', () => {
 
   it('re-sanitizes returnTo on the way out', async () => {
     const sealed = await sealState({ state: 'abc', returnTo: '//evil.example' }, SECRET)
-    expect((await unsealState(sealed, SECRET))?.returnTo).toBe('/tasks')
+    expect((await unsealState(sealed, SECRET))?.returnTo).toBe('/dashboard')
   })
 
   it('rejects a tampered or foreign cookie', async () => {

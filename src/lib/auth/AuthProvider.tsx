@@ -45,9 +45,10 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
     [],
   )
 
-  // The Tasks page explains it in place; everywhere else, a toast does.
+  // The Tasks page explains it in place (the Dashboard redirects there); elsewhere, a toast does.
   useEffect(() => {
-    if (status.sessionExpired && !window.location.pathname.startsWith('/tasks')) {
+    const path = window.location.pathname
+    if (status.sessionExpired && !path.startsWith('/tasks') && !path.startsWith('/dashboard')) {
       showToast('error', SESSION_EXPIRED_MESSAGE)
     }
   }, [status.sessionExpired])

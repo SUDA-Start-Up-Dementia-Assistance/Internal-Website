@@ -4,11 +4,11 @@ import { deriveKey, seal, unseal } from './crypto.js'
 export const STATE_COOKIE = 'dawn_oauth_state'
 /** Long enough to finish GitHub's consent screen; short enough to limit replay. */
 export const STATE_MAX_AGE = 10 * 60
-export const DEFAULT_RETURN_TO = '/tasks'
+export const DEFAULT_RETURN_TO = '/dashboard'
 
 /**
  * Only same-site relative paths are allowed after sign-in, so the callback can't be used
- * as an open redirect. Anything else falls back to /tasks.
+ * as an open redirect. Anything else falls back to /dashboard.
  */
 export function sanitizeReturnTo(value: unknown): string {
   if (typeof value !== 'string') return DEFAULT_RETURN_TO

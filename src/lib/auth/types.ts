@@ -13,7 +13,7 @@ export interface AuthState {
   preview: boolean
   /** The server stopped accepting the session and the user was signed out. */
   sessionExpired: boolean
-  /** Starts GitHub sign-in; afterwards the user lands on `returnTo` (default /tasks). */
+  /** Starts GitHub sign-in; afterwards the user lands on `returnTo` (default /dashboard). */
   signIn: (returnTo?: string) => void
   signOut: () => void
 }

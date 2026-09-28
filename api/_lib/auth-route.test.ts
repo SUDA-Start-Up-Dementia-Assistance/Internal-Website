@@ -206,7 +206,7 @@ describe('/api/auth/callback', () => {
         query: { state, code: 'abc' },
         cookies: { dawn_oauth_state: cookieValue(login, 'dawn_oauth_state')! },
       })
-      expect(res.headers.location).toBe('/tasks')
+      expect(res.headers.location).toBe('/dashboard')
     },
   )
 

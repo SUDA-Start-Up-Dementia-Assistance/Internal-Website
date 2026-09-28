@@ -4,6 +4,7 @@ import { AuthProvider } from './lib/auth'
 import Agendas from './pages/Agendas'
 import ArtifactCategory from './pages/ArtifactCategory'
 import Artifacts from './pages/Artifacts'
+import Dashboard from './pages/Dashboard'
 import Home from './pages/Home'
 import NotFound from './pages/NotFound'
 import Tasks from './pages/Tasks'
@@ -20,6 +21,7 @@ export default function App() {
           <Route path="/artifacts/4ups" element={<Navigate to="/agendas?show=4ups" replace />} />
           <Route path="/artifacts/:category" element={<ArtifactCategory />} />
           <Route path="/tasks" element={<Tasks />} />
+          <Route path="/dashboard" element={<Dashboard />} />
           <Route path="*" element={<NotFound />} />
         </Route>
       </Routes>

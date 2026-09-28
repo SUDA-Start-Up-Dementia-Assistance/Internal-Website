@@ -184,6 +184,17 @@ export async function saveTaskEdit(itemId: string, patch: TaskPatch): Promise<st
   return result.failedFields
 }
 
+/**
+ * Saves an edit to a task that may not be in the tasks cache (e.g. from the Dashboard, which
+ * has its own data). A cached task goes through saveTaskEdit so every view stays in step.
+ * Resolves with the names of changes GitHub rejected; rejects if the whole edit failed.
+ */
+export async function saveTaskPatch(itemId: string, patch: TaskPatch): Promise<string[]> {
+  if (peekTasks()?.tasks.some((t) => t.itemId === itemId)) return saveTaskEdit(itemId, patch)
+  const result = await writes().update(itemId, patch)
+  return result.failedFields
+}
+
 /** Creates an issue (added to the project) and adds it to the cached list. */
 export async function createNewTask(input: NewTaskRequest): Promise<WriteResult> {
   const result = await writes().create(input)

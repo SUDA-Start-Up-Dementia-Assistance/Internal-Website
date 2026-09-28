@@ -2,8 +2,11 @@ import { CircleAlert, LogIn } from 'lucide-react'
 import { useAuth } from '../../lib/auth'
 import { buttonClasses } from '../buttonStyles'
 
-/** "Tasks are for the team: sign in", with an optional error from a failed sign-in. */
-export default function SignInPanel({ error }: { error?: string }) {
+/**
+ * "Tasks are for the team: sign in", with an optional error from a failed sign-in. After
+ * signing in, the user lands on `returnTo` (a same-site path), else the Dashboard.
+ */
+export default function SignInPanel({ error, returnTo }: { error?: string; returnTo?: string }) {
   const { authAvailable, signIn } = useAuth()
   return (
     <div className="max-w-prose">
@@ -20,7 +23,7 @@ export default function SignInPanel({ error }: { error?: string }) {
       {authAvailable ? (
         <button
           type="button"
-          onClick={() => signIn('/tasks')}
+          onClick={() => signIn(returnTo)}
           className={`mt-6 ${buttonClasses('primary')}`}
         >
           <LogIn aria-hidden="true" className="size-4" />

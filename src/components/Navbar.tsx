@@ -6,6 +6,8 @@ import AuthControl from './AuthControl'
 import SunArc from './SunArc'
 
 const NAV_ITEMS = [
+  // Signed in, the Dashboard comes first.
+  { to: '/dashboard', label: 'Dashboard', end: false, signedInOnly: true },
   { to: '/', label: 'Home', end: true },
   { to: '/agendas', label: 'Agendas', end: false },
   { to: '/artifacts', label: 'Artifacts', end: false },
@@ -25,7 +27,8 @@ function linkClass({ isActive }: { isActive: boolean }) {
 
 export default function Navbar() {
   const [open, setOpen] = useState(false)
-  const { user } = useAuth()
+  const { user, preview } = useAuth()
+  const signedIn = !!user && !preview
   // Hidden while auth is still loading too, so the link never flashes in and out.
   const navItems = NAV_ITEMS.filter((item) => !item.signedInOnly || user)
   const buttonRef = useRef<HTMLButtonElement>(null)
@@ -51,7 +54,11 @@ export default function Navbar() {
         aria-label="Main"
         className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4"
       >
-        <Link to="/" className="flex items-center gap-2 rounded-sm" aria-label="D.A.W.N. home">
+        <Link
+          to={signedIn ? '/dashboard' : '/'}
+          className="flex items-center gap-2 rounded-sm"
+          aria-label={signedIn ? 'D.A.W.N. dashboard' : 'D.A.W.N. home'}
+        >
           <SunArc horizon className="h-4 w-7" />
           <span className="font-heading text-xl font-semibold tracking-tight">D.A.W.N.</span>
         </Link>

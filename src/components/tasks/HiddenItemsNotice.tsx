@@ -28,7 +28,7 @@ export default function HiddenItemsNotice({ count }: { count: number }) {
         </p>
         <button
           type="button"
-          onClick={() => signIn('/tasks')}
+          onClick={() => signIn()}
           className={`mt-3 ${buttonClasses('secondary', 'sm')}`}
         >
           <LogIn aria-hidden="true" className="size-4" />

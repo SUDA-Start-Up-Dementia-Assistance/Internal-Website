@@ -20,6 +20,7 @@ export default function Tasks() {
   const { user, loading, sessionExpired } = useAuth()
   const [params] = useSearchParams()
   const error = sessionExpired ? SESSION_EXPIRED_MESSAGE : ERROR_MESSAGES[params.get('error') ?? '']
+  const returnTo = safeReturnTo(params.get('returnTo'))
 
   return (
     <div className="mx-auto max-w-5xl px-6 py-12 sm:py-16">
@@ -36,9 +37,16 @@ export default function Tasks() {
         ) : user ? (
           <TasksView login={user.login} />
         ) : (
-          <SignInPanel error={error} />
+          <SignInPanel error={error} returnTo={returnTo} />
         )}
       </div>
     </div>
   )
+}
+
+/** Only same-site paths ("/dashboard"); the server re-checks it too. */
+function safeReturnTo(value: string | null): string | undefined {
+  return value && value.startsWith('/') && !value.startsWith('//') && !value.includes('\\')
+    ? value
+    : undefined
 }

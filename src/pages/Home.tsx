@@ -9,13 +9,30 @@ import { isSourceConfigured } from '../config/sources'
 import { useMeetings, usePublishedCategories } from '../lib/drive'
 import { ABOUT, CURRENT_STATE } from '../../CONTENT'
 import PageTitle from '../components/PageTitle'
+import { Navigate, useLocation } from 'react-router-dom'
+import { useAuth } from '../lib/auth'
 
 // Sources without a folder ID are hidden rather than shown as errors.
 const SHOW_AGENDAS = isSourceConfigured('agendas')
 const SHOW_FOUR_UPS = isSourceConfigured('fourUps')
 const SHOW_PUBLISHED = isSourceConfigured('publishedArtifacts')
 
+/**
+ * A signed-in visitor who *arrives* on / (typing the URL, a bookmark, a reload) goes to the
+ * Dashboard. Only the entry page redirects, so the Home nav link still reaches Home.
+ */
 export default function Home() {
+  const { user, loading, preview } = useAuth()
+  const location = useLocation()
+  // React Router gives the page a visit starts on the key "default".
+  const isEntry = location.key === 'default'
+  // Hold the page until we know, so signed-in visitors don't see Home flash first.
+  if (isEntry && loading) return <PageTitle />
+  if (isEntry && user && !preview) return <Navigate to="/dashboard" replace />
+  return <HomeContent />
+}
+
+function HomeContent() {
   const meetings = useMeetings()
   const published = usePublishedCategories()
 

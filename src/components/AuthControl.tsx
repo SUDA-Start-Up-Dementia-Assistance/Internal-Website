@@ -1,13 +1,12 @@
-import { ChevronDown, ListTodo, LogIn, LogOut } from 'lucide-react'
+import { ChevronDown, LayoutDashboard, ListTodo, LogIn, LogOut } from 'lucide-react'
 import { useEffect, useId, useRef, useState } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { useAuth, type AuthUser } from '../lib/auth'
 import Avatar from './Avatar'
 
 /** Navbar right side: "Sign in with GitHub", or the user's avatar with an account menu. */
 export default function AuthControl() {
   const { user, loading, authAvailable, signIn } = useAuth()
-  const location = useLocation()
 
   // Reserve the avatar's space while loading so the navbar doesn't jump.
   if (loading) return <span aria-hidden="true" className="size-9" />
@@ -17,8 +16,8 @@ export default function AuthControl() {
   return (
     <button
       type="button"
-      // Come back to this page after signing in.
-      onClick={() => signIn(location.pathname + location.search)}
+      // Signing in always lands on the Dashboard.
+      onClick={() => signIn()}
       className="inline-flex items-center gap-1.5 rounded-full border border-cream/40 px-3.5 py-1.5 text-sm font-medium text-cream transition-colors hover:border-cream hover:bg-cream/10"
     >
       <LogIn aria-hidden="true" className="size-4" />
@@ -90,6 +89,16 @@ function UserMenu({ user }: { user: AuthUser }) {
             </div>
           </div>
           <ul className="p-1.5">
+            <li>
+              <Link
+                to="/dashboard"
+                onClick={() => setOpen(false)}
+                className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm hover:bg-night/5"
+              >
+                <LayoutDashboard aria-hidden="true" className="size-4 text-dusk" />
+                Dashboard
+              </Link>
+            </li>
             <li>
               <Link
                 to="/tasks"

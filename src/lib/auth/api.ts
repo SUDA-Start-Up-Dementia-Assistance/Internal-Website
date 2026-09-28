@@ -39,7 +39,7 @@ export async function fetchMe(): Promise<MeResult> {
   }
 }
 
-export function loginUrl(returnTo = '/tasks'): string {
+export function loginUrl(returnTo = '/dashboard'): string {
   return `/api/auth/login?returnTo=${encodeURIComponent(returnTo)}`
 }
 

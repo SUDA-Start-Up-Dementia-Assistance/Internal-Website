@@ -4,6 +4,7 @@ export {
   createNewTask,
   markDonePatch,
   saveTaskEdit,
+  saveTaskPatch,
   type TaskChange,
 } from './edits'
 export * from './selectors'

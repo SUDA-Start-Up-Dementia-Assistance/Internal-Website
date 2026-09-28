@@ -6,6 +6,7 @@ import {
   ProjectSetupError,
   toClientError,
 } from './github/errors.js'
+import { CalendarError } from './google/calendar.js'
 import { firstHeader, requestOrigin } from './request.js'
 import { InputError } from './taskInput.js'
 import { AuthError, clearSession } from './session.js'
@@ -73,6 +74,10 @@ export function withErrors(handler: Handler): Handler {
         if (err.retryAfter) res.setHeader('Retry-After', String(err.retryAfter))
         const { status, code, message } = toClientError(err)
         sendError(res, status, code, message)
+      } else if (err instanceof CalendarError) {
+        // Google's status and message go to the logs only.
+        console.error(`[calendar] ${err.code} (${err.status}) ${err.detail}`)
+        sendError(res, err.code === 'calendar-no-access' ? 502 : 503, err.code, err.message)
       } else if (err instanceof ProjectSetupError) {
         console.error(err.message)
         sendError(res, 500, 'project-misconfigured', err.message)

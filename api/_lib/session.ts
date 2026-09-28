@@ -159,8 +159,13 @@ export function clearRefreshCache(): void {
   refreshes.clear()
 }
 
-/** One token lookup per request, so concurrent callers share a refresh and one Set-Cookie. */
-const perRequest = new WeakMap<VercelRequest, Promise<string>>()
+/** One lookup per request, so concurrent callers share a refresh and one Set-Cookie. */
+const perRequest = new WeakMap<VercelRequest, Promise<ValidAuth>>()
+
+export interface ValidAuth {
+  token: string
+  user: SessionUser
+}
 
 /**
  * The ONLY way routes get a GitHub token. Returns the signed-in user's access token,
@@ -168,16 +173,21 @@ const perRequest = new WeakMap<VercelRequest, Promise<string>>()
  * Throws AuthError('unauthenticated') with no session, and AuthError('session-expired')
  * after clearing the cookie when the refresh fails; withErrors turns both into a 401.
  */
-export function getValidToken(req: VercelRequest, res: VercelResponse): Promise<string> {
-  let token = perRequest.get(req)
-  if (!token) {
-    token = resolveToken(req, res)
-    perRequest.set(req, token)
-  }
-  return token
+export async function getValidToken(req: VercelRequest, res: VercelResponse): Promise<string> {
+  return (await getValidAuth(req, res)).token
 }
 
-async function resolveToken(req: VercelRequest, res: VercelResponse): Promise<string> {
+/** getValidToken, plus who the token belongs to. */
+export function getValidAuth(req: VercelRequest, res: VercelResponse): Promise<ValidAuth> {
+  let auth = perRequest.get(req)
+  if (!auth) {
+    auth = resolveAuth(req, res)
+    perRequest.set(req, auth)
+  }
+  return auth
+}
+
+async function resolveAuth(req: VercelRequest, res: VercelResponse): Promise<ValidAuth> {
   const config = getAuthConfig()
   const session = config ? await getSession(req) : null
   if (!config || !session) {
@@ -185,7 +195,8 @@ async function resolveToken(req: VercelRequest, res: VercelResponse): Promise<st
     if (req.cookies?.[SESSION_COOKIE]) clearSession(req, res)
     throw new AuthError('unauthenticated')
   }
-  if (!needsRefresh(session)) return session.accessToken
+  const { user } = session
+  if (!needsRefresh(session)) return { token: session.accessToken, user }
 
   const expire = (detail: string): never => {
     console.error(`[session] token refresh failed: ${detail}`)
@@ -202,8 +213,7 @@ async function resolveToken(req: VercelRequest, res: VercelResponse): Promise<st
     // Status and GitHub's error code only; never tokens.
     return expire(err instanceof GitHubError ? `${err.status} ${err.detail}` : String(err))
   }
-  await setSession(req, res, { ...tokens, user: session.user }, config.sessionSecret)
-  if (isDevEnvironment())
-    console.info(`[session] refreshed the GitHub token for ${session.user.login}`)
-  return tokens.accessToken
+  await setSession(req, res, { ...tokens, user }, config.sessionSecret)
+  if (isDevEnvironment()) console.info(`[session] refreshed the GitHub token for ${user.login}`)
+  return { token: tokens.accessToken, user }
 }

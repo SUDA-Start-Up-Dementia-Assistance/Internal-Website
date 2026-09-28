@@ -1,4 +1,4 @@
-import { saveTaskEdit, TasksError, type TaskPatch } from '../../lib/tasks'
+import { saveTaskPatch, TasksError, type TaskPatch } from '../../lib/tasks'
 import { isSampleMode } from '../../lib/sampleMode'
 import { showToast } from '../../lib/toast'
 
@@ -13,19 +13,26 @@ export function listNames(names: string[]): string {
 }
 
 /**
- * Saves an inline edit (optimistically) and reports the outcome in a toast: a quiet
- * "Saved to GitHub", or what didn't save and why. `what` names the change, e.g. "the status".
+ * Saves an inline edit (optimistically, when the task is in the tasks cache) and reports the
+ * outcome in a toast: a quiet "Saved to GitHub", or what didn't save and why. `what` names the
+ * change, e.g. "the status". Resolves true only if every change was accepted.
  */
-export async function saveWithToast(itemId: string, patch: TaskPatch, what: string): Promise<void> {
+export async function saveWithToast(
+  itemId: string,
+  patch: TaskPatch,
+  what: string,
+): Promise<boolean> {
   try {
-    const failed = await saveTaskEdit(itemId, patch)
+    const failed = await saveTaskPatch(itemId, patch)
     if (failed.length > 0) {
       showToast('error', `Saved, but GitHub didn't accept ${listNames(failed)}. Try that again.`)
-    } else {
-      showToast('success', savedMessage())
+      return false
     }
+    showToast('success', savedMessage())
+    return true
   } catch (err) {
     const reason = err instanceof TasksError ? err.message : 'Something went wrong.'
     showToast('error', `Couldn't save ${what}: ${reason}`)
+    return false
   }
 }
