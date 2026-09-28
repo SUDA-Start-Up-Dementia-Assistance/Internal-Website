@@ -20,6 +20,15 @@ function agenda(dateKey: string): FeedItem {
   }
 }
 
+function fourUp(dateKey: string): FeedItem {
+  const item = agenda(dateKey)
+  return {
+    ...item,
+    sourceKey: 'fourUps',
+    file: { ...item.file, id: `4-${dateKey}`, name: `${dateKey} 4Up` },
+  }
+}
+
 function meeting(start: string, end: string, kind: Meeting['kind'] = 'official'): Meeting {
   return {
     id: start,
@@ -91,6 +100,35 @@ describe('joinAgendas', () => {
     ])
   })
 
+  it('attaches 4Ups the same way, independently of agendas', () => {
+    const joined = joinAgendas(
+      [
+        meeting('2026-09-29T16:00:00-04:00', '2026-09-29T16:45:00-04:00'),
+        meeting('2026-10-06T16:00:00-04:00', '2026-10-06T16:45:00-04:00'),
+        meeting('2026-09-29T17:00:00-04:00', '2026-09-29T18:15:00-04:00', 'adhoc'),
+      ],
+      [agenda('2026-09-29'), agenda('2026-10-06')],
+      [fourUp('2026-09-29')],
+    )
+    expect(joined.map((m) => [m.agenda?.file.id, m.fourUp?.file.id])).toEqual([
+      ['a-2026-09-29', '4-2026-09-29'],
+      ['a-2026-10-06', undefined],
+      [undefined, undefined],
+    ])
+    expect(joined[1].fourUp).toBeNull() // posted-yet state, not "unknown"
+    expect('fourUp' in joined[2]).toBe(false)
+  })
+
+  it('adds no key for a feed that isn’t loaded', () => {
+    const [onlyFourUps] = joinAgendas(
+      [meeting('2026-09-29T16:00:00-04:00', '2026-09-29T16:45:00-04:00')],
+      undefined,
+      [fourUp('2026-09-29')],
+    )
+    expect('agenda' in onlyFourUps).toBe(false)
+    expect(onlyFourUps.fourUp?.file.id).toBe('4-2026-09-29')
+  })
+
   it('uses an all-day meeting’s own date', () => {
     const allDay: Meeting = { ...meeting('2026-10-06', '2026-10-07'), allDay: true }
     expect(joinAgendas([allDay], [agenda('2026-10-06')])[0].agenda?.file.id).toBe('a-2026-10-06')
@@ -117,23 +155,31 @@ describe('mockMeetings', () => {
   // Monday 2026-09-28 through Sunday 2026-10-04; "now" is Monday morning.
   const res = mockMeetings('2026-09-28', '2026-10-04', zonedInstant('2026-09-28', 9))
 
-  it('has Tue/Thu official meetings 17:00–18:15, a Monday 20:00 retro, and one ad hoc with a Meet link', () => {
-    const summary = res.meetings.map((m) => [m.kind, m.start, m.end])
+  it('has a Tuesday sponsor meeting, Tue/Thu team meetings, a Monday retro, and a one-off with a Meet link', () => {
+    const summary = res.meetings.map((m) => [m.title, m.kind, m.recurring, m.start, m.end])
     expect(summary).toEqual([
-      ['retro', '2026-09-29T00:00:00.000Z', '2026-09-29T01:00:00.000Z'],
-      ['official', '2026-09-29T21:00:00.000Z', '2026-09-29T22:15:00.000Z'],
-      ['adhoc', '2026-09-30T18:00:00.000Z', '2026-09-30T18:30:00.000Z'],
-      ['official', '2026-10-01T21:00:00.000Z', '2026-10-01T22:15:00.000Z'],
+      ['Sprint Retro', 'retro', true, '2026-09-29T00:00:00.000Z', '2026-09-29T01:00:00.000Z'],
+      ['Sponsor Meeting', 'official', true, '2026-09-29T20:00:00.000Z', '2026-09-29T20:45:00.000Z'],
+      ['DAWN Team Meeting', 'adhoc', true, '2026-09-29T21:00:00.000Z', '2026-09-29T22:15:00.000Z'],
+      [
+        'Pairing: morning routine screen',
+        'adhoc',
+        false,
+        '2026-09-30T18:00:00.000Z',
+        '2026-09-30T18:30:00.000Z',
+      ],
+      ['DAWN Team Meeting', 'adhoc', true, '2026-10-01T21:00:00.000Z', '2026-10-01T22:15:00.000Z'],
     ])
-    expect(res.meetings.find((m) => m.kind === 'adhoc')?.joinUrl).toMatch(
+    expect(res.meetings.find((m) => !m.recurring)?.joinUrl).toMatch(
       /^https:\/\/meet\.google\.com\//,
     )
   })
 
-  it('gives one official meeting an agenda and the other none, with the mock Drive feed', () => {
-    // The mock Drive feed posts agendas on Tuesdays only.
+  it('joins agendas to the sponsor meeting only, never the team meetings', () => {
+    // The mock Drive feed posts agendas on Tuesdays, the same day as a team meeting.
     const joined = joinAgendas(res.meetings, [agenda('2026-09-29')])
-    const official = joined.filter((m) => m.kind === 'official')
-    expect(official.map((m) => m.agenda === null)).toEqual([false, true])
+    expect(joined.filter((m) => 'agenda' in m).map((m) => [m.title, m.agenda !== null])).toEqual([
+      ['Sponsor Meeting', true],
+    ])
   })
 })

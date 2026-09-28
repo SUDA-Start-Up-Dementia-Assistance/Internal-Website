@@ -160,11 +160,6 @@ export function sumTotals(tasks: Task[]): Totals {
   )
 }
 
-/** The user's next `count` open tasks by "Done by" (undated ones last). */
-export function selectNextUp(tasks: Task[], login: string, count = 3): Task[] {
-  return selectMine(tasks, login).filter(isOpen).sort(compareByDoneBy).slice(0, count)
-}
-
 export interface TaskFilters {
   /** Option names; "" = any. */
   type: string

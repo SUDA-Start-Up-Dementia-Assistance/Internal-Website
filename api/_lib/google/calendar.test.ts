@@ -40,14 +40,14 @@ describe('normalizeEvent', () => {
       normalizeEvent({
         id: 'e1',
         status: 'confirmed',
-        summary: 'DAWN Team Meeting',
+        summary: 'Sponsor Meeting',
         start: { dateTime: '2026-09-29T17:00:00-04:00', timeZone: 'America/New_York' } as never,
         end: { dateTime: '2026-09-29T18:15:00-04:00' },
         htmlLink: LINK,
       }),
     ).toEqual({
       id: 'e1',
-      title: 'DAWN Team Meeting',
+      title: 'Sponsor Meeting',
       start: '2026-09-29T17:00:00-04:00',
       end: '2026-09-29T18:15:00-04:00',
       allDay: false,
@@ -74,14 +74,14 @@ describe('normalizeEvent', () => {
       id: 'recurring123_20260929T210000Z',
       recurringEventId: 'recurring123',
       originalStartTime: { dateTime: '2026-09-29T17:00:00-04:00' },
-      summary: 'Team Meeting',
+      summary: 'Sponsor Meeting',
       start: { dateTime: '2026-09-29T17:00:00-04:00' },
       end: { dateTime: '2026-09-29T18:15:00-04:00' },
       htmlLink: LINK,
     } as RawEvent)
     expect(instance).toEqual({
       id: 'recurring123_20260929T210000Z',
-      title: 'Team Meeting',
+      title: 'Sponsor Meeting',
       start: '2026-09-29T17:00:00-04:00',
       end: '2026-09-29T18:15:00-04:00',
       allDay: false,
@@ -92,15 +92,15 @@ describe('normalizeEvent', () => {
   })
 
   it('marks recurring by the series, not the title', () => {
-    const sponsor = normalizeEvent({
-      id: 'sponsor1_20260929T190000Z',
-      recurringEventId: 'sponsor1',
-      summary: 'Sponsor check-in with Gerry',
+    const team = normalizeEvent({
+      id: 'team1_20260929T210000Z',
+      recurringEventId: 'team1',
+      summary: 'DAWN Team Meeting',
       start: { dateTime: '2026-09-29T15:00:00-04:00' },
       end: { dateTime: '2026-09-29T15:30:00-04:00' },
       htmlLink: LINK,
     })
-    expect(sponsor).toMatchObject({ kind: 'adhoc', recurring: true })
+    expect(team).toMatchObject({ kind: 'adhoc', recurring: true })
   })
 
   it('drops a cancelled occurrence', () => {
@@ -196,13 +196,15 @@ describe('normalizeEvent', () => {
 
 describe('classifyMeeting', () => {
   it.each([
-    ['Team Meeting', 'official'],
-    ['DAWN team meeting (Thursday)', 'official'],
-    ['TEAM MEETING + retro', 'official'], // official wins
+    ['Sponsor Meeting', 'official'],
+    ['DAWN sponsor meeting (Tuesday)', 'official'],
+    ['SPONSOR MEETING + retro', 'official'], // official wins
     ['Sprint Retro', 'retro'],
     ['sprint 4 retrospective', 'retro'],
+    // Team meetings have no agendas.
+    ['DAWN Team Meeting', 'adhoc'],
     ['Pairing: clock screen', 'adhoc'],
-    ['Team sync', 'adhoc'],
+    ['Sponsor sync', 'adhoc'],
   ])('%j → %s', (title, kind) => {
     expect(classifyMeeting(title)).toBe(kind)
   })
@@ -274,7 +276,7 @@ function connect() {
 const EVENTS: RawEvent[] = [
   {
     id: 'a',
-    summary: 'Team Meeting',
+    summary: 'Sponsor Meeting',
     start: { dateTime: '2026-09-29T17:00:00-04:00' },
     end: { dateTime: '2026-09-29T18:15:00-04:00' },
     htmlLink: LINK,

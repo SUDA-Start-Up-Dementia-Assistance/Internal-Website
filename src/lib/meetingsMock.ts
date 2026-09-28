@@ -3,10 +3,12 @@ import { addDaysToDateKey, weekdayOf, zonedDateKey, zonedInstant } from './teamT
 
 /*
  * Fake /api/meetings for sample mode (VITE_TASKS_MOCK=true, or a preview deployment):
- * - official "DAWN Team Meeting" every Tue & Thu 17:00–18:15. The mock Drive feed has
- *   Tuesday agendas only, so Tuesdays show an agenda and Thursdays show "not posted yet".
- * - "Sprint Retro" every Monday 20:00–21:00 (no agenda)
- * - one ad hoc meeting with a Google Meet link, two days from today at 14:00
+ * - official "Sponsor Meeting" every Tuesday 16:00–16:45 (the time is made up). The mock
+ *   Drive feed has Tuesday agendas, so these show an agenda link (or "not posted yet" past
+ *   the last mock agenda).
+ * - "DAWN Team Meeting" every Tue & Thu 17:00–18:15: recurring, no agenda
+ * - "Sprint Retro" every Monday 20:00–21:00: recurring, no agenda
+ * - one one-off meeting with a Google Meet link, two days from today at 14:00
  */
 
 const CALENDAR = 'https://calendar.google.com/calendar/'
@@ -18,6 +20,7 @@ function timed(
   [startHour, startMinute]: [number, number],
   [endHour, endMinute]: [number, number],
   kind: Meeting['kind'],
+  recurring: boolean,
   joinUrl?: string,
 ): Meeting {
   return {
@@ -27,8 +30,7 @@ function timed(
     end: zonedInstant(dateKey, endHour, endMinute).toISOString(),
     allDay: false,
     kind,
-    // The team meetings and retros repeat; the ad hoc pairing session is a one-off.
-    recurring: kind !== 'adhoc',
+    recurring,
     htmlLink: CALENDAR,
     ...(joinUrl && { joinUrl }),
   }
@@ -40,11 +42,18 @@ export function mockMeetings(from: string, to: string, now = new Date()): Meetin
   for (let key = from; key <= to; key = addDaysToDateKey(key, 1)) {
     const weekday = weekdayOf(key)
     if (weekday === 1) {
-      meetings.push(timed(`mock-retro-${key}`, 'Sprint Retro', key, [20, 0], [21, 0], 'retro'))
+      meetings.push(
+        timed(`mock-retro-${key}`, 'Sprint Retro', key, [20, 0], [21, 0], 'retro', true),
+      )
+    }
+    if (weekday === 2) {
+      meetings.push(
+        timed(`mock-sponsor-${key}`, 'Sponsor Meeting', key, [16, 0], [16, 45], 'official', true),
+      )
     }
     if (weekday === 2 || weekday === 4) {
       meetings.push(
-        timed(`mock-team-${key}`, 'DAWN Team Meeting', key, [17, 0], [18, 15], 'official'),
+        timed(`mock-team-${key}`, 'DAWN Team Meeting', key, [17, 0], [18, 15], 'adhoc', true),
       )
     }
     if (key === adHocDay) {
@@ -56,6 +65,7 @@ export function mockMeetings(from: string, to: string, now = new Date()): Meetin
           [14, 0],
           [14, 30],
           'adhoc',
+          false,
           'https://meet.google.com/abc-defg-hij',
         ),
       )

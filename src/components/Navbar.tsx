@@ -8,6 +8,7 @@ import SunArc from './SunArc'
 const NAV_ITEMS = [
   // Signed in, the Dashboard comes first.
   { to: '/dashboard', label: 'Dashboard', end: false, signedInOnly: true },
+  { to: '/meetings', label: 'Meetings', end: false, signedInOnly: true },
   { to: '/', label: 'Home', end: true },
   { to: '/agendas', label: 'Agendas', end: false },
   { to: '/artifacts', label: 'Artifacts', end: false },

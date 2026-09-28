@@ -1,4 +1,3 @@
-import { useEffect, useState } from 'react'
 import { Navigate } from 'react-router-dom'
 import DashboardHeader from '../components/dashboard/DashboardHeader'
 import MeetingsWidget from '../components/dashboard/MeetingsWidget'
@@ -13,6 +12,7 @@ import Skeleton from '../components/Skeleton'
 import PreviewBanner from '../components/tasks/PreviewBanner'
 import { useAuth, type AuthUser } from '../lib/auth'
 import { useDashboard } from '../lib/dashboard'
+import { useNow } from '../lib/useNow'
 
 /** Where signed-out visitors go: the Tasks sign-in panel, returning here afterwards. */
 const SIGN_IN = `/tasks?returnTo=${encodeURIComponent('/dashboard')}`
@@ -46,16 +46,6 @@ function Page({ children }: { children: React.ReactNode }) {
       {children}
     </div>
   )
-}
-
-/** The current time, ticking every 30 seconds ("Updated 2 min ago", "Happening now"). */
-function useNow(intervalMs = 30_000): Date {
-  const [now, setNow] = useState(() => new Date())
-  useEffect(() => {
-    const id = setInterval(() => setNow(new Date()), intervalMs)
-    return () => clearInterval(id)
-  }, [intervalMs])
-  return now
 }
 
 function SignedInDashboard({ user }: { user: AuthUser }) {

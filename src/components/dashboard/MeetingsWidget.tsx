@@ -1,8 +1,6 @@
-import { ArrowRight, CalendarDays, FileText, Video } from 'lucide-react'
-import { useMemo } from 'react'
+import { ArrowRight, CalendarDays } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { CALENDAR_URL } from '../../config/meetings'
-import { isSourceConfigured } from '../../config/sources'
 import {
   isHappeningNow,
   meetingDayLabel,
@@ -10,26 +8,13 @@ import {
   type DashboardQuery,
   type MeetingsWidget as MeetingsData,
 } from '../../lib/dashboard'
-import { useFeed } from '../../lib/drive'
-import { joinAgendas, type JoinedMeeting, type Meeting } from '../../lib/meetings'
+import { useWithAgendas, type JoinedMeeting } from '../../lib/meetings'
 import EmptyState from '../EmptyState'
 import ExternalLinkLabel from '../ExternalLinkLabel'
+import { MeetingDocLinks, JoinLink } from '../meetings/MeetingLinks'
+import MeetingTag, { HappeningNowBadge } from '../meetings/MeetingTag'
 import Skeleton from '../Skeleton'
 import { FOOTER_LINK, WidgetBody, WidgetCard } from './Widget'
-
-/**
- * The meeting's tag: "Retro" for retros, "Recurring" for any other event that's part of a
- * repeating series in Google Calendar, and none for one-off events.
- */
-function meetingTag(meeting: Meeting): { label: string; className: string } | null {
-  if (meeting.kind === 'retro') {
-    return { label: 'Retro', className: 'bg-status-purple-bg text-status-purple-text' }
-  }
-  if (meeting.recurring) {
-    return { label: 'Recurring', className: 'bg-status-blue-bg text-status-blue-text' }
-  }
-  return null
-}
 
 export default function MeetingsWidget({ query, now }: { query: DashboardQuery; now: Date }) {
   return (
@@ -76,13 +61,7 @@ export default function MeetingsWidget({ query, now }: { query: DashboardQuery; 
 }
 
 function MeetingList({ data, now }: { data: MeetingsData; now: Date }) {
-  const agendas = useFeed('agendas')
-  const agendasShown = isSourceConfigured('agendas')
-  // Official meetings show agenda state only once the feed has loaded (never a false "not posted").
-  const meetings: JoinedMeeting[] = useMemo(
-    () => (agendasShown && agendas.data ? joinAgendas(data.meetings, agendas.data) : data.meetings),
-    [agendasShown, agendas.data, data.meetings],
-  )
+  const meetings = useWithAgendas(data.meetings) ?? []
 
   if (!data.connected) {
     return (
@@ -106,7 +85,6 @@ function MeetingList({ data, now }: { data: MeetingsData; now: Date }) {
 function MeetingRow({ meeting, next, now }: { meeting: JoinedMeeting; next: boolean; now: Date }) {
   const live = isHappeningNow(meeting, now)
   const day = meetingDayLabel(meeting, now)
-  const tag = meetingTag(meeting)
   return (
     <li className={`flex gap-4 rounded-xl p-3 ${next ? 'bg-cream ring-1 ring-apricot/60' : ''}`}>
       <div className="w-28 shrink-0 text-sm">
@@ -116,21 +94,11 @@ function MeetingRow({ meeting, next, now }: { meeting: JoinedMeeting; next: bool
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
           {live ? (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-apricot px-2 py-0.5 text-xs font-semibold text-night">
-              <span
-                aria-hidden="true"
-                className="size-1.5 rounded-full bg-night motion-safe:animate-pulse"
-              />
-              Happening now
-            </span>
+            <HappeningNowBadge />
           ) : (
             next && <span className="text-xs font-semibold text-ember">Next up</span>
           )}
-          {tag && (
-            <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${tag.className}`}>
-              {tag.label}
-            </span>
-          )}
+          <MeetingTag meeting={meeting} />
         </div>
         <a
           href={meeting.htmlLink}
@@ -145,33 +113,8 @@ function MeetingRow({ meeting, next, now }: { meeting: JoinedMeeting; next: bool
           </span>
         </a>
         <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-sm">
-          {meeting.joinUrl && (
-            <a
-              href={meeting.joinUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-1 rounded-sm font-medium text-ember underline-offset-4 hover:underline"
-            >
-              <Video aria-hidden="true" className="size-4" />
-              Join<span className="sr-only"> {meeting.title}</span>
-              <ExternalLinkLabel />
-            </a>
-          )}
-          {meeting.agenda !== undefined &&
-            (meeting.agenda ? (
-              <a
-                href={meeting.agenda.file.webViewLink}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-1 rounded-sm font-medium text-ember underline-offset-4 hover:underline"
-              >
-                <FileText aria-hidden="true" className="size-4" />
-                Agenda<span className="sr-only"> for {meeting.title}</span>
-                <ExternalLinkLabel />
-              </a>
-            ) : (
-              <span className="text-dusk">Agenda not posted yet</span>
-            ))}
+          <JoinLink meeting={meeting} />
+          <MeetingDocLinks meeting={meeting} />
         </div>
       </div>
     </li>

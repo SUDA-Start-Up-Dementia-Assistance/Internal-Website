@@ -231,9 +231,10 @@ GitHub Project; the site reads and writes them through GitHub's API.
 
 ## Meetings (Google Calendar)
 - The shared "DAWN Team" Google Calendar is the ONLY source of meetings:
-  - Official: "Team Meeting", Tue & Thu 17:00–18:15 America/New_York (have agendas)
+  - Official: "Sponsor Meeting", Tuesdays (the ONLY meetings with agendas and 4Ups)
   - Retro: "Sprint Retro", Mon 20:00 (no agenda)
-  - Ad hoc: anything else on the calendar (no agenda)
+  - Ad hoc: anything else on the calendar (no agenda), including the "Team Meeting"
+    Tue & Thu 17:00–18:15 America/New_York
   The site never stores a schedule of its own and never writes to the calendar.
 - Server reads it with a Google service account (GOOGLE_SA_EMAIL,
   GOOGLE_SA_PRIVATE_KEY, GOOGLE_CALENDAR_ID): sign a JWT with jose (RS256, scope
@@ -245,7 +246,7 @@ GitHub Project; the site reads and writes them through GitHub's API.
   timeZone=America/New_York so Google expands recurrences and applies cancellations.
 - Normalize each event to Meeting { id, title, start, end, allDay, kind:
   "official" | "retro" | "adhoc", recurring, joinUrl?, htmlLink }. kind: title contains
-  OFFICIAL_MEETING_KEYWORD ("Team Meeting") → official; contains RETRO_KEYWORD ("Retro")
+  OFFICIAL_MEETING_KEYWORD ("Sponsor Meeting") → official; contains RETRO_KEYWORD ("Retro")
   → retro; else adhoc (keywords in src/config/meetings.ts, case-insensitive).
   recurring = the event has a recurringEventId (part of a repeating series).
   joinUrl from hangoutLink / conferenceData / a URL in location.
@@ -254,13 +255,15 @@ GitHub Project; the site reads and writes them through GitHub's API.
   agenda linking.
 - NEVER return attendee emails, descriptions, or organizer info to the client (they can
   contain private notes/links). "Details" links to htmlLink in Google Calendar.
-- Only official meetings are joined to the Agendas feed item with the same date
-  (America/New_York): agenda link if it exists, otherwise "Agenda not posted yet".
-  Retro and ad hoc meetings never show agenda state.
+- Only official meetings are joined (joinAgendas) to the Agendas AND 4Ups feed items with
+  the same date (America/New_York): an "Agenda" link and a "4Up" link when they exist,
+  otherwise "Agenda not posted yet" / "4Up not posted yet" (past meetings: "No agenda
+  posted" / "No 4Up posted"). Show nothing for a feed that hasn't loaded. Retro and ad hoc
+  meetings never show agenda or 4Up state.
 - GET /api/meetings?from=YYYY-MM-DD&to=YYYY-MM-DD (signed-in only; max range 62 days).
   Cache per range for 5 minutes in memory (calendar data is team-wide, not per-user).
 - /meetings page (signed-in only): 3-week list + week grid, past 2 weeks of official
-  meetings with agenda links, "Add a meeting" opens Google Calendar (the site never
+  meetings with agenda and 4Up links, "Add a meeting" opens Google Calendar (the site never
   creates events), "Subscribe" → CALENDAR_URL.
 - Missing calendar env vars: meetings UI shows "Calendar not connected" (mock meetings
   when VITE_TASKS_MOCK=true), never a crash.

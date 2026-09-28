@@ -14,7 +14,6 @@ import {
   selectCurrentIteration,
   selectDueSoon,
   selectMine,
-  selectNextUp,
   selectOverdue,
   selectSprintBacklogWithoutIteration,
   sumTotals,
@@ -244,21 +243,6 @@ describe('applyFilters', () => {
     expect(ids(applyFilters(all, { ...DEFAULT_FILTERS, status: 'done' }, meta))).toEqual([
       done.itemId,
     ])
-  })
-})
-
-describe('selectNextUp', () => {
-  it("returns the user's next 3 open tasks by date, undated last", () => {
-    const me = [{ login: 'me', avatarUrl: '' }]
-    const tasks = [
-      task({ title: 'undated', assignees: me }),
-      task({ title: 'third', assignees: me, doneBy: '2026-10-09' }),
-      task({ title: 'first', assignees: me, doneBy: '2026-09-01' }),
-      task({ title: 'finished', assignees: me, key: 'done', doneBy: '2026-08-01' }),
-      task({ title: 'not mine', doneBy: '2026-08-01' }),
-      task({ title: 'second', assignees: me, doneBy: '2026-10-02' }),
-    ]
-    expect(selectNextUp(tasks, 'me').map((t) => t.title)).toEqual(['first', 'second', 'third'])
   })
 })
 

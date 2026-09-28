@@ -61,6 +61,12 @@ export function zonedHour(instant: Date, timeZone = TEAM_TIME_ZONE): number {
   return wallClock(instant, timeZone).hour
 }
 
+/** Minutes since midnight (0–1439) of `instant`'s wall clock in `timeZone`. */
+export function zonedMinuteOfDay(instant: Date, timeZone = TEAM_TIME_ZONE): number {
+  const { hour, minute } = wallClock(instant, timeZone)
+  return hour * 60 + minute
+}
+
 /** Milliseconds `timeZone` is ahead of UTC at `instant` (e.g. -4h for EDT). */
 function offsetMs(instant: Date, timeZone: string): number {
   const w = wallClock(instant, timeZone)

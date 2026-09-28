@@ -2,25 +2,6 @@ import { startOfDay } from './dates'
 import type { ArtifactCategory, DriveFile, Meeting } from './drive'
 import { artifactDisplayName } from './files'
 
-/** The soonest meeting dated today or later, or undefined if none. */
-export function selectNextMeeting(meetings: Meeting[], today = new Date()): Meeting | undefined {
-  const cutoff = startOfDay(today).getTime()
-  return meetings
-    .filter((m) => m.date.getTime() >= cutoff)
-    .sort((a, b) => a.date.getTime() - b.date.getTime())[0]
-}
-
-/**
- * The most recent meeting, dated today or earlier, that has a 4Up. 4Ups posted ahead of
- * future meetings are skipped. Undefined if none.
- */
-export function selectLatestFourUp(meetings: Meeting[], today = new Date()): Meeting | undefined {
-  const endOfToday = startOfDay(today).getTime()
-  return meetings
-    .filter((m) => m.fourUp && m.date.getTime() <= endOfToday)
-    .sort((a, b) => b.date.getTime() - a.date.getTime())[0]
-}
-
 export interface PublishedFileRef {
   file: DriveFile
   category: ArtifactCategory

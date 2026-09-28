@@ -20,7 +20,7 @@ const at = (hour: number, minute = 0, day = '2026-09-30') => zonedInstant(day, h
 function meeting(start: Date, end: Date, fields: Partial<Meeting> = {}): Meeting {
   return {
     id: 'm',
-    title: 'Team Meeting',
+    title: 'Sponsor Meeting',
     start: start.toISOString(),
     end: end.toISOString(),
     allDay: false,

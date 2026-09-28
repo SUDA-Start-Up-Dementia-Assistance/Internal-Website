@@ -8,22 +8,11 @@ export function startOfDay(date: Date): Date {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate())
 }
 
-const longDate = new Intl.DateTimeFormat(LOCALE, {
-  weekday: 'long',
-  month: 'long',
-  day: 'numeric',
-})
-
 const shortDate = new Intl.DateTimeFormat(LOCALE, {
   month: 'short',
   day: 'numeric',
   year: 'numeric',
 })
-
-/** "Thursday, October 2" */
-export function formatMeetingDate(date: Date): string {
-  return longDate.format(date)
-}
 
 /** "Oct 2, 2026" from an ISO timestamp. */
 export function formatShortDate(timestamp: string): string {

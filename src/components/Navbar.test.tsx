@@ -53,7 +53,7 @@ describe('Navbar', () => {
     renderNavbar({ user: { login: 'ada', name: 'Ada', avatarUrl: '' } })
     const main = screen.getByRole('navigation', { name: 'Main' })
     const links = Array.from(main.querySelectorAll('ul a')).map((a) => a.textContent)
-    expect(links[0]).toBe('Dashboard')
+    expect(links.slice(0, 2)).toEqual(['Dashboard', 'Meetings'])
     cleanup()
     renderNavbar({ user: null })
     expect(screen.queryAllByRole('link', { name: 'Dashboard' })).toHaveLength(0)

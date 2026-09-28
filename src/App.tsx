@@ -6,6 +6,7 @@ import ArtifactCategory from './pages/ArtifactCategory'
 import Artifacts from './pages/Artifacts'
 import Dashboard from './pages/Dashboard'
 import Home from './pages/Home'
+import Meetings from './pages/Meetings'
 import NotFound from './pages/NotFound'
 import Tasks from './pages/Tasks'
 
@@ -22,6 +23,7 @@ export default function App() {
           <Route path="/artifacts/:category" element={<ArtifactCategory />} />
           <Route path="/tasks" element={<Tasks />} />
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/meetings" element={<Meetings />} />
           <Route path="*" element={<NotFound />} />
         </Route>
       </Routes>
