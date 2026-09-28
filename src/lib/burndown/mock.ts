@@ -17,10 +17,10 @@ function totals(tasks: Task[], iterationId: string): Omit<BurndownDay, 'date' | 
   let unestimatedCount = 0
   for (const t of tasks) {
     if (t.iteration?.id !== iterationId) continue
-    if (t.storyPoints === undefined) unestimatedCount += 1
+    if (t.estimateHours === undefined) unestimatedCount += 1
     else {
-      scope += t.storyPoints
-      if (t.statusKey === 'done') done += t.storyPoints
+      scope += t.estimateHours
+      if (t.statusKey === 'done') done += t.estimateHours
     }
   }
   return { scope, done, remaining: scope - done, unestimatedCount }
@@ -32,7 +32,7 @@ const day = (date: string, scope: number, done: number, unestimatedCount = 0): B
   done,
   remaining: scope - done,
   unestimatedCount,
-  unit: 'storyPoints',
+  unit: 'estimateHours',
 })
 
 export async function mockBurndown(iterationId?: string): Promise<BurndownResponse> {
@@ -44,7 +44,7 @@ export async function mockBurndown(iterationId?: string): Promise<BurndownRespon
   const id = iterationId || currentIterationId
   const it = iterations.find((i) => i.id === id)
   const iterationsWithSnapshots = iterations.filter((i) => i.startDate <= today).map((i) => i.id)
-  const base = { unit: 'storyPoints' as const, today, iterationsWithSnapshots, storageOk: true }
+  const base = { unit: 'estimateHours' as const, today, iterationsWithSnapshots, storageOk: true }
   if (!it) return { ...base, iteration: null, isCurrent: false, days: [] }
 
   const iteration = { id: it.id, title: it.title, startDate: it.startDate, duration: it.duration }
@@ -58,7 +58,7 @@ export async function mockBurndown(iterationId?: string): Promise<BurndownRespon
       day(at(1), live.scope - 3, 0, live.unestimatedCount),
       day(at(3), live.scope, Math.max(0, live.done - 3), live.unestimatedCount),
     ].filter((d) => d.date < today)
-    if (elapsed >= 0) days.push({ date: today, ...live, unit: 'storyPoints' })
+    if (elapsed >= 0) days.push({ date: today, ...live, unit: 'estimateHours' })
   } else if (it.completed) {
     const done = [0, 2, 3, 3, 5, null, null, 8, 10, 13, 15, 18, 20, 21]
     days = done.flatMap((d, i) => (d === null ? [] : [day(at(i), i < 7 ? 21 : 24, d)]))

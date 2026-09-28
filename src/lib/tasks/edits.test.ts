@@ -73,9 +73,9 @@ describe('saveTaskEdit (optimistic update)', () => {
     const saving = saveTaskEdit(target.itemId, {
       statusOptionId: 'S_done',
       doneBy: null,
-      storyPointsOptionId: 'SP_13',
+      estimateHours: 13,
     })
-    expect(taskById(target.itemId)).toMatchObject({ statusKey: 'done', storyPoints: 13 })
+    expect(taskById(target.itemId)).toMatchObject({ statusKey: 'done', estimateHours: 13 })
     expect(taskById(target.itemId).doneBy).toBeUndefined()
 
     await expect(saving).rejects.toThrow('GitHub said no.')
@@ -204,7 +204,6 @@ describe('changeFromPatch', () => {
       changeFromPatch(
         {
           statusOptionId: 'S_blocked',
-          storyPointsOptionId: 'SP_5',
           priorityOptionId: null,
           iterationId: 'IT_4',
           assigneeIds: [me.id, 'U_unknown'],
@@ -215,7 +214,6 @@ describe('changeFromPatch', () => {
     ).toEqual({
       status: 'Blocked',
       statusKey: 'blocked',
-      storyPoints: 5,
       priority: undefined,
       iteration: expect.objectContaining({ id: 'IT_4', title: 'Sprint 4' }),
       assignees: [{ login: me.login, avatarUrl: me.avatarUrl }],

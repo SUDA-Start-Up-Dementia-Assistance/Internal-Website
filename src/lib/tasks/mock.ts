@@ -14,7 +14,7 @@ import type {
 /*
  * Fake /api/tasks data for VITE_TASKS_MOCK=true. Dates are relative to today, so there's
  * always a running sprint, an overdue task, and something due soon. Covers: drafts, issues
- * and a PR; a Blocked item; an item with no Story Points; a "Sprint Backlog" item with no
+ * and a PR; a Blocked item; an item with no Estimate; a "Sprint Backlog" item with no
  * iteration; and items across two iterations.
  */
 
@@ -105,7 +105,6 @@ export function createMockTasks(today = new Date()): TasksResponse {
       type: 'Dev',
       priority: 'P0',
       size: 'M',
-      storyPoints: 5,
       estimateHours: 6,
       doneBy: dayKey(today, -2),
       iteration: current,
@@ -122,7 +121,6 @@ export function createMockTasks(today = new Date()): TasksResponse {
       type: 'Dev',
       priority: 'P1',
       size: 'S',
-      storyPoints: 3,
       estimateHours: 4,
       doneBy: dayKey(today, 1),
       iteration: current,
@@ -134,7 +132,6 @@ export function createMockTasks(today = new Date()): TasksResponse {
       type: 'Docs',
       priority: 'P1',
       size: 'S',
-      storyPoints: 2,
       estimateHours: 3,
       doneBy: dayKey(today, 3),
       iteration: current,
@@ -156,7 +153,6 @@ export function createMockTasks(today = new Date()): TasksResponse {
       assignees: [person(ME)],
       type: 'Dev',
       size: 'M',
-      storyPoints: 3,
       iteration: current,
     }),
     task({
@@ -168,7 +164,6 @@ export function createMockTasks(today = new Date()): TasksResponse {
       type: 'Dev',
       priority: 'P1',
       size: 'S',
-      storyPoints: 2,
       estimateHours: 2,
       doneBy: dayKey(today, -1),
       iteration: current,
@@ -182,7 +177,6 @@ export function createMockTasks(today = new Date()): TasksResponse {
       type: 'Dev',
       priority: 'P0',
       size: 'L',
-      storyPoints: 8,
       estimateHours: 10,
       doneBy: dayKey(today, 2),
       iteration: current,
@@ -195,7 +189,6 @@ export function createMockTasks(today = new Date()): TasksResponse {
       type: 'Dev',
       priority: 'P1',
       size: 'M',
-      storyPoints: 5,
       estimateHours: 8,
       doneBy: dayKey(today, 5),
       iteration: current,
@@ -207,7 +200,6 @@ export function createMockTasks(today = new Date()): TasksResponse {
       type: 'Docs',
       priority: 'P2',
       size: 'S',
-      storyPoints: 3,
       estimateHours: 4,
       doneBy: dayKey(today, 8),
       iteration: current,
@@ -219,7 +211,6 @@ export function createMockTasks(today = new Date()): TasksResponse {
       type: 'Admin',
       priority: 'P1',
       size: 'XS',
-      storyPoints: 1,
       estimateHours: 1,
       doneBy: dayKey(today, -3),
       iteration: current,
@@ -229,7 +220,6 @@ export function createMockTasks(today = new Date()): TasksResponse {
       key: 'sprintBacklog',
       type: 'Dev',
       size: 'S',
-      storyPoints: 2,
       doneBy: dayKey(today, 6),
       iteration: current,
     }),
@@ -241,7 +231,6 @@ export function createMockTasks(today = new Date()): TasksResponse {
       type: 'Dev',
       priority: 'P2',
       size: 'S',
-      storyPoints: 3,
     }),
     // Previous sprint
     task({
@@ -252,7 +241,6 @@ export function createMockTasks(today = new Date()): TasksResponse {
       type: 'Dev',
       priority: 'P0',
       size: 'M',
-      storyPoints: 5,
       estimateHours: 6,
       doneBy: dayKey(today, -8),
       iteration: previous,
@@ -264,7 +252,6 @@ export function createMockTasks(today = new Date()): TasksResponse {
       type: 'Admin',
       priority: 'P1',
       size: 'S',
-      storyPoints: 2,
       doneBy: dayKey(today, -10),
       iteration: previous,
     }),
@@ -277,7 +264,6 @@ export function createMockTasks(today = new Date()): TasksResponse {
       type: 'Dev',
       priority: 'P1',
       size: 'L',
-      storyPoints: 8,
       doneBy: dayKey(today, 20),
       iteration: next,
     }),
@@ -298,13 +284,11 @@ export function createMockTasks(today = new Date()): TasksResponse {
   const meta: TaskMeta = {
     projectUrl: PROJECT_URL,
     issueRepository: REPO,
-    burndownUnit: 'storyPoints',
+    burndownUnit: 'estimateHours',
     statuses,
-    storyPointOptions: options(['1', '2', '3', '5', '8', '13'], 'SP'),
     priorities: options(['P0', 'P1', 'P2'], 'PR'),
     sizes: options(['XS', 'S', 'M', 'L', 'XL'], 'SZ'),
     types: options(['Dev', 'Docs', 'Admin'], 'T'),
-    hasEstimate: true,
     iterations,
     currentIterationId: current.id,
   }

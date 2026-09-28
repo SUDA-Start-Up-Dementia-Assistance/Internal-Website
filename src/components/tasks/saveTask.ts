@@ -4,7 +4,7 @@ import { showToast } from '../../lib/toast'
 
 export const SAVED_MESSAGE = TASKS_MOCK ? 'Saved (mock data, not GitHub)' : 'Saved to GitHub'
 
-/** "Priority, Story Points" → "Priority and Story Points". */
+/** "Priority, Estimate" → "Priority and Estimate". */
 export function listNames(names: string[]): string {
   return names.length <= 1
     ? (names[0] ?? '')

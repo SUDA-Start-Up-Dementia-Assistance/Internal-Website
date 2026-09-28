@@ -25,7 +25,6 @@ export type TaskChange = Partial<
     | 'assignees'
     | 'status'
     | 'statusKey'
-    | 'storyPoints'
     | 'estimateHours'
     | 'priority'
     | 'size'
@@ -39,12 +38,6 @@ type Ctx = Pick<TasksResponse, 'meta' | 'team'>
 
 const optionName = (options: { id: string; name: string }[] | undefined, id: string | null) =>
   id === null ? undefined : options?.find((o) => o.id === id)?.name
-
-/** Story Points option name → number; non-numeric ("?") → undefined (unestimated). */
-export function pointsOf(name: string | undefined): number | undefined {
-  const trimmed = name?.trim()
-  return trimmed && /^\d+(\.\d+)?$/.test(trimmed) ? Number(trimmed) : undefined
-}
 
 /** What a task will look like once GitHub accepts `patch`: the optimistic change. */
 export function changeFromPatch(patch: TaskPatch, { meta, team }: Ctx): TaskChange {
@@ -66,9 +59,6 @@ export function changeFromPatch(patch: TaskPatch, { meta, team }: Ctx): TaskChan
     change.iteration = it
       ? { id: it.id, title: it.title, startDate: it.startDate, duration: it.duration }
       : undefined
-  }
-  if (patch.storyPointsOptionId !== undefined) {
-    change.storyPoints = pointsOf(optionName(meta.storyPointOptions, patch.storyPointsOptionId))
   }
   if (patch.estimateHours !== undefined) change.estimateHours = patch.estimateHours ?? undefined
   if (patch.priorityOptionId !== undefined) {

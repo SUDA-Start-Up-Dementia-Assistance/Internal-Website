@@ -145,20 +145,18 @@ export function groupByAssignee(tasks: Task[], team: TeamMember[]): AssigneeGrou
 }
 
 export interface Totals {
-  storyPoints: number
   estimateHours: number
-  /** Tasks with no Story Points. */
+  /** Tasks with no Estimate. */
   unestimated: number
 }
 
 export function sumTotals(tasks: Task[]): Totals {
   return tasks.reduce<Totals>(
     (sum, t) => ({
-      storyPoints: sum.storyPoints + (t.storyPoints ?? 0),
       estimateHours: sum.estimateHours + (t.estimateHours ?? 0),
-      unestimated: sum.unestimated + (t.storyPoints === undefined ? 1 : 0),
+      unestimated: sum.unestimated + (t.estimateHours === undefined ? 1 : 0),
     }),
-    { storyPoints: 0, estimateHours: 0, unestimated: 0 },
+    { estimateHours: 0, unestimated: 0 },
   )
 }
 

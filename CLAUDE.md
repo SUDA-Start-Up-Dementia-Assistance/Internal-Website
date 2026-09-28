@@ -96,9 +96,7 @@ GitHub Project; the site reads and writes them through GitHub's API.
   - Status (single select): Product Backlog, Sprint Backlog, In progress, In review,
     Done, Blocked. "Done" = complete; everything else is open. "Blocked" is flagged.
   - Iteration (iteration): the ONLY source of truth for sprint membership.
-  - Story Points (single select: 1, 2, 3, 5, 8, 13). Parse the option name as a number;
-    a non-numeric option counts as unestimated.
-  - Estimate (number, HOURS).
+  - Estimate (number, HOURS). The burndown's unit.
   - Priority (single select: P0, P1, P2). Badge, filter, secondary sort (P0 first).
   - Size (single select: XS, S, M, L, XL). Display only, never used in math.
   - Estimated done date (project DATE field): overdue/due-soon logic. In code, call
@@ -107,11 +105,12 @@ GitHub Project; the site reads and writes them through GitHub's API.
   - Ignore "Sub-issues progress" and any other issue-level fields, except labels: issue/PR
     labels are shown read-only on task rows (drafts can't have labels). The site never
     edits labels.
-  The team hasn't finalized sizing fields. The burndown unit is a single config value,
-  BURNDOWN_UNIT: "storyPoints" (default) | "estimateHours". Never mix units in one chart.
-  Required fields: Status, Iteration, Estimated done date, plus whichever field
-  BURNDOWN_UNIT uses. If one is missing, fail with a readable error naming it. All other
-  fields (Type, Story Points, Estimate, Priority, Size) are optional: hide their UI
+  There is no Story Points field (it was removed from the project); the site doesn't read
+  or write it, and ignores it if it reappears. The burndown is measured in Estimate hours
+  (BURNDOWN_UNIT = "estimateHours"); never mix units in one chart.
+  Required fields: Status, Iteration, Estimated done date, Estimate. If one is missing,
+  fail with a readable error naming it. All other fields (Type, Priority, Size) are
+  optional: hide their UI
   (badges, filters, and dialog fields) when absent.
 - New Task dialog: the sprint (Iteration) defaults to "none"; the user can pick one.
 - Status colors come from GitHub's option colors (fetched with the project meta), mapped
@@ -144,12 +143,14 @@ GitHub Project; the site reads and writes them through GitHub's API.
 - Snapshots are VIEW-TRIGGERED: there is no scheduled job and no server-owned GitHub
   token. When a signed-in user loads /api/burndown for the CURRENT iteration, the server
   computes today's totals with that user's token and upserts today's entry
-  (America/New_York date) into burndown/<iterationId>.json. Days nobody views are gaps.
+  (America/New_York date) into burndown/<iterationId>.estimateHours.json. Days nobody
+  views are gaps.
 - File shape: { iteration: {id,title,startDate,duration}, days: [{ date, remaining,
-  done, scope, unestimatedCount, unit }] }, measured in BURNDOWN_UNIT. Upsert by date
-  (the latest view of the day wins). If BURNDOWN_UNIT changes mid-sprint, start a new
-  file rather than mixing units: "estimateHours" snapshots go in
-  burndown/<iterationId>.estimateHours.json. Past iterations are read-only (never rewritten).
+  done, scope, unestimatedCount, unit }] }, measured in hours (unit "estimateHours").
+  Upsert by date (the latest view of the day wins). Plain burndown/<iterationId>.json
+  files are older Story Points snapshots: never read, list, or overwrite them. If the unit
+  ever changes again, start a new file rather than mixing units. Past iterations are
+  read-only (never rewritten).
 - Vercel Blob store is PRIVATE: read/write with access "private", server-side only;
   never send blob URLs to the client.
 - Store only totals, never task titles or assignees.

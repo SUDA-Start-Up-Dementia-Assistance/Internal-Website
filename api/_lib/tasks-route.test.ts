@@ -63,12 +63,7 @@ const PROJECT_FIELDS = [
     dataType: 'ITERATION',
     configuration: { iterations: [], completedIterations: [] },
   },
-  {
-    id: 'F_pts',
-    name: 'Story Points',
-    dataType: 'SINGLE_SELECT',
-    options: [{ id: 'P3', name: '3' }],
-  },
+  { id: 'F_est', name: 'Estimate', dataType: 'NUMBER' },
   { id: 'F_done', name: 'Estimated done date', dataType: 'DATE' },
   { id: 'F_type', name: 'Type', dataType: 'SINGLE_SELECT', options: [{ id: 'T', name: 'Dev' }] },
 ]
@@ -213,7 +208,6 @@ describe('GET /api/tasks', () => {
       projectUrl: 'https://github.com/orgs/dawn/projects/1',
       statuses: [{ id: 'S_done', name: 'Done', key: 'done' }],
       types: [{ id: 'T', name: 'Dev' }],
-      hasEstimate: false,
       currentIterationId: null,
     })
     expect(body.team).toEqual([

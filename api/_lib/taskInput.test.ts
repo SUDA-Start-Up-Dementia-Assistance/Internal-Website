@@ -22,12 +22,6 @@ const FIELDS: RawField[] = [
       completedIterations: [],
     },
   },
-  {
-    id: 'F_pts',
-    name: 'Story Points',
-    dataType: 'SINGLE_SELECT',
-    options: [{ id: 'P_3', name: '3' }],
-  },
   { id: 'F_est', name: 'Estimate', dataType: 'NUMBER' },
   {
     id: 'F_pri',
@@ -56,7 +50,6 @@ describe('parseCreateTask', () => {
         title: '  Write the test plan  ',
         body: 'Notes',
         assigneeIds: ['U1', 'U1', 'U2'],
-        storyPointsOptionId: 'P_3',
         estimateHours: 4.5,
         priorityOptionId: 'PR_0',
         doneBy: '2026-10-05',
@@ -71,7 +64,6 @@ describe('parseCreateTask', () => {
       fields: {
         status: { kind: 'singleSelect', optionId: 'S_done' },
         iteration: { kind: 'iteration', iterationId: 'I_2' },
-        storyPoints: { kind: 'singleSelect', optionId: 'P_3' },
         estimate: { kind: 'number', number: 4.5 },
         priority: { kind: 'singleSelect', optionId: 'PR_0' },
         doneBy: { kind: 'date', date: '2026-10-05' },
@@ -103,7 +95,7 @@ describe('parseCreateTask', () => {
     [{ title: 't', doneBy: '2026-10-05T00:00:00Z' }, /must be a date/],
     [{ title: 't', doneBy: '10/05/2026' }, /must be a date/],
     [{ title: 't', priorityOptionId: 'nope' }, /Priority option is not one of/],
-    [{ title: 't', statusOptionId: 'P_3' }, /Status option is not one of/],
+    [{ title: 't', statusOptionId: 'PR_0' }, /Status option is not one of/],
     [{ title: 't', iterationId: 'I_9' }, /sprint is not one of/],
     [{ title: 't', sizeOptionId: 'SZ_m' }, /no "Size" field/],
     [{ title: 't', assigneeIds: 'U1' }, /list of GitHub user ids/],

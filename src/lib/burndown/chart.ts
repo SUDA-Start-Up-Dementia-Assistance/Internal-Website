@@ -84,7 +84,6 @@ export function niceScale(maxValue: number, maxTicks = 5): { max: number; ticks:
 }
 
 export const UNIT_LABELS: Record<BurndownUnit, { one: string; many: string; missing: string }> = {
-  storyPoints: { one: 'point', many: 'points', missing: 'no story points' },
   estimateHours: { one: 'hour', many: 'hours', missing: 'no estimate' },
 }
 

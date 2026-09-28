@@ -19,7 +19,7 @@ interface TeamTasksProps {
   showIteration: boolean
 }
 
-/** One section per member: their open tasks (Blocked first) and open points/hours. */
+/** One section per member: their open tasks (Blocked first) and open estimated hours. */
 export default function TeamTasks({ tasks, team, meta, showIteration }: TeamTasksProps) {
   const groups = groupByAssignee(tasks, team)
   return (
@@ -51,11 +51,7 @@ function MemberSection({
   const headingId = useId()
   const { member, tasks } = group
   const totals = sumTotals(tasks)
-  const summary = [
-    `${tasks.length} open`,
-    meta.storyPointOptions && `${totals.storyPoints} pts`,
-    meta.hasEstimate && `${totals.estimateHours}h estimated`,
-  ].filter(Boolean)
+  const summary = [`${tasks.length} open`, `${totals.estimateHours}h estimated`].filter(Boolean)
 
   return (
     <section aria-labelledby={headingId}>

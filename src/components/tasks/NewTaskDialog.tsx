@@ -60,7 +60,6 @@ export default function NewTaskDialog({
   const [typeId, setTypeId] = useState(byName(meta.types, 'Admin')?.id ?? '')
   const [doneBy, setDoneBy] = useState('')
   const [priorityId, setPriorityId] = useState('')
-  const [pointsId, setPointsId] = useState('')
   const [estimate, setEstimate] = useState('')
   const [sizeId, setSizeId] = useState('')
   // Chosen by the user; until then, each follows its default.
@@ -85,7 +84,6 @@ export default function NewTaskDialog({
   const sizingOpen = chosenSizingOpen ?? isDev
   // The server couldn't work out which repository new issues go in (it says why).
   const cannotCreate = !meta.issueRepository && Boolean(meta.issueSetupError)
-  const hasSizing = Boolean(meta.storyPointOptions || meta.hasEstimate || meta.sizes)
   // Current and upcoming sprints only.
   const iterations = meta.iterations.filter((it) => !it.completed)
 
@@ -137,7 +135,6 @@ export default function NewTaskDialog({
     if (priorityId) input.priorityOptionId = priorityId
     if (iterationId) input.iterationId = iterationId
     if (statusId) input.statusOptionId = statusId
-    if (pointsId) input.storyPointsOptionId = pointsId
     if (estimate.trim() !== '') input.estimateHours = Number(estimate)
     if (sizeId) input.sizeOptionId = sizeId
 
@@ -345,70 +342,56 @@ export default function NewTaskDialog({
             </div>
           </div>
 
-          {hasSizing && (
-            <details
-              open={sizingOpen}
-              onToggle={(e) => {
-                const open = e.currentTarget.open
-                if (open !== sizingOpen) setChosenSizingOpen(open)
-              }}
-              className="group rounded-xl border border-night/10 px-4 py-3"
-            >
-              <summary className="flex cursor-pointer list-none items-center gap-1.5 text-sm font-medium [&::-webkit-details-marker]:hidden">
-                <ChevronRight
-                  aria-hidden="true"
-                  className="size-4 text-dusk transition-transform group-open:rotate-90 motion-reduce:transition-none"
+          <details
+            open={sizingOpen}
+            onToggle={(e) => {
+              const open = e.currentTarget.open
+              if (open !== sizingOpen) setChosenSizingOpen(open)
+            }}
+            className="group rounded-xl border border-night/10 px-4 py-3"
+          >
+            <summary className="flex cursor-pointer list-none items-center gap-1.5 text-sm font-medium [&::-webkit-details-marker]:hidden">
+              <ChevronRight
+                aria-hidden="true"
+                className="size-4 text-dusk transition-transform group-open:rotate-90 motion-reduce:transition-none"
+              />
+              Sizing
+            </summary>
+            <div className="mt-4 grid gap-5 sm:grid-cols-2">
+              <div>
+                <label htmlFor={id('estimate')} className={LABEL}>
+                  Estimate (hours)
+                </label>
+                <input
+                  id={id('estimate')}
+                  type="number"
+                  inputMode="decimal"
+                  min={0}
+                  max={ESTIMATE_MAX}
+                  step={0.5}
+                  value={estimate}
+                  onChange={(e) => {
+                    setEstimate(e.target.value)
+                    if (estimateError) setEstimateError(null)
+                  }}
+                  aria-invalid={estimateError ? true : undefined}
+                  aria-describedby={describedBy(estimateError !== null && id('estimate-error'))}
+                  className={`mt-1.5 ${FIELD} ${estimateError ? 'border-ember' : ''}`}
                 />
-                Sizing
-              </summary>
-              <div className="mt-4 grid gap-5 sm:grid-cols-3">
-                {meta.storyPointOptions && (
-                  <Field label="Story points" htmlFor={id('points')}>
-                    <OptionSelect
-                      id={id('points')}
-                      options={meta.storyPointOptions}
-                      value={pointsId}
-                      onChange={setPointsId}
-                    />
-                  </Field>
-                )}
-                {meta.hasEstimate && (
-                  <div>
-                    <label htmlFor={id('estimate')} className={LABEL}>
-                      Estimate (hours)
-                    </label>
-                    <input
-                      id={id('estimate')}
-                      type="number"
-                      inputMode="decimal"
-                      min={0}
-                      max={ESTIMATE_MAX}
-                      step={0.5}
-                      value={estimate}
-                      onChange={(e) => {
-                        setEstimate(e.target.value)
-                        if (estimateError) setEstimateError(null)
-                      }}
-                      aria-invalid={estimateError ? true : undefined}
-                      aria-describedby={describedBy(estimateError !== null && id('estimate-error'))}
-                      className={`mt-1.5 ${FIELD} ${estimateError ? 'border-ember' : ''}`}
-                    />
-                    <FieldError id={id('estimate-error')} message={estimateError} />
-                  </div>
-                )}
-                {meta.sizes && (
-                  <Field label="Size" htmlFor={id('size')}>
-                    <OptionSelect
-                      id={id('size')}
-                      options={meta.sizes}
-                      value={sizeId}
-                      onChange={setSizeId}
-                    />
-                  </Field>
-                )}
+                <FieldError id={id('estimate-error')} message={estimateError} />
               </div>
-            </details>
-          )}
+              {meta.sizes && (
+                <Field label="Size" htmlFor={id('size')}>
+                  <OptionSelect
+                    id={id('size')}
+                    options={meta.sizes}
+                    value={sizeId}
+                    onChange={setSizeId}
+                  />
+                </Field>
+              )}
+            </div>
+          </details>
         </div>
 
         <div className="mt-8 flex flex-wrap justify-end gap-3">

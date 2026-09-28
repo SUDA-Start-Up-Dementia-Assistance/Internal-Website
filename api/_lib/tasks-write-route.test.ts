@@ -80,12 +80,7 @@ const FIELDS = [
     dataType: 'ITERATION',
     configuration: { iterations: [], completedIterations: [] },
   },
-  {
-    id: 'F_pts',
-    name: 'Story Points',
-    dataType: 'SINGLE_SELECT',
-    options: [{ id: 'P3', name: '3' }],
-  },
+  { id: 'F_est', name: 'Estimate', dataType: 'NUMBER' },
   { id: 'F_done', name: 'Estimated done date', dataType: 'DATE' },
 ]
 
@@ -207,9 +202,9 @@ describe('POST /api/tasks', () => {
           errors: [{ message: 'bad', path: ['updateProjectV2ItemFieldValue'] }],
         }),
     })
-    const res = await call({ method: 'POST', body: { title: 'Plan', storyPointsOptionId: 'P3' } })
+    const res = await call({ method: 'POST', body: { title: 'Plan', estimateHours: 3 } })
     expect(res.statusCode).toBe(201)
-    expect(res.body).toMatchObject({ failedFields: ['Story Points', 'Status'] })
+    expect(res.body).toMatchObject({ failedFields: ['Estimate', 'Status'] })
   })
 
   it('returns 502 naming the issue when it was created but not added to the project', async () => {

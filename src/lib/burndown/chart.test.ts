@@ -18,7 +18,7 @@ const day = (date: string, scope: number, done = 0): BurndownDay => ({
   done,
   remaining: scope - done,
   unestimatedCount: 0,
-  unit: 'storyPoints',
+  unit: 'estimateHours',
 })
 
 describe('idealLine', () => {
@@ -111,8 +111,8 @@ describe('niceScale', () => {
 
 describe('formatAmount', () => {
   it('matches the unit and number', () => {
-    expect(formatAmount(1, 'storyPoints')).toBe('1 point')
-    expect(formatAmount(21, 'storyPoints')).toBe('21 points')
+    expect(formatAmount(1, 'estimateHours')).toBe('1 hour')
+    expect(formatAmount(21, 'estimateHours')).toBe('21 hours')
     expect(formatAmount(3.25, 'estimateHours')).toBe('3.3 hours')
     expect(formatAmount(2.5, 'estimateHours')).toBe('2.5 hours')
   })

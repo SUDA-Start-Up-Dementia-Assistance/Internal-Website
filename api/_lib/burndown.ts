@@ -40,17 +40,17 @@ export type Totals = Omit<BurndownDay, 'date' | 'unit'>
 const round = (n: number) => Math.round(n * 100) / 100
 
 /**
- * Totals for the items in `iterationId`, chosen by the Iteration field (never by Status).
- * scope = sum of the unit; done = sum where Status is Done; remaining = scope - done.
- * Items with no value for the unit add 0 and are counted in unestimatedCount.
+ * Totals for the items in `iterationId`, chosen by the Iteration field (never by Status), in
+ * Estimate hours. scope = sum of estimates; done = sum where Status is Done; remaining =
+ * scope - done. Items with no estimate add 0 and are counted in unestimatedCount.
  */
-export function aggregate(tasks: readonly Task[], iterationId: string, unit: BurndownUnit): Totals {
+export function aggregate(tasks: readonly Task[], iterationId: string): Totals {
   let scope = 0
   let done = 0
   let unestimatedCount = 0
   for (const task of tasks) {
     if (task.iteration?.id !== iterationId) continue
-    const value = unit === 'storyPoints' ? task.storyPoints : task.estimateHours
+    const value = task.estimateHours
     if (value === undefined) {
       unestimatedCount += 1
       continue
@@ -83,7 +83,7 @@ export async function computeSnapshot(token: string, now = new Date()): Promise<
   const { id, title, startDate, duration } = current
   return {
     iteration: { id, title, startDate, duration },
-    day: { date: today, ...aggregate(tasks, id, BURNDOWN_UNIT), unit: BURNDOWN_UNIT },
+    day: { date: today, ...aggregate(tasks, id), unit: BURNDOWN_UNIT },
   }
 }
 
@@ -98,12 +98,15 @@ export function isIterationId(value: unknown): value is string {
 }
 
 /**
- * burndown/<iterationId>.json for the default unit. If BURNDOWN_UNIT changes, the new unit
- * gets its own file (burndown/<iterationId>.estimateHours.json) so units never mix.
+ * Hours snapshots live in burndown/<iterationId>.estimateHours.json. Plain
+ * burndown/<iterationId>.json files are from when the unit was Story Points: they are left
+ * untouched (never read or overwritten), so units never mix.
  */
-export function blobPath(iterationId: string, unit: BurndownUnit = BURNDOWN_UNIT): string {
+const FILE_SUFFIX = `.${BURNDOWN_UNIT}.json`
+
+export function blobPath(iterationId: string): string {
   if (!isIterationId(iterationId)) throw new Error(`Bad iteration id for a blob path`)
-  return `${PREFIX}${iterationId}${unit === 'storyPoints' ? '' : `.${unit}`}.json`
+  return `${PREFIX}${iterationId}${FILE_SUFFIX}`
 }
 
 function blobToken(): string {
@@ -116,8 +119,8 @@ function blobToken(): string {
 
 const isNumber = (n: unknown): n is number => typeof n === 'number' && Number.isFinite(n)
 
-/** A stored file, keeping only well-formed days in `unit`. Null if it isn't a burndown file. */
-export function parseFile(raw: unknown, unit: BurndownUnit = BURNDOWN_UNIT): BurndownFile | null {
+/** A stored file, keeping only well-formed days in the burndown unit. Null if it isn't a burndown file. */
+export function parseFile(raw: unknown): BurndownFile | null {
   if (typeof raw !== 'object' || raw === null) return null
   const { iteration, days } = raw as Partial<BurndownFile>
   if (!iteration || !isIterationId(iteration.id) || !Array.isArray(days)) return null
@@ -126,7 +129,7 @@ export function parseFile(raw: unknown, unit: BurndownUnit = BURNDOWN_UNIT): Bur
       typeof d === 'object' &&
       d !== null &&
       parseDateKey(d.date) === d.date &&
-      d.unit === unit &&
+      d.unit === BURNDOWN_UNIT &&
       [d.remaining, d.done, d.scope, d.unestimatedCount].every(isNumber),
   )
   return { iteration, days: valid.sort((a, b) => a.date.localeCompare(b.date)) }
@@ -143,9 +146,8 @@ export function mergeDay(file: BurndownFile, iteration: Iteration, day: Burndown
 /** The stored file and its ETag, or null if none exists yet. */
 export async function readFile(
   iterationId: string,
-  unit: BurndownUnit = BURNDOWN_UNIT,
 ): Promise<{ file: BurndownFile; etag: string } | null> {
-  const result = await get(blobPath(iterationId, unit), {
+  const result = await get(blobPath(iterationId), {
     access: 'private',
     token: blobToken(),
     // Read the latest write, not a cached copy: this is read-modify-write.
@@ -159,9 +161,9 @@ export async function readFile(
   } catch {
     raw = null
   }
-  const file = parseFile(raw, unit)
+  const file = parseFile(raw)
   if (!file) {
-    console.error(`[burndown] ignoring malformed ${blobPath(iterationId, unit)}`)
+    console.error(`[burndown] ignoring malformed ${blobPath(iterationId)}`)
     return null
   }
   return { file, etag: result.blob.etag }
@@ -181,10 +183,10 @@ export async function upsertDay(iteration: Iteration, day: BurndownDay): Promise
     throw new Error(`[burndown] ${day.date} is outside iteration ${iteration.id}; not writing`)
   }
   const token = blobToken()
-  const path = blobPath(iteration.id, day.unit)
+  const path = blobPath(iteration.id)
 
   for (let attempt = 1; ; attempt++) {
-    const current = await readFile(iteration.id, day.unit)
+    const current = await readFile(iteration.id)
     const next = mergeDay(current?.file ?? { iteration, days: [] }, iteration, day)
     if (current && JSON.stringify(current.file) === JSON.stringify(next)) return next
 
@@ -205,12 +207,10 @@ export async function upsertDay(iteration: Iteration, day: BurndownDay): Promise
   }
 }
 
-/** Ids of iterations with a stored file in `unit`. */
-export async function listSnapshotIterations(
-  unit: BurndownUnit = BURNDOWN_UNIT,
-): Promise<string[]> {
+/** Ids of iterations with a stored hours file. */
+export async function listSnapshotIterations(): Promise<string[]> {
   const token = blobToken()
-  const suffix = unit === 'storyPoints' ? '.json' : `.${unit}.json`
+  const suffix = FILE_SUFFIX
   const ids = new Set<string>()
   let cursor: string | undefined
   do {
@@ -219,7 +219,7 @@ export async function listSnapshotIterations(
       const name = blob.pathname.slice(PREFIX.length)
       if (!name.endsWith(suffix)) continue
       const id = name.slice(0, -suffix.length)
-      // "abc.json" must not also count as "abc.estimateHours" for the default unit.
+      // Old story-point files ("abc.json") don't end with the suffix, so they never count.
       if (isIterationId(id)) ids.add(id)
     }
     cursor = page.hasMore ? page.cursor : undefined

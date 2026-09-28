@@ -40,7 +40,6 @@ export interface Task {
   assignees: Assignee[]
   status: string | null
   statusKey: StatusKey | null
-  storyPoints?: number
   estimateHours?: number
   priority?: string
   size?: string
@@ -74,14 +73,12 @@ export interface TaskMeta {
   issueRepository?: string
   /** Why New task can't create issues (e.g. no linked repository). Safe to show. */
   issueSetupError?: string
-  burndownUnit: 'storyPoints' | 'estimateHours'
+  burndownUnit: 'estimateHours'
   statuses: StatusOption[]
   /** Optional fields are absent when the project doesn't have them: hide their UI. */
-  storyPointOptions?: Option[]
   priorities?: Option[]
   sizes?: Option[]
   types?: Option[]
-  hasEstimate: boolean
   iterations: IterationOption[]
   currentIterationId: string | null
 }
@@ -106,7 +103,6 @@ export interface NewTaskRequest {
   title: string
   body?: string
   assigneeIds?: string[]
-  storyPointsOptionId?: string
   estimateHours?: number
   priorityOptionId?: string
   sizeOptionId?: string
@@ -127,7 +123,6 @@ export interface TaskPatch {
   title?: string
   body?: string
   assigneeIds?: string[]
-  storyPointsOptionId?: string | null
   estimateHours?: number | null
   priorityOptionId?: string | null
   sizeOptionId?: string | null

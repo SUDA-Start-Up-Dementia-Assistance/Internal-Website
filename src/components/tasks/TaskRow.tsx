@@ -9,7 +9,6 @@ import {
   isOverdue,
   markDonePatch,
   type Label,
-  pointsOf,
   type Task,
   type TaskMeta,
   type TaskPatch,
@@ -47,7 +46,7 @@ interface TaskRowProps {
 }
 
 /**
- * One task, with inline edits: status, "Done by", story points, estimate, priority, and
+ * One task, with inline edits: status, "Done by", estimate, priority, and
  * assignee, plus a "Mark done" checkbox. Every edit is optimistic and confirmed by a toast.
  * Drafts can be renamed here; issue and PR titles link out to GitHub instead.
  */
@@ -125,25 +124,11 @@ export default function TaskRow({ task, meta, team, showIteration = true, today 
             onChange={(id) => save({ priorityOptionId: id }, 'the priority')}
           />
         )}
-        {meta.storyPointOptions && (
-          <OptionPill
-            label={label('Story points')}
-            options={meta.storyPointOptions}
-            valueName={
-              meta.storyPointOptions.find((o) => pointsOf(o.name) === task.storyPoints)?.name
-            }
-            emptyLabel="– pts"
-            format={(name) => (pointsOf(name) === 1 ? '1 pt' : `${name} pts`)}
-            onChange={(id) => save({ storyPointsOptionId: id }, 'the story points')}
-          />
-        )}
-        {meta.hasEstimate && (
-          <EstimateInput
-            label={label('Estimate in hours')}
-            value={task.estimateHours}
-            onCommit={(hours) => save({ estimateHours: hours }, 'the estimate')}
-          />
-        )}
+        <EstimateInput
+          label={label('Estimate in hours')}
+          value={task.estimateHours}
+          onCommit={(hours) => save({ estimateHours: hours }, 'the estimate')}
+        />
         {task.size && (
           <span className="px-1">
             <span className="sr-only">Size </span>

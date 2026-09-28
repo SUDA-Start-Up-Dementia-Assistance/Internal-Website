@@ -60,8 +60,7 @@ export interface ProjectMeta {
   iteration: IterationField
   doneBy: PlainField
   type?: SelectField
-  storyPoints?: SelectField
-  estimate?: PlainField
+  estimate: PlainField
   priority?: SelectField
   size?: SelectField
 }
@@ -69,7 +68,6 @@ export interface ProjectMeta {
 const FIELD_DATA_TYPES: Record<FieldKey, string> = {
   status: 'SINGLE_SELECT',
   iteration: 'ITERATION',
-  storyPoints: 'SINGLE_SELECT',
   estimate: 'NUMBER',
   priority: 'SINGLE_SELECT',
   size: 'SINGLE_SELECT',
@@ -217,8 +215,7 @@ export function resolveFields(
     iteration: { id: found.iteration!.id!, iterations: iterationsOf(found.iteration!) },
     doneBy: plain(found.doneBy!),
     type: optional(found.type, select),
-    storyPoints: optional(found.storyPoints, select),
-    estimate: optional(found.estimate, plain),
+    estimate: plain(found.estimate!),
     priority: optional(found.priority, select),
     size: optional(found.size, select),
   }
@@ -326,11 +323,9 @@ export function toClientMeta(meta: ProjectMeta, today = todayKey()): TaskMeta {
     issueSetupError,
     burndownUnit: BURNDOWN_UNIT,
     statuses,
-    storyPointOptions: plain(meta.storyPoints?.options),
     priorities: plain(meta.priority?.options),
     sizes: plain(meta.size?.options),
     types: plain(meta.type?.options),
-    hasEstimate: Boolean(meta.estimate),
     iterations: meta.iteration.iterations,
     currentIterationId: current?.id ?? null,
   })
@@ -613,7 +608,6 @@ export function normalizeItem(item: RawItem, meta: ProjectMeta): Task | null {
       .map((a) => ({ login: a.login, avatarUrl: a.avatarUrl })),
     status,
     statusKey: statusKeyOf(status),
-    storyPoints: parsePoints(selectName(meta.storyPoints)),
     estimateHours: numberOf(meta.estimate),
     priority: selectName(meta.priority),
     size: selectName(meta.size),
@@ -651,13 +645,6 @@ export function labelsOf(nodes: ({ name: string; color: string } | null)[] | und
       name: l.name,
       color: /^[0-9a-f]{6}$/i.test(l.color) ? l.color.toLowerCase() : '',
     }))
-}
-
-/** Story Points option name → number; unset or non-numeric ("?", "XL") → undefined. */
-export function parsePoints(name: string | undefined): number | undefined {
-  const trimmed = name?.trim()
-  if (!trimmed || !/^\d+(\.\d+)?$/.test(trimmed)) return undefined
-  return Number(trimmed)
 }
 
 function later(a: string, b: string): string {

@@ -79,7 +79,7 @@ function day(date: string, totals: Partial<BurndownDay> = {}): BurndownDay {
     done: 2,
     remaining: 8,
     unestimatedCount: 0,
-    unit: 'storyPoints',
+    unit: 'estimateHours',
     ...totals,
   }
 }
@@ -129,13 +129,13 @@ function task(fields: Partial<Task> = {}): Task {
 const done = { status: 'Done', statusKey: 'done' } as const
 
 describe('aggregate', () => {
-  it('sums scope and done in story points; remaining is the difference', () => {
+  it('sums scope and done in estimated hours; remaining is the difference', () => {
     const tasks = [
-      task({ storyPoints: 5, ...done }),
-      task({ storyPoints: 3 }),
-      task({ storyPoints: 8, status: 'Blocked', statusKey: 'blocked' }),
+      task({ estimateHours: 5, ...done }),
+      task({ estimateHours: 3 }),
+      task({ estimateHours: 8, status: 'Blocked', statusKey: 'blocked' }),
     ]
-    expect(aggregate(tasks, 'I_2', 'storyPoints')).toEqual({
+    expect(aggregate(tasks, 'I_2')).toEqual({
       scope: 16,
       done: 5,
       remaining: 11,
@@ -143,55 +143,48 @@ describe('aggregate', () => {
     })
   })
 
-  it('counts items with no value for the unit as unestimated (done or not), adding 0', () => {
-    const tasks = [
-      task({ storyPoints: 5, estimateHours: 4 }),
-      task({ estimateHours: 2 }),
-      task({ ...done, estimateHours: 1 }),
-    ]
-    expect(aggregate(tasks, 'I_2', 'storyPoints')).toEqual({
-      scope: 5,
+  it('counts items with no estimate as unestimated (done or not), adding 0', () => {
+    const tasks = [task({ estimateHours: 4 }), task({}), task({ ...done })]
+    expect(aggregate(tasks, 'I_2')).toEqual({
+      scope: 4,
       done: 0,
-      remaining: 5,
+      remaining: 4,
       unestimatedCount: 2,
     })
-    // The same items in hours: every one has an estimate.
-    expect(aggregate(tasks, 'I_2', 'estimateHours')).toEqual({
-      scope: 7,
-      done: 1,
-      remaining: 6,
-      unestimatedCount: 0,
-    })
+  })
+
+  it('treats an estimate of 0 as estimated, not missing', () => {
+    expect(aggregate([task({ estimateHours: 0 })], 'I_2').unestimatedCount).toBe(0)
   })
 
   it('decides membership by the Iteration field only, never by Status', () => {
     const other = { ...ITERATION, id: 'I_1' }
     const tasks = [
-      task({ storyPoints: 3 }),
+      task({ estimateHours: 3 }),
       // "Sprint Backlog" but no iteration: not in the sprint.
       task({
-        storyPoints: 5,
+        estimateHours: 5,
         status: 'Sprint Backlog',
         statusKey: 'sprintBacklog',
         iteration: undefined,
       }),
-      task({ storyPoints: 8, iteration: other }),
+      task({ estimateHours: 8, iteration: other }),
       // "Product Backlog" status but in the iteration: counts.
-      task({ storyPoints: 2, status: 'Product Backlog', statusKey: 'productBacklog' }),
+      task({ estimateHours: 2, status: 'Product Backlog', statusKey: 'productBacklog' }),
     ]
-    expect(aggregate(tasks, 'I_2', 'storyPoints').scope).toBe(5)
+    expect(aggregate(tasks, 'I_2').scope).toBe(5)
   })
 
   it('grows scope and remaining, not done, when work is added mid-sprint', () => {
-    const before = [task({ storyPoints: 5, ...done }), task({ storyPoints: 5 })]
-    const after = [...before, task({ storyPoints: 3 }), task({})]
-    expect(aggregate(before, 'I_2', 'storyPoints')).toEqual({
+    const before = [task({ estimateHours: 5, ...done }), task({ estimateHours: 5 })]
+    const after = [...before, task({ estimateHours: 3 }), task({})]
+    expect(aggregate(before, 'I_2')).toEqual({
       scope: 10,
       done: 5,
       remaining: 5,
       unestimatedCount: 0,
     })
-    expect(aggregate(after, 'I_2', 'storyPoints')).toEqual({
+    expect(aggregate(after, 'I_2')).toEqual({
       scope: 13,
       done: 5,
       remaining: 8,
@@ -201,7 +194,7 @@ describe('aggregate', () => {
 
   it('rounds hour sums instead of storing float noise', () => {
     const tasks = [task({ estimateHours: 0.1 }), task({ estimateHours: 0.2, ...done })]
-    expect(aggregate(tasks, 'I_2', 'estimateHours')).toMatchObject({
+    expect(aggregate(tasks, 'I_2')).toMatchObject({
       scope: 0.3,
       done: 0.2,
       remaining: 0.1,
@@ -209,7 +202,7 @@ describe('aggregate', () => {
   })
 
   it('is all zeros for an empty sprint', () => {
-    expect(aggregate([], 'I_2', 'storyPoints')).toEqual({
+    expect(aggregate([], 'I_2')).toEqual({
       scope: 0,
       done: 0,
       remaining: 0,
@@ -243,7 +236,8 @@ describe('parseFile', () => {
       iteration: ITERATION,
       days: [
         day('2026-09-23'),
-        { ...day('2026-09-24'), unit: 'estimateHours' },
+        // Left over from when the unit was Story Points.
+        { ...day('2026-09-24'), unit: 'storyPoints' },
         { ...day('2026-02-30') },
         { ...day('2026-09-25'), scope: 'ten' },
         null,
@@ -256,7 +250,7 @@ describe('parseFile', () => {
 })
 
 describe('upsertDay', () => {
-  const path = 'burndown/I_2.json'
+  const path = 'burndown/I_2.estimateHours.json'
 
   it('creates the file, then upserts by date; the same day twice writes once', async () => {
     await upsertDay(ITERATION, day('2026-09-22'))
@@ -307,9 +301,8 @@ describe('upsertDay', () => {
     expect(blob.puts).toEqual([])
   })
 
-  it('keeps a second unit in its own file', () => {
-    expect(blobPath('I_2', 'storyPoints')).toBe('burndown/I_2.json')
-    expect(blobPath('I_2', 'estimateHours')).toBe('burndown/I_2.estimateHours.json')
+  it('keeps hours in their own file, apart from old story-point files', () => {
+    expect(blobPath('I_2')).toBe('burndown/I_2.estimateHours.json')
     expect(() => blobPath('../x')).toThrow()
   })
 })
@@ -377,16 +370,11 @@ const FIELDS = [
       iterations: [{ id: 'I_2', title: 'Sprint 2', startDate: '2026-09-22', duration: 14 }],
     },
   },
-  {
-    id: 'F_pts',
-    name: 'Story Points',
-    dataType: 'SINGLE_SELECT',
-    options: ['3', '5', '8'].map((p) => ({ id: `P${p}`, name: p })),
-  },
+  { id: 'F_est', name: 'Estimate', dataType: 'NUMBER' },
   { id: 'F_done', name: 'Estimated done date', dataType: 'DATE' },
 ]
 
-function item(id: string, points: string | null, status: string, iterationId: string | null) {
+function item(id: string, hours: number | null, status: string, iterationId: string | null) {
   const value = (fieldId: string, name: string) => ({
     __typename: 'ProjectV2ItemFieldSingleSelectValue',
     optionId: `${fieldId}-${name}`,
@@ -411,7 +399,15 @@ function item(id: string, points: string | null, status: string, iterationId: st
     fieldValues: {
       nodes: [
         value('F_status', status),
-        ...(points ? [value('F_pts', points)] : []),
+        ...(hours === null
+          ? []
+          : [
+              {
+                __typename: 'ProjectV2ItemFieldNumberValue',
+                number: hours,
+                field: { id: 'F_est' },
+              },
+            ]),
         ...(it
           ? [
               {
@@ -430,11 +426,11 @@ function item(id: string, points: string | null, status: string, iterationId: st
 }
 
 const ITEMS = [
-  item('a', '5', 'Done', 'I_2'),
-  item('b', '3', 'In progress', 'I_2'),
+  item('a', 5, 'Done', 'I_2'),
+  item('b', 3, 'In progress', 'I_2'),
   item('c', null, 'In progress', 'I_2'),
-  item('d', '8', 'Done', 'I_1'),
-  item('e', '5', 'In progress', null),
+  item('d', 8, 'Done', 'I_1'),
+  item('e', 5, 'In progress', null),
 ]
 
 function stubGitHub() {
@@ -468,14 +464,14 @@ function stubGitHub() {
 }
 
 describe('GET /api/burndown', () => {
-  const TODAY_PATH = 'burndown/I_2.json'
+  const TODAY_PATH = 'burndown/I_2.estimateHours.json'
   const todays = {
     date: '2026-09-29',
     scope: 8,
     done: 5,
     remaining: 3,
     unestimatedCount: 1,
-    unit: 'storyPoints',
+    unit: 'estimateHours',
   }
 
   beforeEach(() => {
@@ -505,7 +501,7 @@ describe('GET /api/burndown', () => {
     expect(res.body).toEqual({
       iteration: ITERATION,
       isCurrent: true,
-      unit: 'storyPoints',
+      unit: 'estimateHours',
       today: '2026-09-29',
       days: [earlier, todays],
       iterationsWithSnapshots: ['I_2'],
@@ -520,9 +516,23 @@ describe('GET /api/burndown', () => {
     expect(blob.puts).toHaveLength(1)
   })
 
+  it('leaves old story-point files alone: not read, overwritten, or listed', async () => {
+    const old = JSON.stringify({
+      iteration: ITERATION,
+      days: [{ ...day('2026-09-23'), unit: 'storyPoints' }],
+    })
+    blob.files.set('burndown/I_2.json', { body: old, etag: '"old"' })
+    blob.files.set('burndown/I_1.json', { body: old, etag: '"old1"' })
+    stubGitHub()
+    const res = await call()
+    expect(res.body).toMatchObject({ days: [todays], iterationsWithSnapshots: ['I_2'] })
+    expect(blob.files.get('burndown/I_2.json')!.body).toBe(old)
+    expect(blob.puts.map((p) => p.path)).toEqual([TODAY_PATH])
+  })
+
   it('never writes a past iteration, and does not read tasks for it', async () => {
     const past = { id: 'I_1', title: 'Sprint 1', startDate: '2026-09-08', duration: 14 }
-    seed('burndown/I_1.json', { iteration: past, days: [day('2026-09-10')] })
+    seed('burndown/I_1.estimateHours.json', { iteration: past, days: [day('2026-09-10')] })
     const operations = stubGitHub()
 
     const res = await call({ iteration: 'I_1' })
@@ -566,7 +576,7 @@ describe('GET /api/burndown', () => {
 
   it('returns no iteration when none is running and none was asked for', async () => {
     vi.setSystemTime(new Date('2026-12-01T16:00:00Z'))
-    seed('burndown/I_1.json', {
+    seed('burndown/I_1.estimateHours.json', {
       iteration: { id: 'I_1', title: 'Sprint 1', startDate: '2026-09-08', duration: 14 },
       days: [day('2026-09-10')],
     })

@@ -5,7 +5,8 @@ import type { Iteration } from '../tasks/types'
  * api/burndown.ts: keep them in sync.
  */
 
-export type BurndownUnit = 'storyPoints' | 'estimateHours'
+/** Hours, from the Estimate field. Stored with each day so units never mix. */
+export type BurndownUnit = 'estimateHours'
 
 /** One day's totals, measured in `unit`. */
 export interface BurndownDay {

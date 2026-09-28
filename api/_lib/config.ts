@@ -6,7 +6,6 @@
 export const FIELD_NAMES = {
   status: 'Status',
   iteration: 'Iteration',
-  storyPoints: 'Story Points',
   estimate: 'Estimate',
   priority: 'Priority',
   size: 'Size',
@@ -35,8 +34,8 @@ export type StatusKey = keyof typeof STATUS_NAMES
  */
 export const ISSUE_REPOSITORY: string | null = null
 
-/** The burndown's single unit. Never mix units in one chart. */
-export const BURNDOWN_UNIT: 'storyPoints' | 'estimateHours' = 'storyPoints'
+/** The burndown's unit: the Estimate field, in hours. Stored with each day so units never mix. */
+export const BURNDOWN_UNIT = 'estimateHours' as const
 
 /** GitHub date fields are calendar dates; "today" is judged in the team's time zone. */
 export const TEAM_TIME_ZONE = 'America/New_York'
@@ -44,10 +43,5 @@ export const TEAM_TIME_ZONE = 'America/New_York'
 /** How long project metadata (field ids, options, iterations) is cached per instance. */
 export const PROJECT_META_TTL_MS = 5 * 60 * 1000
 
-/** Fields the site can't work without. The burndown's unit field is required too. */
-export const REQUIRED_FIELDS: readonly FieldKey[] = [
-  'status',
-  'iteration',
-  'doneBy',
-  BURNDOWN_UNIT === 'storyPoints' ? 'storyPoints' : 'estimate',
-]
+/** Fields the site can't work without. Estimate is the burndown's unit, so it's required. */
+export const REQUIRED_FIELDS: readonly FieldKey[] = ['status', 'iteration', 'doneBy', 'estimate']

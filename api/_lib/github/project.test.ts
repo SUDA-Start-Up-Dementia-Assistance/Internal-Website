@@ -4,7 +4,6 @@ import {
   issueRepository,
   labelsOf,
   normalizeItem,
-  parsePoints,
   resolveFields,
   statusKeyOf,
   toClientMeta,
@@ -44,12 +43,6 @@ const FIELDS: RawField[] = [
       ],
     },
   },
-  {
-    id: 'F_pts',
-    name: 'Story Points',
-    dataType: 'SINGLE_SELECT',
-    options: ['1', '2', '3', '5', '8', '13', '?'].map((n) => ({ id: `P_${n}`, name: n })),
-  },
   { id: 'F_est', name: 'Estimate', dataType: 'NUMBER' },
   {
     id: 'F_pri',
@@ -83,7 +76,6 @@ const select = (fieldId: string, name: string): RawFieldValue => ({
 const ALL_VALUES: RawFieldValue[] = [
   { __typename: 'ProjectV2ItemFieldTextValue', field: { id: 'F_title' } },
   select('F_status', 'In progress'),
-  select('F_pts', '5'),
   { __typename: 'ProjectV2ItemFieldNumberValue', number: 4.5, field: { id: 'F_est' } },
   select('F_pri', 'P0'),
   select('F_size', 'M'),
@@ -153,7 +145,6 @@ describe('normalizeItem', () => {
       assignees: [{ login: 'ada', avatarUrl: 'https://a/ada.png' }],
       status: 'In progress',
       statusKey: 'inProgress',
-      storyPoints: 5,
       estimateHours: 4.5,
       priority: 'P0',
       size: 'M',
@@ -201,28 +192,17 @@ describe('normalizeItem', () => {
     const task = normalizeItem(item(issue), META)!
     expect(task.status).toBeNull()
     expect(task.statusKey).toBeNull()
-    for (const key of [
-      'storyPoints',
-      'estimateHours',
-      'priority',
-      'size',
-      'doneBy',
-      'type',
-      'iteration',
-    ]) {
+    for (const key of ['estimateHours', 'priority', 'size', 'doneBy', 'type', 'iteration']) {
       expect(task).not.toHaveProperty(key)
     }
   })
 
-  it('treats non-numeric Story Points as unestimated', () => {
-    const task = normalizeItem(item(draft, [select('F_pts', '?')]), META)!
-    expect(task).not.toHaveProperty('storyPoints')
-  })
-
-  it('reads values by field id, not by option name', () => {
-    // A "5" in some other single-select field must not become story points.
-    const task = normalizeItem(item(draft, [select('F_other', '5')]), META)!
-    expect(task).not.toHaveProperty('storyPoints')
+  it('reads values by field id, not by kind', () => {
+    // A number in some other number field must not become the estimate.
+    const values: RawFieldValue[] = [
+      { __typename: 'ProjectV2ItemFieldNumberValue', number: 5, field: { id: 'F_other' } },
+    ]
+    expect(normalizeItem(item(draft, values), META)).not.toHaveProperty('estimateHours')
   })
 
   it('drops archived and redacted items', () => {
@@ -255,20 +235,6 @@ describe('labelsOf', () => {
   })
 })
 
-describe('parsePoints', () => {
-  it.each([
-    ['1', 1],
-    [' 13 ', 13],
-    ['0.5', 0.5],
-    ['?', undefined],
-    ['XL', undefined],
-    ['', undefined],
-    [undefined, undefined],
-  ])('%j → %j', (input, expected) => {
-    expect(parsePoints(input)).toBe(expected)
-  })
-})
-
 describe('statusKeyOf', () => {
   it('maps configured names case-insensitively, and unknown names to null', () => {
     expect(statusKeyOf('Done')).toBe('done')
@@ -294,7 +260,7 @@ describe('resolveFields', () => {
       /"Status" \(single select\) is missing; "Iteration" \(iteration\) is missing/,
     )
     expect(() => resolveFields(PROJECT, fields)).toThrow(
-      /The project's fields are: "Title" \(title\), "Story Points" \(single select\)/,
+      /The project's fields are: "Title" \(title\), "Estimate" \(number\)/,
     )
   })
 
@@ -320,20 +286,31 @@ describe('resolveFields', () => {
   })
 
   it('omits missing optional fields', () => {
-    const fields = FIELDS.filter((f) => !['Priority', 'Size', 'Estimate'].includes(f.name!))
+    const fields = FIELDS.filter((f) => !['Priority', 'Size'].includes(f.name!))
     const meta = resolveFields(PROJECT, fields)
     expect(meta.priority).toBeUndefined()
     const client = toClientMeta(meta, '2026-09-20')
     expect(client).not.toHaveProperty('priorities')
-    expect(client.hasEstimate).toBe(false)
-    expect(client.storyPointOptions).toHaveLength(7)
+    expect(client).not.toHaveProperty('sizes')
+  })
+
+  it('requires Estimate, the burndown unit', () => {
+    const fields = FIELDS.filter((f) => f.name !== 'Estimate')
+    expect(() => resolveFields(PROJECT, fields)).toThrow(/"Estimate" \(number\) is missing/)
+  })
+
+  it('ignores a leftover Story Points field', () => {
+    const fields: RawField[] = [
+      ...FIELDS,
+      { id: 'F_pts', name: 'Story Points', dataType: 'SINGLE_SELECT', options: [] },
+    ]
+    const meta = resolveFields(PROJECT, fields)
+    expect(Object.values(meta).some((f) => (f as { id?: string })?.id === 'F_pts')).toBe(false)
   })
 
   it('finds fields regardless of name casing', () => {
-    const fields = FIELDS.map((f) =>
-      f.name === 'Story Points' ? { ...f, name: 'story points' } : f,
-    )
-    expect(resolveFields(PROJECT, fields).storyPoints?.id).toBe('F_pts')
+    const fields = FIELDS.map((f) => (f.name === 'Estimate' ? { ...f, name: 'estimate' } : f))
+    expect(resolveFields(PROJECT, fields).estimate.id).toBe('F_est')
   })
 })
 

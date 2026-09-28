@@ -3,7 +3,6 @@ export {
   changeFromPatch,
   createNewTask,
   markDonePatch,
-  pointsOf,
   saveTaskEdit,
   type TaskChange,
 } from './edits'

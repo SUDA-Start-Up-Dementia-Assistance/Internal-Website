@@ -50,7 +50,6 @@ export interface PatchTaskInput {
 const FIELD_KEYS = {
   statusOptionId: 'status',
   iterationId: 'iteration',
-  storyPointsOptionId: 'storyPoints',
   estimateHours: 'estimate',
   priorityOptionId: 'priority',
   sizeOptionId: 'size',
@@ -121,7 +120,6 @@ function parseField(
 
   switch (fieldKey) {
     case 'estimate': {
-      if (!meta.estimate) throw new InputError(`This project has no "${label}" field.`)
       if (typeof value !== 'number' || !Number.isFinite(value)) {
         throw new InputError(`${label} must be a number of hours.`)
       }

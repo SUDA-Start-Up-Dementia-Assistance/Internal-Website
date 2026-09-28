@@ -43,7 +43,6 @@ export interface Task {
   status: string | null
   /** The status's role (Done, Blocked, …) from the server config, so renames stay one-line. */
   statusKey: StatusKey | null
-  storyPoints?: number
   estimateHours?: number
   priority?: string
   size?: string
@@ -80,11 +79,9 @@ export interface TaskMeta {
   burndownUnit: typeof BURNDOWN_UNIT
   statuses: StatusOption[]
   /** Optional fields are omitted when the project doesn't have them. */
-  storyPointOptions?: Option[]
   priorities?: Option[]
   sizes?: Option[]
   types?: Option[]
-  hasEstimate: boolean
   /** Completed and upcoming iterations, oldest first. */
   iterations: IterationOption[]
   currentIterationId: string | null
@@ -110,7 +107,6 @@ export interface NewTaskRequest {
   title: string
   body?: string
   assigneeIds?: string[]
-  storyPointsOptionId?: string
   estimateHours?: number
   priorityOptionId?: string
   sizeOptionId?: string
@@ -131,7 +127,6 @@ export interface TaskPatch {
   title?: string
   body?: string
   assigneeIds?: string[]
-  storyPointsOptionId?: string | null
   estimateHours?: number | null
   priorityOptionId?: string | null
   sizeOptionId?: string | null

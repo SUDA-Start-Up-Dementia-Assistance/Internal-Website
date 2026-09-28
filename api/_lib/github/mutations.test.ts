@@ -28,12 +28,6 @@ const FIELDS: RawField[] = [
     },
   },
   {
-    id: 'F_pts',
-    name: 'Story Points',
-    dataType: 'SINGLE_SELECT',
-    options: [{ id: 'P_3', name: '3' }],
-  },
-  {
     id: 'F_pri',
     name: 'Priority',
     dataType: 'SINGLE_SELECT',
@@ -132,7 +126,6 @@ describe('createTask', () => {
       body: 'Notes',
       assigneeIds: ['U_ada'],
       iterationId: 'I_2',
-      storyPointsOptionId: 'P_3',
       estimateHours: 3,
       doneBy: '2026-10-01',
     },
@@ -150,7 +143,6 @@ describe('createTask', () => {
       'UpdateFieldValue',
       'UpdateFieldValue',
       'UpdateFieldValue',
-      'UpdateFieldValue',
       'ProjectItem',
     ])
     expect(inputsOf('CreateIssue')).toEqual([
@@ -159,12 +151,6 @@ describe('createTask', () => {
     expect(inputsOf('AddProjectItem')).toEqual([{ projectId: 'PVT', contentId: 'I_new' }])
     expect(inputsOf('UpdateFieldValue')).toEqual([
       { projectId: 'PVT', itemId: 'PVTI_1', fieldId: 'F_iter', value: { iterationId: 'I_2' } },
-      {
-        projectId: 'PVT',
-        itemId: 'PVTI_1',
-        fieldId: 'F_pts',
-        value: { singleSelectOptionId: 'P_3' },
-      },
       { projectId: 'PVT', itemId: 'PVTI_1', fieldId: 'F_est', value: { number: 3 } },
       { projectId: 'PVT', itemId: 'PVTI_1', fieldId: 'F_done', value: { date: '2026-10-01' } },
       // The default status comes last: Sprint Backlog, since an iteration was set.
@@ -181,11 +167,11 @@ describe('createTask', () => {
   })
 
   it('keeps going after a failed field and reports it by name', async () => {
-    stub({ content: ISSUE, fail: ['F_pts', 'F_done'] })
+    stub({ content: ISSUE, fail: ['F_est', 'F_done'] })
     const result = await createTask('t', META, input)
     // Every field was still attempted.
-    expect(inputsOf('UpdateFieldValue')).toHaveLength(5)
-    expect(result.failedFields).toEqual(['Story Points', 'Estimated done date'])
+    expect(inputsOf('UpdateFieldValue')).toHaveLength(4)
+    expect(result.failedFields).toEqual(['Estimate', 'Estimated done date'])
     expect(result.task).not.toBeNull()
   })
 
@@ -203,13 +189,7 @@ describe('createTask', () => {
     const result = await createTask('t', META, input)
     // One field attempt, then the read-back (which fails quietly).
     expect(calls).toBe(2)
-    expect(result.failedFields).toEqual([
-      'Iteration',
-      'Story Points',
-      'Estimate',
-      'Estimated done date',
-      'Status',
-    ])
+    expect(result.failedFields).toEqual(['Iteration', 'Estimate', 'Estimated done date', 'Status'])
     expect(result.task).toBeNull()
   })
 

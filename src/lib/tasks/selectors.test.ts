@@ -210,14 +210,10 @@ describe('groupByAssignee', () => {
 })
 
 describe('sumTotals', () => {
-  it('adds points and hours, counting tasks without points', () => {
-    expect(
-      sumTotals([
-        task({ storyPoints: 3, estimateHours: 4 }),
-        task({ estimateHours: 1.5 }),
-        task({ storyPoints: 5 }),
-      ]),
-    ).toEqual({ storyPoints: 8, estimateHours: 5.5, unestimated: 1 })
+  it('adds up hours, counting tasks without an estimate', () => {
+    expect(sumTotals([task({ estimateHours: 4 }), task({ estimateHours: 1.5 }), task({})])).toEqual(
+      { estimateHours: 5.5, unestimated: 1 },
+    )
   })
 })
 
@@ -284,7 +280,7 @@ describe('mock data', () => {
     expect(new Set(tasks.map((t) => t.kind))).toEqual(new Set(['draft', 'issue', 'pr']))
     expect(selectOverdue(tasks, TODAY).length).toBeGreaterThan(0)
     expect(selectBlocked(tasks).length).toBeGreaterThan(0)
-    expect(tasks.some((t) => t.storyPoints === undefined)).toBe(true)
+    expect(tasks.some((t) => t.estimateHours === undefined)).toBe(true)
     expect(selectSprintBacklogWithoutIteration(tasks).length).toBeGreaterThan(0)
     expect(
       new Set(tasks.flatMap((t) => (t.iteration ? [t.iteration.id] : []))).size,
