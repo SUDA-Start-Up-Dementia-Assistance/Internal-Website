@@ -124,9 +124,16 @@ GitHub Project; the site reads and writes them through GitHub's API.
   otherwise "Product Backlog", unless the user picks a status explicitly.
 - Items GitHub returns redacted (content the user's token can't read) are skipped but
   counted; /tasks shows how many are hidden, with a "Sign in again" button.
-- Items can be draft issues, issues, or PRs. The site creates DRAFT issues only. It can
-  edit fields on any item, title/assignees on drafts and issues, and links out to GitHub
-  for everything else. Archived items are excluded.
+- Items can be draft issues, issues, or PRs. New task creates real ISSUES only, never
+  drafts: createIssue in the repository linked to the project, then addProjectV2ItemById,
+  then the field updates. The repository is found at runtime from the project's linked
+  repositories (fetched with the project meta): the only linked repo, or, if several are
+  linked, the one named by ISSUE_REPOSITORY in /api/_lib/config.ts. With none (or an
+  ambiguous set), refuse before writing anything, with a readable error naming the fix. If
+  the issue is created but can't be added to the project, say which issue exists (so nobody
+  retries into a duplicate). The site can edit fields on any item, title/notes on drafts
+  (existing ones; drafts can still be made on the GitHub board), assignees on drafts and
+  issues, and links out to GitHub for everything else. Archived items are excluded.
 - "Current iteration" = the iteration where startDate <= today < startDate + duration.
 - Dates: GitHub date fields are calendar dates. Parse them as local dates
   (America/New_York), never as UTC midnight. Overdue = Estimated done date before today and not Done.
@@ -141,7 +148,8 @@ GitHub Project; the site reads and writes them through GitHub's API.
 - File shape: { iteration: {id,title,startDate,duration}, days: [{ date, remaining,
   done, scope, unestimatedCount, unit }] }, measured in BURNDOWN_UNIT. Upsert by date
   (the latest view of the day wins). If BURNDOWN_UNIT changes mid-sprint, start a new
-  file rather than mixing units. Past iterations are read-only (never rewritten).
+  file rather than mixing units: "estimateHours" snapshots go in
+  burndown/<iterationId>.estimateHours.json. Past iterations are read-only (never rewritten).
 - Vercel Blob store is PRIVATE: read/write with access "private", server-side only;
   never send blob URLs to the client.
 - Store only totals, never task titles or assignees.

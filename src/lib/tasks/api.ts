@@ -22,7 +22,7 @@ type ErrorBody = { error?: { code?: string; message?: string } }
  * Calls /api and returns its JSON, or throws a TasksError with the server's message. Writes
  * are same-origin fetches, so the browser sends the Origin header the server checks.
  */
-async function request<T>(
+export async function request<T>(
   path: string,
   init: { method?: string; body?: unknown },
   isValid: (body: unknown) => boolean,
@@ -54,7 +54,7 @@ async function request<T>(
   return body as T
 }
 
-const hasKey = (key: string) => (body: unknown) =>
+export const hasKey = (key: string) => (body: unknown) =>
   typeof body === 'object' && body !== null && key in body
 
 export function fetchTasks(): Promise<TasksResponse> {

@@ -114,7 +114,10 @@ const ITEM = {
 }
 
 /** Answers each GraphQL operation by name; records the operations in order. */
-function stubGitHub(overrides: Record<string, () => Response> = {}) {
+function stubGitHub(
+  overrides: Record<string, () => Response> = {},
+  repositories: unknown[] = [{ id: 'R_app', nameWithOwner: 'dawn/app' }],
+) {
   const operations: string[] = []
   const fetchMock = vi.fn(async (_url: string, init?: RequestInit) => {
     const { query } = JSON.parse(String(init?.body)) as { query: string }
@@ -129,15 +132,22 @@ function stubGitHub(overrides: Record<string, () => Response> = {}) {
               projectV2: {
                 id: 'PVT',
                 url: 'https://github.com/orgs/dawn/projects/1',
+                repositories: { nodes: repositories },
                 fields: { nodes: FIELDS },
               },
             },
           },
         })
-      case 'AddDraftIssue':
+      case 'CreateIssue':
         return Response.json({
-          data: { addProjectV2DraftIssue: { projectItem: { id: 'PVTI_new' } } },
+          data: {
+            createIssue: {
+              issue: { id: 'I_new', number: 7, url: 'https://github.com/dawn/app/issues/7' },
+            },
+          },
         })
+      case 'AddProjectItem':
+        return Response.json({ data: { addProjectV2ItemById: { item: { id: 'PVTI_new' } } } })
       case 'UpdateFieldValue':
       case 'ClearFieldValue':
         return Response.json({ data: { x: { projectV2Item: { id: 'PVTI_new' } } } })
@@ -168,11 +178,17 @@ afterEach(() => {
 })
 
 describe('POST /api/tasks', () => {
-  it('creates a draft, applies the default status, and returns 201 with the item', async () => {
+  it('creates an issue, adds it, applies the default status, and returns 201 with the item', async () => {
     const { fetchMock, operations } = stubGitHub()
     const res = await call({ method: 'POST', body: { title: 'Plan the demo' } })
     expect(res.statusCode).toBe(201)
-    expect(operations).toEqual(['ProjectMeta', 'AddDraftIssue', 'UpdateFieldValue', 'ProjectItem'])
+    expect(operations).toEqual([
+      'ProjectMeta',
+      'CreateIssue',
+      'AddProjectItem',
+      'UpdateFieldValue',
+      'ProjectItem',
+    ])
     expect(res.body).toEqual({
       task: expect.objectContaining({ itemId: 'PVTI_new', status: 'Product Backlog' }),
       failedFields: [],
@@ -194,6 +210,38 @@ describe('POST /api/tasks', () => {
     const res = await call({ method: 'POST', body: { title: 'Plan', storyPointsOptionId: 'P3' } })
     expect(res.statusCode).toBe(201)
     expect(res.body).toMatchObject({ failedFields: ['Story Points', 'Status'] })
+  })
+
+  it('returns 502 naming the issue when it was created but not added to the project', async () => {
+    const { operations } = stubGitHub({
+      AddProjectItem: () =>
+        Response.json({
+          data: null,
+          errors: [{ message: 'nope', path: ['addProjectV2ItemById'] }],
+        }),
+    })
+    const res = await call({ method: 'POST', body: { title: 'Plan' } })
+    expect(res.statusCode).toBe(502)
+    expect(res.body).toMatchObject({
+      error: {
+        code: 'issue-not-added',
+        message: expect.stringContaining('Issue #7 was created in dawn/app'),
+      },
+    })
+    expect(operations).not.toContain('UpdateFieldValue')
+  })
+
+  it('explains a project with no linked repository, and creates nothing', async () => {
+    const { operations } = stubGitHub({}, [])
+    const res = await call({ method: 'POST', body: { title: 'Plan' } })
+    expect(res.statusCode).toBe(500)
+    expect(res.body).toMatchObject({
+      error: {
+        code: 'project-misconfigured',
+        message: expect.stringContaining("isn't linked to a repository"),
+      },
+    })
+    expect(operations).toEqual(['ProjectMeta'])
   })
 
   it.each([

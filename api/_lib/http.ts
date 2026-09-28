@@ -1,6 +1,11 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { ConfigError } from './env.js'
-import { GitHubApiError, ProjectSetupError, toClientError } from './github/errors.js'
+import {
+  GitHubApiError,
+  IssueNotAddedError,
+  ProjectSetupError,
+  toClientError,
+} from './github/errors.js'
 import { firstHeader, requestOrigin } from './request.js'
 import { InputError } from './taskInput.js'
 import { clearSession, getSession, type Session } from './session.js'
@@ -67,6 +72,9 @@ export function withErrors(handler: Handler): Handler {
       if (res.headersSent) return
       if (err instanceof InputError) {
         sendError(res, 400, 'invalid-input', err.message)
+      } else if (err instanceof IssueNotAddedError) {
+        console.error(`[github] ${err.message}`)
+        sendError(res, 502, 'issue-not-added', err.message)
       } else if (err instanceof GitHubApiError) {
         // Status and GitHub's error code only; never tokens or raw bodies.
         console.error(`[github] ${err.kind} (${err.status}) ${err.detail}`)

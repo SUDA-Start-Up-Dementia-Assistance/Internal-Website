@@ -121,14 +121,19 @@ const mockWrites = {
     const data = peekTasks()
     if (!data) throw new TasksError('unknown', 'Tasks have not loaded yet.')
     mockCount += 1
+    const repo = data.meta.issueRepository ?? 'dawn-team/dawn-app'
+    const number = 900 + mockCount
     const statusKey: StatusKey = input.iterationId ? 'sprintBacklog' : 'productBacklog'
     const statusOptionId =
       input.statusOptionId ?? data.meta.statuses.find((s) => s.key === statusKey)?.id
     const task: Task = {
       itemId: `PVTI_local${mockCount}`,
-      contentId: `DI_local${mockCount}`,
-      kind: 'draft',
+      contentId: `I_local${mockCount}`,
+      kind: 'issue',
       title: input.title,
+      url: `https://github.com/${repo}/issues/${number}`,
+      repo,
+      number,
       assignees: [],
       status: null,
       statusKey: null,
@@ -188,7 +193,7 @@ export async function saveTaskEdit(itemId: string, patch: TaskPatch): Promise<st
   return result.failedFields
 }
 
-/** Creates a draft issue and adds it to the cached list. */
+/** Creates an issue (added to the project) and adds it to the cached list. */
 export async function createNewTask(input: NewTaskRequest): Promise<WriteResult> {
   const result = await writes.create(input)
   const task = result.task

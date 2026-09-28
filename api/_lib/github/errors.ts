@@ -47,6 +47,22 @@ export class ProjectSetupError extends Error {
   }
 }
 
+/**
+ * The issue was created, but adding it to the project failed. Its own error (not a GitHub
+ * failure) so the user learns the issue exists and doesn't retry into a duplicate.
+ */
+export class IssueNotAddedError extends Error {
+  readonly issueUrl: string
+
+  constructor(repo: string, number: number, issueUrl: string) {
+    super(
+      `Issue #${number} was created in ${repo}, but it couldn't be added to the project. Add it from the project board (it's at ${issueUrl}) rather than creating it again.`,
+    )
+    this.name = 'IssueNotAddedError'
+    this.issueUrl = issueUrl
+  }
+}
+
 export interface ClientError {
   status: number
   code: string

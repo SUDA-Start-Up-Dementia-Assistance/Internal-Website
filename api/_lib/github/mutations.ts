@@ -6,9 +6,9 @@ import {
   type FieldValue,
   type PatchTaskInput,
 } from '../taskInput.js'
-import { GitHubApiError } from './errors.js'
+import { GitHubApiError, IssueNotAddedError } from './errors.js'
 import { graphql } from './graphql.js'
-import { getItem, type ProjectMeta } from './project.js'
+import { getItem, issueRepository, type ProjectMeta } from './project.js'
 import type { Task, WriteResult } from './types.js'
 
 /*
@@ -18,10 +18,22 @@ import type { Task, WriteResult } from './types.js'
  * stick.
  */
 
-const ADD_DRAFT_ISSUE = /* GraphQL */ `
-  mutation AddDraftIssue($input: AddProjectV2DraftIssueInput!) {
-    addProjectV2DraftIssue(input: $input) {
-      projectItem {
+const CREATE_ISSUE = /* GraphQL */ `
+  mutation CreateIssue($input: CreateIssueInput!) {
+    createIssue(input: $input) {
+      issue {
+        id
+        number
+        url
+      }
+    }
+  }
+`
+
+const ADD_PROJECT_ITEM = /* GraphQL */ `
+  mutation AddProjectItem($input: AddProjectV2ItemByIdInput!) {
+    addProjectV2ItemById(input: $input) {
+      item {
         id
       }
     }
@@ -74,8 +86,12 @@ const REMOVE_ASSIGNEES = /* GraphQL */ `
   }
 `
 
-interface AddDraftData {
-  addProjectV2DraftIssue: { projectItem: { id: string } | null } | null
+interface CreateIssueData {
+  createIssue: { issue: { id: string; number: number; url: string } | null } | null
+}
+
+interface AddProjectItemData {
+  addProjectV2ItemById: { item: { id: string } | null } | null
 }
 
 /** Labels for non-field changes in `failedFields`. */
@@ -156,25 +172,42 @@ async function readBack(token: string, itemId: string, meta: ProjectMeta): Promi
 }
 
 /**
- * Creates a draft issue, then sets each field on it. If the draft itself can't be created,
- * this throws. After that, a failed field doesn't undo the task: the result lists it in
- * `failedFields` so the user knows what to fix.
+ * Creates an issue in the project's linked repository, adds it to the project, then sets each
+ * field on it. Nothing is written if the repository can't be determined. If the issue itself
+ * can't be created, this throws; if it's created but can't be added to the project, this
+ * throws IssueNotAddedError (so the user doesn't create it twice). After that, a failed field
+ * doesn't undo the task: the result lists it in `failedFields`.
  */
 export async function createTask(
   token: string,
   meta: ProjectMeta,
   input: CreateTaskInput,
 ): Promise<WriteResult & { itemId: string }> {
-  const data = await graphql<AddDraftData>(token, ADD_DRAFT_ISSUE, {
+  const repo = issueRepository(meta)
+  const created = await graphql<CreateIssueData>(token, CREATE_ISSUE, {
     input: {
-      projectId: meta.projectId,
+      repositoryId: repo.id,
       title: input.title,
       ...(input.body !== undefined && { body: input.body }),
       ...(input.assigneeIds?.length && { assigneeIds: input.assigneeIds }),
     },
   })
-  const itemId = data.addProjectV2DraftIssue?.projectItem?.id
-  if (!itemId) throw new GitHubApiError('upstream', 200, 'addProjectV2DraftIssue returned no item')
+  const issue = created.createIssue?.issue
+  if (!issue) throw new GitHubApiError('upstream', 200, 'createIssue returned no issue')
+
+  let itemId: string | undefined
+  try {
+    // Returns the existing item if a project workflow already auto-added the issue.
+    const added = await graphql<AddProjectItemData>(token, ADD_PROJECT_ITEM, {
+      input: { projectId: meta.projectId, contentId: issue.id },
+    })
+    itemId = added.addProjectV2ItemById?.item?.id
+  } catch (err) {
+    console.error(
+      `[github] adding ${repo.nameWithOwner}#${issue.number} to the project failed: ${String(err)}`,
+    )
+  }
+  if (!itemId) throw new IssueNotAddedError(repo.nameWithOwner, issue.number, issue.url)
 
   const runner = new StepRunner()
   await applyFields(token, meta, itemId, input.fields, runner)

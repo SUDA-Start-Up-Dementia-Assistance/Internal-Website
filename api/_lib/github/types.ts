@@ -73,6 +73,10 @@ export interface IterationOption extends Iteration {
 
 export interface TaskMeta {
   projectUrl: string
+  /** "owner/name" where New task creates issues. Absent when that can't be worked out. */
+  issueRepository?: string
+  /** Why New task can't create issues (e.g. no linked repository). Safe to show. */
+  issueSetupError?: string
   burndownUnit: typeof BURNDOWN_UNIT
   statuses: StatusOption[]
   /** Optional fields are omitted when the project doesn't have them. */

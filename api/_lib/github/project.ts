@@ -1,6 +1,7 @@
 import {
   BURNDOWN_UNIT,
   FIELD_NAMES,
+  ISSUE_REPOSITORY,
   PROJECT_META_TTL_MS,
   REQUIRED_FIELDS,
   STATUS_NAMES,
@@ -44,9 +45,17 @@ interface PlainField {
 }
 
 /** The project's fields, resolved by the names in config.ts. Optional fields may be absent. */
+/** A repository linked to the project. */
+export interface LinkedRepository {
+  id: string
+  nameWithOwner: string
+}
+
 export interface ProjectMeta {
   projectId: string
   projectUrl: string
+  /** Repositories linked to the project (Project settings → Linked repositories). */
+  repositories: LinkedRepository[]
   status: SelectField
   iteration: IterationField
   doneBy: PlainField
@@ -96,6 +105,12 @@ const PROJECT_META_QUERY = /* GraphQL */ `
       projectV2(number: $number) {
         id
         url
+        repositories(first: 20) {
+          nodes {
+            id
+            nameWithOwner
+          }
+        }
         fields(first: 100) {
           nodes {
             ... on ProjectV2FieldCommon {
@@ -135,7 +150,12 @@ const PROJECT_META_QUERY = /* GraphQL */ `
 
 interface ProjectMetaData {
   organization: {
-    projectV2: { id: string; url: string; fields: { nodes: (RawField | null)[] } } | null
+    projectV2: {
+      id: string
+      url: string
+      repositories?: { nodes: (LinkedRepository | null)[] }
+      fields: { nodes: (RawField | null)[] }
+    } | null
   } | null
 }
 
@@ -144,7 +164,7 @@ interface ProjectMetaData {
  * REQUIRED field throws, naming it; a missing optional field is simply left out.
  */
 export function resolveFields(
-  project: { id: string; url: string },
+  project: { id: string; url: string; repositories?: { nodes: (LinkedRepository | null)[] } },
   rawFields: readonly (RawField | null)[],
 ): ProjectMeta {
   const byName = new Map<string, RawField>()
@@ -190,6 +210,9 @@ export function resolveFields(
   return {
     projectId: project.id,
     projectUrl: project.url,
+    repositories: (project.repositories?.nodes ?? []).filter((r): r is LinkedRepository =>
+      Boolean(r?.id && r.nameWithOwner),
+    ),
     status: select(found.status!),
     iteration: { id: found.iteration!.id!, iterations: iterationsOf(found.iteration!) },
     doneBy: plain(found.doneBy!),
@@ -253,6 +276,29 @@ async function fetchProjectMeta(token: string, org: string, number: number): Pro
   return resolveFields(project, project.fields.nodes)
 }
 
+/**
+ * Where New task creates issues: ISSUE_REPOSITORY if set, else the project's only linked
+ * repository. Throws a ProjectSetupError (safe to show) naming the problem otherwise.
+ */
+export function issueRepository(meta: ProjectMeta): LinkedRepository {
+  const linked = meta.repositories
+  const names = linked.map((r) => r.nameWithOwner).join(', ')
+  if (ISSUE_REPOSITORY) {
+    const wanted = ISSUE_REPOSITORY.trim().toLowerCase()
+    const repo = linked.find((r) => r.nameWithOwner.toLowerCase() === wanted)
+    if (repo) return repo
+    throw new ProjectSetupError(
+      `ISSUE_REPOSITORY in api/_lib/config.ts is "${ISSUE_REPOSITORY}", but the GitHub Project isn't linked to that repository. Linked: ${names || 'none'}.`,
+    )
+  }
+  if (linked.length === 1) return linked[0]
+  throw new ProjectSetupError(
+    linked.length === 0
+      ? "New tasks become issues, but the GitHub Project isn't linked to a repository (or you can't see it). Link one in the project's settings."
+      : `The GitHub Project links several repositories (${names}). Set ISSUE_REPOSITORY in api/_lib/config.ts to the one new tasks should go in.`,
+  )
+}
+
 /** The browser's view of the metadata: option lists, iterations, and the current sprint. */
 export function toClientMeta(meta: ProjectMeta, today = todayKey()): TaskMeta {
   // Statuses carry GitHub's color so badges match the board; other options don't need it.
@@ -267,8 +313,17 @@ export function toClientMeta(meta: ProjectMeta, today = todayKey()): TaskMeta {
   const plain = (options: RawOption[] | undefined): Option[] | undefined =>
     options?.map(({ id, name }) => ({ id, name }))
   const current = findCurrentIteration(meta.iteration.iterations, today)
+  let repository: string | undefined
+  let issueSetupError: string | undefined
+  try {
+    repository = issueRepository(meta).nameWithOwner
+  } catch (err) {
+    issueSetupError = err instanceof Error ? err.message : String(err)
+  }
   return dropUndefined({
     projectUrl: meta.projectUrl,
+    issueRepository: repository,
+    issueSetupError,
     burndownUnit: BURNDOWN_UNIT,
     statuses,
     storyPointOptions: plain(meta.storyPoints?.options),

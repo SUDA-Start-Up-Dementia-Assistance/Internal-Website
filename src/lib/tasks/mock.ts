@@ -297,6 +297,7 @@ export function createMockTasks(today = new Date()): TasksResponse {
   }))
   const meta: TaskMeta = {
     projectUrl: PROJECT_URL,
+    issueRepository: REPO,
     burndownUnit: 'storyPoints',
     statuses,
     storyPointOptions: options(['1', '2', '3', '5', '8', '13'], 'SP'),

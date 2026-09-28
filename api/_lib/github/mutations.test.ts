@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { parseCreateTask, parsePatchTask } from '../taskInput.js'
-import { GitHubApiError } from './errors.js'
+import { GitHubApiError, IssueNotAddedError, ProjectSetupError } from './errors.js'
 import { graphql } from './graphql.js'
 import { createTask, patchTask } from './mutations.js'
 import { resolveFields, type RawContent, type RawField, type RawItem } from './project.js'
@@ -43,7 +43,8 @@ const FIELDS: RawField[] = [
   { id: 'F_done', name: 'Estimated done date', dataType: 'DATE' },
 ]
 
-const META = resolveFields({ id: 'PVT', url: 'u' }, FIELDS)
+const REPO = { id: 'R_app', nameWithOwner: 'dawn/app' }
+const META = resolveFields({ id: 'PVT', url: 'u', repositories: { nodes: [REPO] } }, FIELDS)
 
 const DRAFT: RawContent = {
   __typename: 'DraftIssue',
@@ -102,7 +103,14 @@ function stub(options: { content?: RawContent; projectId?: string; fail?: string
     if (fail.has(op) || (input?.fieldId && fail.has(input.fieldId))) {
       throw new GitHubApiError('upstream', 200, 'nope')
     }
-    if (op === 'AddDraftIssue') return { addProjectV2DraftIssue: { projectItem: { id: 'PVTI_1' } } }
+    if (op === 'CreateIssue') {
+      return {
+        createIssue: {
+          issue: { id: 'I_new', number: 12, url: 'https://github.com/dawn/app/issues/12' },
+        },
+      }
+    }
+    if (op === 'AddProjectItem') return { addProjectV2ItemById: { item: { id: 'PVTI_1' } } }
     if (op === 'ProjectItem') return { node: item(options.content ?? DRAFT, options.projectId) }
     return {}
   })
@@ -131,12 +139,13 @@ describe('createTask', () => {
     META,
   )
 
-  it('creates the draft first, then sets each field in turn, then re-reads the item', async () => {
-    stub()
+  it('creates an issue in the linked repo, adds it to the project, then sets each field', async () => {
+    stub({ content: ISSUE })
     const result = await createTask('gho_test', META, input)
 
     expect(operations()).toEqual([
-      'AddDraftIssue',
+      'CreateIssue',
+      'AddProjectItem',
       'UpdateFieldValue',
       'UpdateFieldValue',
       'UpdateFieldValue',
@@ -144,9 +153,10 @@ describe('createTask', () => {
       'UpdateFieldValue',
       'ProjectItem',
     ])
-    expect(inputsOf('AddDraftIssue')).toEqual([
-      { projectId: 'PVT', title: 'Plan', body: 'Notes', assigneeIds: ['U_ada'] },
+    expect(inputsOf('CreateIssue')).toEqual([
+      { repositoryId: 'R_app', title: 'Plan', body: 'Notes', assigneeIds: ['U_ada'] },
     ])
+    expect(inputsOf('AddProjectItem')).toEqual([{ projectId: 'PVT', contentId: 'I_new' }])
     expect(inputsOf('UpdateFieldValue')).toEqual([
       { projectId: 'PVT', itemId: 'PVTI_1', fieldId: 'F_iter', value: { iterationId: 'I_2' } },
       {
@@ -167,11 +177,11 @@ describe('createTask', () => {
     ])
     for (const [token] of graphqlMock.mock.calls) expect(token).toBe('gho_test')
     expect(result.failedFields).toEqual([])
-    expect(result.task).toMatchObject({ itemId: 'PVTI_1', kind: 'draft', title: 'Plan' })
+    expect(result.task).toMatchObject({ itemId: 'PVTI_1', kind: 'issue' })
   })
 
   it('keeps going after a failed field and reports it by name', async () => {
-    stub({ fail: ['F_pts', 'F_done'] })
+    stub({ content: ISSUE, fail: ['F_pts', 'F_done'] })
     const result = await createTask('t', META, input)
     // Every field was still attempted.
     expect(inputsOf('UpdateFieldValue')).toHaveLength(5)
@@ -182,9 +192,11 @@ describe('createTask', () => {
   it('stops calling GitHub once the session has expired, and marks the rest failed', async () => {
     let calls = 0
     graphqlMock.mockImplementation(async (_t, query) => {
-      if (query.includes('AddDraftIssue')) {
-        return { addProjectV2DraftIssue: { projectItem: { id: 'PVTI_1' } } }
+      if (query.includes('CreateIssue')) {
+        return { createIssue: { issue: { id: 'I_new', number: 12, url: 'u' } } }
       }
+      if (query.includes('AddProjectItem'))
+        return { addProjectV2ItemById: { item: { id: 'PVTI_1' } } }
       calls += 1
       throw new GitHubApiError('session-expired', 401)
     })
@@ -201,10 +213,31 @@ describe('createTask', () => {
     expect(result.task).toBeNull()
   })
 
-  it('sets no fields when the draft itself cannot be created', async () => {
-    stub({ fail: ['AddDraftIssue'] })
+  it('writes nothing more when the issue itself cannot be created', async () => {
+    stub({ fail: ['CreateIssue'] })
     await expect(createTask('t', META, input)).rejects.toBeInstanceOf(GitHubApiError)
-    expect(operations()).toEqual(['AddDraftIssue'])
+    expect(operations()).toEqual(['CreateIssue'])
+  })
+
+  it('names the created issue when it cannot be added to the project, so nobody retries', async () => {
+    stub({ fail: ['AddProjectItem'] })
+    const attempt = createTask('t', META, input)
+    await expect(attempt).rejects.toBeInstanceOf(IssueNotAddedError)
+    await expect(attempt).rejects.toThrow(
+      /Issue #12 was created in dawn\/app.*https:\/\/github\.com\/dawn\/app\/issues\/12/,
+    )
+    // No field writes against an item that doesn't exist.
+    expect(operations()).toEqual(['CreateIssue', 'AddProjectItem'])
+  })
+
+  it.each([
+    ['no linked repository', []],
+    ['several linked repositories', [REPO, { id: 'R_docs', nameWithOwner: 'dawn/docs' }]],
+  ])('refuses before writing anything with %s', async (_label, repos) => {
+    stub()
+    const meta = resolveFields({ id: 'PVT', url: 'u', repositories: { nodes: repos } }, FIELDS)
+    await expect(createTask('t', meta, input)).rejects.toBeInstanceOf(ProjectSetupError)
+    expect(operations()).toEqual([])
   })
 })
 

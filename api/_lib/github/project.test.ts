@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { ProjectSetupError } from './errors.js'
 import {
+  issueRepository,
   labelsOf,
   normalizeItem,
   parsePoints,
@@ -333,6 +334,35 @@ describe('resolveFields', () => {
       f.name === 'Story Points' ? { ...f, name: 'story points' } : f,
     )
     expect(resolveFields(PROJECT, fields).storyPoints?.id).toBe('F_pts')
+  })
+})
+
+describe('issueRepository', () => {
+  const withRepos = (names: string[]) =>
+    resolveFields(
+      {
+        ...PROJECT,
+        repositories: { nodes: names.map((n, i) => ({ id: `R_${i}`, nameWithOwner: n })) },
+      },
+      FIELDS,
+    )
+
+  it('uses the only linked repository, and tells the browser which it is', () => {
+    const meta = withRepos(['dawn/app'])
+    expect(issueRepository(meta)).toEqual({ id: 'R_0', nameWithOwner: 'dawn/app' })
+    const client = toClientMeta(meta, '2026-09-20')
+    expect(client.issueRepository).toBe('dawn/app')
+    expect(client).not.toHaveProperty('issueSetupError')
+  })
+
+  it('explains, rather than guessing, with none or several', () => {
+    expect(() => issueRepository(withRepos([]))).toThrow(/isn't linked to a repository/)
+    expect(() => issueRepository(withRepos(['dawn/app', 'dawn/docs']))).toThrow(
+      /links several repositories \(dawn\/app, dawn\/docs\).*ISSUE_REPOSITORY/,
+    )
+    const client = toClientMeta(withRepos([]), '2026-09-20')
+    expect(client).not.toHaveProperty('issueRepository')
+    expect(client.issueSetupError).toMatch(/isn't linked/)
   })
 })
 

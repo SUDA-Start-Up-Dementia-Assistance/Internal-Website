@@ -1,8 +1,6 @@
-import { ChartNoAxesColumnDecreasing, Plus } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { formatDayMonth } from '../../lib/dates'
-import { parseLocalDate } from '../../lib/drive/parse'
 import {
   applyFilters,
   DEFAULT_FILTERS,
@@ -11,7 +9,6 @@ import {
   useTasks,
   type Task,
   type TaskFilters as Filters,
-  type TaskMeta,
 } from '../../lib/tasks'
 import { showToast } from '../../lib/toast'
 import { buttonClasses } from '../buttonStyles'
@@ -22,6 +19,7 @@ import MyTasks from './MyTasks'
 import NewTaskDialog from './NewTaskDialog'
 import { listNames, SAVED_MESSAGE } from './saveTask'
 import SignInPanel from './SignInPanel'
+import SprintView from './sprint/SprintView'
 import TaskFilters from './TaskFilters'
 import TeamTasks from './TeamTasks'
 import Toaster from '../Toaster'
@@ -165,7 +163,7 @@ export default function TasksView({ login }: { login: string }) {
             showIteration={showIteration}
           />
         )}
-        {tab === 'sprint' && <SprintPlaceholder meta={meta} />}
+        {tab === 'sprint' && <SprintView meta={meta} tasks={tasks} />}
       </div>
     </div>
   )
@@ -221,32 +219,6 @@ function Tabs({ selected, onSelect }: { selected: TabId; onSelect: (id: TabId) =
           </button>
         )
       })}
-    </div>
-  )
-}
-
-function SprintPlaceholder({ meta }: { meta: TaskMeta }) {
-  const current = meta.iterations.find((it) => it.id === meta.currentIterationId)
-  const start = current && parseLocalDate(current.startDate)
-  const end =
-    start && new Date(start.getFullYear(), start.getMonth(), start.getDate() + current.duration - 1)
-
-  return (
-    <div className="rounded-2xl bg-surface p-6 shadow-card sm:p-8">
-      <ChartNoAxesColumnDecreasing aria-hidden="true" className="size-8 text-dusk" />
-      {current && start && end ? (
-        <p className="mt-4 font-heading text-2xl">
-          {current.title}
-          <span className="ml-3 font-body text-base text-dusk">
-            {formatDayMonth(start)} – {formatDayMonth(end)}
-          </span>
-        </p>
-      ) : (
-        <p className="mt-4 font-heading text-2xl">No sprint is running right now</p>
-      )}
-      <p className="mt-2 max-w-prose text-dusk">
-        The sprint burndown chart is coming soon. Until then, the Team tab shows who has what.
-      </p>
     </div>
   )
 }

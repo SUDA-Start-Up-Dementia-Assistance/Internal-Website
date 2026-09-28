@@ -10,6 +10,7 @@ import {
   type TaskMeta,
   type TeamMember,
 } from '../../lib/tasks'
+import { showToast } from '../../lib/toast'
 import { buttonClasses } from '../buttonStyles'
 import StatusSelect from './StatusSelect'
 
@@ -25,7 +26,7 @@ interface NewTaskDialogProps {
   /** The signed-in user's login: the default assignee. */
   login: string
   onClose: () => void
-  /** The draft was created (task is null if the server couldn't read it back). */
+  /** The issue was created and added (task is null if the server couldn't read it back). */
   onCreated: (task: Task | null, failedFields: string[]) => void
 }
 
@@ -33,7 +34,7 @@ const byName = (options: Option[] | undefined, name: string) =>
   options?.find((o) => o.name.trim().toLowerCase() === name.toLowerCase())
 
 /**
- * "New task": creates a draft issue on the project. Mount it to open it. A native modal
+ * "New task": creates an issue in the project's linked repository and adds it to the project. Mount it to open it. A native modal
  * <dialog> traps focus, closes on Esc, and makes the page behind it inert.
  *
  * Defaults follow the Type: Dev tasks go in the current sprint with Sizing open; Admin and
@@ -82,6 +83,8 @@ export default function NewTaskDialog({
   const autoStatusId = statusFor(iterationId ? 'sprintBacklog' : 'productBacklog')
   const statusId = chosenStatusId ?? autoStatusId
   const sizingOpen = chosenSizingOpen ?? isDev
+  // The server couldn't work out which repository new issues go in (it says why).
+  const cannotCreate = !meta.issueRepository && Boolean(meta.issueSetupError)
   const hasSizing = Boolean(meta.storyPointOptions || meta.hasEstimate || meta.sizes)
   // Current and upcoming sprints only.
   const iterations = meta.iterations.filter((it) => !it.completed)
@@ -124,7 +127,7 @@ export default function NewTaskDialog({
   async function submit(e: FormEvent) {
     e.preventDefault()
     setFormError(null)
-    if (submitting || !validate()) return
+    if (submitting || cannotCreate || !validate()) return
 
     const input: NewTaskRequest = { title: title.trim() }
     if (notes.trim()) input.body = notes
@@ -143,6 +146,13 @@ export default function NewTaskDialog({
       const result = await createNewTask(input)
       onCreated(result.task, result.failedFields)
     } catch (err) {
+      if (err instanceof TasksError && err.code === 'issue-not-added') {
+        // The issue exists: close so nobody submits again and creates a duplicate.
+        showToast('error', err.message)
+        setSubmitting(false)
+        ref.current?.close()
+        return
+      }
       setFormError(
         err instanceof TasksError ? err.message : "We couldn't create the task. Please try again.",
       )
@@ -182,8 +192,22 @@ export default function NewTaskDialog({
           </button>
         </div>
         <p className="mt-1 text-sm text-dusk">
-          Creates a draft issue on the team&apos;s GitHub project.
+          {meta.issueRepository ? (
+            <>
+              Creates an issue in <span className="font-medium">{meta.issueRepository}</span> and
+              adds it to the team&apos;s GitHub project.
+            </>
+          ) : (
+            'Creates an issue and adds it to the team’s GitHub project.'
+          )}
         </p>
+
+        {cannotCreate && (
+          <p className="mt-5 flex gap-2 rounded-xl border border-ember/40 p-3 text-sm">
+            <CircleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-ember" />
+            {meta.issueSetupError}
+          </p>
+        )}
 
         {/* Server errors are announced as soon as they appear. */}
         <div aria-live="assertive" aria-atomic="true">
@@ -396,7 +420,11 @@ export default function NewTaskDialog({
           >
             Cancel
           </button>
-          <button type="submit" disabled={submitting} className={buttonClasses('primary')}>
+          <button
+            type="submit"
+            disabled={submitting || cannotCreate}
+            className={`${buttonClasses('primary')} disabled:opacity-60`}
+          >
             {submitting ? 'Creating…' : 'Create task'}
           </button>
         </div>

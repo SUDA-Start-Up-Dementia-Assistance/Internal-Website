@@ -28,6 +28,13 @@ export const STATUS_NAMES = {
 
 export type StatusKey = keyof typeof STATUS_NAMES
 
+/**
+ * New tasks become issues in the repository linked to the project. When the project links
+ * exactly one repository, it's used automatically; if it links several, name the one to use
+ * here ("owner/name"). Null = use the only linked repository.
+ */
+export const ISSUE_REPOSITORY: string | null = null
+
 /** The burndown's single unit. Never mix units in one chart. */
 export const BURNDOWN_UNIT: 'storyPoints' | 'estimateHours' = 'storyPoints'
 
