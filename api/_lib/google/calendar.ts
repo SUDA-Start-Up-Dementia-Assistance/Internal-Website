@@ -30,7 +30,10 @@ export interface Meeting {
   /** Timed: an ISO instant. All-day: "YYYY-MM-DD", exclusive (the day after it ends). */
   end: string
   allDay: boolean
+  /** Decides agenda linking (official only). Not shown as a tag, except Retro. */
   kind: MeetingKind
+  /** One occurrence of a repeating series in Google Calendar: tagged "Recurring". */
+  recurring: boolean
   /** Google Meet / video link, when the event has one. */
   joinUrl?: string
   /** The event in Google Calendar ("Details"). */
@@ -60,7 +63,7 @@ export class CalendarError extends Error {
 
 /** Only what normalization needs. Attendees, description, organizer are never requested. */
 const EVENT_FIELDS =
-  'items(id,status,summary,start,end,hangoutLink,conferenceData/entryPoints,location,htmlLink),nextPageToken'
+  'items(id,status,recurringEventId,summary,start,end,hangoutLink,conferenceData/entryPoints,location,htmlLink),nextPageToken'
 
 interface RawEventTime {
   date?: string
@@ -71,6 +74,8 @@ interface RawEventTime {
 export interface RawEvent {
   id?: string
   status?: string
+  /** Set on each occurrence of a recurring event (with singleEvents=true). */
+  recurringEventId?: string
   summary?: string
   start?: RawEventTime
   end?: RawEventTime
@@ -127,6 +132,7 @@ export function normalizeEvent(event: RawEvent): Meeting | null {
     end,
     allDay,
     kind: classifyMeeting(title),
+    recurring: Boolean(event.recurringEventId),
     htmlLink: httpsUrl(event.htmlLink) ?? 'https://calendar.google.com/calendar/',
   }
   const joinUrl = joinUrlOf(event)

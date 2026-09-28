@@ -11,22 +11,24 @@ import {
   type MeetingsWidget as MeetingsData,
 } from '../../lib/dashboard'
 import { useFeed } from '../../lib/drive'
-import { joinAgendas, type JoinedMeeting, type MeetingKind } from '../../lib/meetings'
+import { joinAgendas, type JoinedMeeting, type Meeting } from '../../lib/meetings'
 import EmptyState from '../EmptyState'
 import ExternalLinkLabel from '../ExternalLinkLabel'
 import Skeleton from '../Skeleton'
 import { FOOTER_LINK, WidgetBody, WidgetCard } from './Widget'
 
-const KIND_LABELS: Record<MeetingKind, string> = {
-  official: 'Official',
-  retro: 'Retro',
-  adhoc: 'Ad hoc',
-}
-
-const KIND_STYLES: Record<MeetingKind, string> = {
-  official: 'bg-status-orange-bg text-status-orange-text',
-  retro: 'bg-status-purple-bg text-status-purple-text',
-  adhoc: 'bg-status-gray-bg text-status-gray-text',
+/**
+ * The meeting's tag: "Retro" for retros, "Recurring" for any other event that's part of a
+ * repeating series in Google Calendar, and none for one-off events.
+ */
+function meetingTag(meeting: Meeting): { label: string; className: string } | null {
+  if (meeting.kind === 'retro') {
+    return { label: 'Retro', className: 'bg-status-purple-bg text-status-purple-text' }
+  }
+  if (meeting.recurring) {
+    return { label: 'Recurring', className: 'bg-status-blue-bg text-status-blue-text' }
+  }
+  return null
 }
 
 export default function MeetingsWidget({ query, now }: { query: DashboardQuery; now: Date }) {
@@ -104,6 +106,7 @@ function MeetingList({ data, now }: { data: MeetingsData; now: Date }) {
 function MeetingRow({ meeting, next, now }: { meeting: JoinedMeeting; next: boolean; now: Date }) {
   const live = isHappeningNow(meeting, now)
   const day = meetingDayLabel(meeting, now)
+  const tag = meetingTag(meeting)
   return (
     <li className={`flex gap-4 rounded-xl p-3 ${next ? 'bg-cream ring-1 ring-apricot/60' : ''}`}>
       <div className="w-28 shrink-0 text-sm">
@@ -123,12 +126,11 @@ function MeetingRow({ meeting, next, now }: { meeting: JoinedMeeting; next: bool
           ) : (
             next && <span className="text-xs font-semibold text-ember">Next up</span>
           )}
-          <span
-            className={`rounded-full px-2 py-0.5 text-xs font-medium ${KIND_STYLES[meeting.kind]}`}
-          >
-            <span className="sr-only">Kind: </span>
-            {KIND_LABELS[meeting.kind]}
-          </span>
+          {tag && (
+            <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${tag.className}`}>
+              {tag.label}
+            </span>
+          )}
         </div>
         <a
           href={meeting.htmlLink}

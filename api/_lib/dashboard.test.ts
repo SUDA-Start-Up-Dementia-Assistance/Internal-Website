@@ -46,6 +46,7 @@ function meeting(id: string, start: string, end: string): Meeting {
     end,
     allDay: false,
     kind: 'adhoc',
+    recurring: false,
     htmlLink: 'https://calendar.google.com/',
   }
 }

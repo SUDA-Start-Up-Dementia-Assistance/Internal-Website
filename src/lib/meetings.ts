@@ -23,7 +23,10 @@ export interface Meeting {
   /** Timed: an ISO instant. All-day: "YYYY-MM-DD", exclusive. */
   end: string
   allDay: boolean
+  /** Decides agenda linking (official only). Not shown as a tag, except Retro. */
   kind: MeetingKind
+  /** One occurrence of a repeating series in Google Calendar: tagged "Recurring". */
+  recurring: boolean
   joinUrl?: string
   /** The event in Google Calendar ("Details"). */
   htmlLink: string

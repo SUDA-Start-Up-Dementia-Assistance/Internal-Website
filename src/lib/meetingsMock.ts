@@ -27,6 +27,8 @@ function timed(
     end: zonedInstant(dateKey, endHour, endMinute).toISOString(),
     allDay: false,
     kind,
+    // The team meetings and retros repeat; the ad hoc pairing session is a one-off.
+    recurring: kind !== 'adhoc',
     htmlLink: CALENDAR,
     ...(joinUrl && { joinUrl }),
   }

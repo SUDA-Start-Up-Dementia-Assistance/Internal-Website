@@ -28,6 +28,7 @@ function meeting(start: string, end: string, kind: Meeting['kind'] = 'official')
     end,
     allDay: false,
     kind,
+    recurring: false,
     htmlLink: 'https://calendar.google.com/',
   }
 }

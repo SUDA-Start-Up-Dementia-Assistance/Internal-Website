@@ -244,10 +244,14 @@ GitHub Project; the site reads and writes them through GitHub's API.
 - Always call events.list with singleEvents=true, orderBy=startTime,
   timeZone=America/New_York so Google expands recurrences and applies cancellations.
 - Normalize each event to Meeting { id, title, start, end, allDay, kind:
-  "official" | "retro" | "adhoc", joinUrl?, htmlLink }. kind: title contains
+  "official" | "retro" | "adhoc", recurring, joinUrl?, htmlLink }. kind: title contains
   OFFICIAL_MEETING_KEYWORD ("Team Meeting") → official; contains RETRO_KEYWORD ("Retro")
   → retro; else adhoc (keywords in src/config/meetings.ts, case-insensitive).
+  recurring = the event has a recurringEventId (part of a repeating series).
   joinUrl from hangoutLink / conferenceData / a URL in location.
+- Meeting tags in the UI: "Retro" for retros, "Recurring" for any other recurring event,
+  no tag for one-off events. kind is never shown as "Official"/"Ad hoc"; it only decides
+  agenda linking.
 - NEVER return attendee emails, descriptions, or organizer info to the client (they can
   contain private notes/links). "Details" links to htmlLink in Google Calendar.
 - Only official meetings are joined to the Agendas feed item with the same date

@@ -25,6 +25,7 @@ function meeting(start: Date, end: Date, fields: Partial<Meeting> = {}): Meeting
     end: end.toISOString(),
     allDay: false,
     kind: 'official',
+    recurring: false,
     htmlLink: 'https://calendar.google.com/',
     ...fields,
   }

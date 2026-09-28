@@ -52,6 +52,7 @@ describe('normalizeEvent', () => {
       end: '2026-09-29T18:15:00-04:00',
       allDay: false,
       kind: 'official',
+      recurring: false,
       htmlLink: LINK,
     })
   })
@@ -85,8 +86,21 @@ describe('normalizeEvent', () => {
       end: '2026-09-29T18:15:00-04:00',
       allDay: false,
       kind: 'official',
+      recurring: true,
       htmlLink: LINK,
     })
+  })
+
+  it('marks recurring by the series, not the title', () => {
+    const sponsor = normalizeEvent({
+      id: 'sponsor1_20260929T190000Z',
+      recurringEventId: 'sponsor1',
+      summary: 'Sponsor check-in with Gerry',
+      start: { dateTime: '2026-09-29T15:00:00-04:00' },
+      end: { dateTime: '2026-09-29T15:30:00-04:00' },
+      htmlLink: LINK,
+    })
+    expect(sponsor).toMatchObject({ kind: 'adhoc', recurring: true })
   })
 
   it('drops a cancelled occurrence', () => {
@@ -157,7 +171,7 @@ describe('normalizeEvent', () => {
     }
     const meeting = normalizeEvent(raw as RawEvent)
     expect(Object.keys(meeting!).sort()).toEqual(
-      ['allDay', 'end', 'htmlLink', 'id', 'kind', 'start', 'title'].sort(),
+      ['allDay', 'end', 'htmlLink', 'id', 'kind', 'recurring', 'start', 'title'].sort(),
     )
     const json = JSON.stringify(meeting)
     for (const secret of [
