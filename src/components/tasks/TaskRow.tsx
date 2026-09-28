@@ -18,9 +18,12 @@ import { saveWithToast } from './saveTask'
 import StatusSelect from './StatusSelect'
 
 const BADGE = 'inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium'
-/** A compact native control that looks like a badge until you use it. */
+/**
+ * A compact native control that looks like a badge until you use it. min-h-6 keeps it at
+ * least 24px tall (WCAG 2.5.8 target size), which matters on phones.
+ */
 const PILL =
-  'rounded-full border border-night/15 bg-surface py-0.5 text-xs font-medium text-dusk hover:border-night/30'
+  'min-h-6 rounded-full border border-night/15 bg-surface py-0.5 text-xs font-medium text-dusk hover:border-night/30'
 
 /** "Done by Tue, Sep 29", in ember with "overdue" when it has passed. */
 export function DoneByLabel({ task, today }: { task: Task; today?: Date }) {
@@ -274,7 +277,7 @@ function TaskTitle({
           finished.current = false
           setEditing(true)
         }}
-        className="ml-1.5 inline-flex rounded-full p-1 align-middle text-dusk opacity-60 group-hover:opacity-100 hover:bg-night/5 hover:text-ember focus-visible:opacity-100"
+        className="ml-1.5 inline-flex size-6 items-center justify-center rounded-full align-middle text-dusk opacity-80 group-hover:opacity-100 hover:bg-night/5 hover:text-ember focus-visible:opacity-100"
       >
         <Pencil aria-hidden="true" className="size-3.5" />
         <span className="sr-only">Rename “{task.title}”</span>

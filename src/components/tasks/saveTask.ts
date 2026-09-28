@@ -1,8 +1,9 @@
-import { TASKS_MOCK } from '../../config/tasks'
 import { saveTaskEdit, TasksError, type TaskPatch } from '../../lib/tasks'
+import { isSampleMode } from '../../lib/sampleMode'
 import { showToast } from '../../lib/toast'
 
-export const SAVED_MESSAGE = TASKS_MOCK ? 'Saved (mock data, not GitHub)' : 'Saved to GitHub'
+export const savedMessage = () =>
+  isSampleMode() ? 'Saved (sample data, not GitHub)' : 'Saved to GitHub'
 
 /** "Priority, Estimate" → "Priority and Estimate". */
 export function listNames(names: string[]): string {
@@ -21,7 +22,7 @@ export async function saveWithToast(itemId: string, patch: TaskPatch, what: stri
     if (failed.length > 0) {
       showToast('error', `Saved, but GitHub didn't accept ${listNames(failed)}. Try that again.`)
     } else {
-      showToast('success', SAVED_MESSAGE)
+      showToast('success', savedMessage())
     }
   } catch (err) {
     const reason = err instanceof TasksError ? err.message : 'Something went wrong.'

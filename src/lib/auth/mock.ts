@@ -1,8 +1,8 @@
 import type { AuthUser } from './types'
 
-/** The fake signed-in user for VITE_TASKS_MOCK=true. */
+/** The fake signed-in user for sample data (VITE_TASKS_MOCK=true, or a preview deployment). */
 export const MOCK_USER: AuthUser = {
-  login: 'mock-teammate',
-  name: 'Mock Teammate',
+  login: 'sample-teammate',
+  name: 'Sample Teammate',
   avatarUrl: '',
 }

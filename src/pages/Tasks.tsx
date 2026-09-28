@@ -4,7 +4,7 @@ import PageTitle from '../components/PageTitle'
 import Skeleton from '../components/Skeleton'
 import SignInPanel from '../components/tasks/SignInPanel'
 import TasksView from '../components/tasks/TasksView'
-import { useAuth } from '../lib/auth'
+import { SESSION_EXPIRED_MESSAGE, useAuth } from '../lib/auth'
 
 const ERROR_MESSAGES: Record<string, string> = {
   'not-a-member':
@@ -13,9 +13,9 @@ const ERROR_MESSAGES: Record<string, string> = {
 }
 
 export default function Tasks() {
-  const { user, loading } = useAuth()
+  const { user, loading, sessionExpired } = useAuth()
   const [params] = useSearchParams()
-  const error = ERROR_MESSAGES[params.get('error') ?? '']
+  const error = sessionExpired ? SESSION_EXPIRED_MESSAGE : ERROR_MESSAGES[params.get('error') ?? '']
 
   return (
     <div className="mx-auto max-w-5xl px-6 py-12 sm:py-16">

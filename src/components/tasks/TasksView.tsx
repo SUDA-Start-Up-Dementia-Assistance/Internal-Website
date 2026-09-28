@@ -17,12 +17,12 @@ import LoadingState from '../LoadingState'
 import Skeleton from '../Skeleton'
 import MyTasks from './MyTasks'
 import NewTaskDialog from './NewTaskDialog'
-import { listNames, SAVED_MESSAGE } from './saveTask'
+import PreviewBanner from './PreviewBanner'
+import { listNames, savedMessage } from './saveTask'
 import SignInPanel from './SignInPanel'
 import SprintView from './sprint/SprintView'
 import TaskFilters from './TaskFilters'
 import TeamTasks from './TeamTasks'
-import Toaster from '../Toaster'
 
 const TABS = [
   { id: 'mine', label: 'My tasks' },
@@ -39,6 +39,7 @@ export default function TasksView({ login }: { login: string }) {
   const tab: TabId = TABS.find((t) => t.id === params.get('tab'))?.id ?? 'mine'
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS)
   const [creating, setCreating] = useState(false)
+  const newTaskButton = useRef<HTMLButtonElement>(null)
   const ready = Boolean(data)
 
   function selectTab(id: TabId) {
@@ -91,12 +92,13 @@ export default function TasksView({ login }: { login: string }) {
         (tab !== 'mine' || selectMine([task], login).length > 0))
     showToast(
       'success',
-      visible ? SAVED_MESSAGE : `${SAVED_MESSAGE}. The current filters or tab hide the new task.`,
+      visible ? savedMessage() : `${savedMessage()}. The current filters or tab hide the new task.`,
     )
   }
 
   return (
     <div className="space-y-8">
+      <PreviewBanner />
       {/* <HiddenItemsNotice count={hiddenCount} /> */}
       {/* <UnscheduledNotice
         tasks={selectSprintBacklogWithoutIteration(tasks)}
@@ -105,6 +107,7 @@ export default function TasksView({ login }: { login: string }) {
       <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-3 border-b border-night/10">
         <Tabs selected={tab} onSelect={selectTab} />
         <button
+          ref={newTaskButton}
           type="button"
           onClick={() => setCreating(true)}
           aria-keyshortcuts="n"
@@ -127,9 +130,9 @@ export default function TasksView({ login }: { login: string }) {
           login={login}
           onClose={() => setCreating(false)}
           onCreated={onCreated}
+          fallbackFocus={newTaskButton}
         />
       )}
-      <Toaster />
 
       <div
         id={`panel-${tab}`}

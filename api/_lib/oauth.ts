@@ -20,6 +20,9 @@ export function sanitizeReturnTo(value: unknown): string {
     const base = 'https://site.invalid'
     const url = new URL(raw, base)
     if (url.origin !== base) return DEFAULT_RETURN_TO
+    // Dot segments collapse during parsing ("/.//evil.com" → "//evil.com"), so the
+    // normalized path gets the same check as the raw one.
+    if (url.pathname.startsWith('//')) return DEFAULT_RETURN_TO
     return `${url.pathname}${url.search}${url.hash}`
   } catch {
     return DEFAULT_RETURN_TO

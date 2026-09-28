@@ -13,6 +13,8 @@ function renderNavbar(auth: Partial<AuthState>) {
     user: null,
     loading: false,
     authAvailable: true,
+    preview: false,
+    sessionExpired: false,
     signIn: vi.fn(),
     signOut: vi.fn(),
     ...auth,

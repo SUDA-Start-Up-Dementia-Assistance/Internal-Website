@@ -25,6 +25,11 @@ describe('sanitizeReturnTo', () => {
     '/tasks\r\nSet-Cookie: x=1',
     '/\tevil',
     '/' + 'a'.repeat(600),
+    // Dot segments that normalize into a protocol-relative "//host" URL.
+    '/.//evil.example',
+    '/%2e//evil.example',
+    '/a/..//evil.example',
+    '/..//evil.example',
   ])('rejects %j', (input) => {
     expect(sanitizeReturnTo(input)).toBe('/tasks')
   })

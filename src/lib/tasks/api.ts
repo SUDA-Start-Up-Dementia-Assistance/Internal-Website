@@ -1,3 +1,4 @@
+import { reportSessionExpired } from '../auth/sessionEvents'
 import type { NewTaskRequest, TaskPatch, TasksResponse, WriteResult } from './types'
 
 /** A failed /api/tasks call, carrying the server's { code, message }. */
@@ -49,7 +50,10 @@ export async function request<T>(
   const body = (await res.json()) as unknown
   if (!res.ok || !isValid(body)) {
     const error = (body as ErrorBody | null)?.error
-    throw new TasksError(error?.code ?? 'unknown', error?.message ?? fallbackMessage)
+    const failure = new TasksError(error?.code ?? 'unknown', error?.message ?? fallbackMessage)
+    // The server has already dropped the cookie; sign the user out everywhere.
+    if (failure.needsSignIn) reportSessionExpired()
+    throw failure
   }
   return body as T
 }

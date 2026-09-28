@@ -289,6 +289,27 @@ describe('PATCH /api/tasks/:itemId', () => {
     expect(res.statusCode).toBe(403)
   })
 
+  it('requires a session, before touching GitHub', async () => {
+    const { fetchMock } = stubGitHub()
+    const res = await call({
+      method: 'PATCH',
+      itemId: 'PVTI_new',
+      body: { doneBy: null },
+      signedIn: false,
+    })
+    expect(res.statusCode).toBe(401)
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
+  it('rejects unknown keys and wrongly typed values with 400', async () => {
+    stubGitHub()
+    for (const body of [{ labels: ['x'] }, { estimateHours: '3' }, { title: 42 }, ['a']]) {
+      const res = await call({ method: 'PATCH', itemId: 'PVTI_new', body })
+      expect(res.statusCode).toBe(400)
+      expect(res.body).toMatchObject({ error: { code: 'invalid-input' } })
+    }
+  })
+
   it('rejects a malformed item id and an empty patch with 400', async () => {
     stubGitHub()
     expect(

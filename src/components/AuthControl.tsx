@@ -30,7 +30,7 @@ export default function AuthControl() {
 
 /** Disclosure menu (like the mobile nav): Esc and outside clicks close it, focus returns. */
 function UserMenu({ user }: { user: AuthUser }) {
-  const { signOut } = useAuth()
+  const { signOut, preview } = useAuth()
   const [open, setOpen] = useState(false)
   const buttonRef = useRef<HTMLButtonElement>(null)
   const panelRef = useRef<HTMLDivElement>(null)
@@ -100,16 +100,20 @@ function UserMenu({ user }: { user: AuthUser }) {
                 My tasks
               </Link>
             </li>
-            <li>
-              <button
-                type="button"
-                onClick={signOut}
-                className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm hover:bg-night/5"
-              >
-                <LogOut aria-hidden="true" className="size-4 text-dusk" />
-                Sign out
-              </button>
-            </li>
+            {preview ? (
+              <li className="px-3 py-2 text-sm text-dusk">Preview: sample data, no sign-in</li>
+            ) : (
+              <li>
+                <button
+                  type="button"
+                  onClick={signOut}
+                  className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm hover:bg-night/5"
+                >
+                  <LogOut aria-hidden="true" className="size-4 text-dusk" />
+                  Sign out
+                </button>
+              </li>
+            )}
           </ul>
         </div>
       )}

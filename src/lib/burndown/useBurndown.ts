@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useState } from 'react'
-import { TASKS_MOCK } from '../../config/tasks'
+import { isSampleMode } from '../sampleMode'
 import { TasksError } from '../tasks/api'
 import { fetchBurndown } from './api'
 import { mockBurndown } from './mock'
 import type { BurndownResponse } from './types'
 
-const load = TASKS_MOCK ? mockBurndown : fetchBurndown
+const load = (iterationId: string | undefined) =>
+  isSampleMode() ? mockBurndown(iterationId) : fetchBurndown(iterationId)
 
 export interface BurndownQuery {
   /** The last loaded response; kept while a different sprint loads. */

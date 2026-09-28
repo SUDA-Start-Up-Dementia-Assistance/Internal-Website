@@ -497,7 +497,7 @@ function DataTable({
   const unitName = UNIT_LABELS[unit].many
   return (
     <table className="sr-only">
-      <caption>
+      <caption className="sr-only">
         {title} data, in {unitName}
       </caption>
       <thead>

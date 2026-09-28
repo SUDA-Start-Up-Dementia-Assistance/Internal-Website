@@ -27,7 +27,9 @@ export default function SignInPanel({ error }: { error?: string }) {
           Sign in with GitHub
         </button>
       ) : (
-        <p className="mt-4 text-dusk">Sign-in isn&apos;t available on this version of the site.</p>
+        <p className="mt-4 text-dusk">
+          Sign-in isn&apos;t available right now. Please try again in a few minutes.
+        </p>
       )}
     </div>
   )

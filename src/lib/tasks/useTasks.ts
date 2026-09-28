@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useSyncExternalStore } from 'react'
-import { TASKS_MOCK } from '../../config/tasks'
+import { isSampleMode } from '../sampleMode'
 import { fetchTasks, TasksError } from './api'
 import { createMockTasks } from './mock'
 import type { TasksResponse } from './types'
@@ -56,8 +56,9 @@ function isStale(now = Date.now()): boolean {
   return !snapshot.data || now - snapshot.fetchedAt > STALE_AFTER_MS
 }
 
-// Mock writes only live in memory, so a mock "refetch" keeps them.
-const load = TASKS_MOCK ? () => Promise.resolve(snapshot.data ?? createMockTasks()) : fetchTasks
+// Sample-data writes only live in memory, so a sample "refetch" keeps them.
+const load = () =>
+  isSampleMode() ? Promise.resolve(snapshot.data ?? createMockTasks()) : fetchTasks()
 
 /** Fetches (or joins the request already in flight). Never rejects: errors land in state. */
 export function loadTasks(): Promise<void> {

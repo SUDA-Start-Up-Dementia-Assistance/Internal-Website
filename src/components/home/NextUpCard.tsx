@@ -1,6 +1,7 @@
 import { ArrowRight, ListTodo } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../../lib/auth'
+import { isSampleMode } from '../../lib/sampleMode'
 import { selectNextUp, useTasks, type TasksQuery } from '../../lib/tasks'
 import Card from '../Card'
 import EmptyState from '../EmptyState'
@@ -47,6 +48,7 @@ function NextUpBody({ tasks, login }: { tasks: TasksQuery; login: string }) {
   const next = selectNextUp(tasks.data.tasks, login)
   return (
     <>
+      {isSampleMode() && <p className="mb-3 text-sm text-dusk">Preview: sample data</p>}
       {next.length === 0 ? (
         <EmptyState>Nothing open is assigned to you. Enjoy the calm.</EmptyState>
       ) : (

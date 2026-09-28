@@ -27,7 +27,8 @@ function read(name: string): string | undefined {
 export function getAuthConfig(): AuthConfig | null {
   const clientId = read('GITHUB_CLIENT_ID')
   const clientSecret = read('GITHUB_CLIENT_SECRET')
-  if (!clientId && !clientSecret) return null
+  // Previews may run without sign-in (the site then shows sample tasks); production may not.
+  if (!clientId && !clientSecret && process.env.VERCEL_ENV !== 'production') return null
 
   const values = {
     GITHUB_CLIENT_ID: clientId,

@@ -13,6 +13,8 @@ function renderNotice(count: number) {
     user: { login: 'ada', name: 'Ada', avatarUrl: '' },
     loading: false,
     authAvailable: true,
+    preview: false,
+    sessionExpired: false,
     signIn,
     signOut: vi.fn(),
   }

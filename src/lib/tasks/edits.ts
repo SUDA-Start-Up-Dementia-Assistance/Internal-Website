@@ -1,4 +1,4 @@
-import { TASKS_MOCK } from '../../config/tasks'
+import { isSampleMode } from '../sampleMode'
 import { createTask, TasksError, updateTask } from './api'
 import type {
   NewTaskRequest,
@@ -104,7 +104,7 @@ function track(itemId: string, change: TaskChange): () => void {
 let mockCount = 0
 const mockDelay = () => new Promise((resolve) => setTimeout(resolve, 250))
 
-/** VITE_TASKS_MOCK: writes only change the in-memory data. */
+/** Sample data (VITE_TASKS_MOCK or a preview): writes only change the in-memory data. */
 const mockWrites = {
   async create(input: NewTaskRequest): Promise<WriteResult> {
     await mockDelay()
@@ -139,7 +139,8 @@ const mockWrites = {
   },
 }
 
-const writes = TASKS_MOCK ? mockWrites : { create: createTask, update: updateTask }
+const apiWrites = { create: createTask, update: updateTask }
+const writes = () => (isSampleMode() ? mockWrites : apiWrites)
 
 /**
  * Saves an edit optimistically. Resolves with the names of any changes GitHub rejected
@@ -161,7 +162,7 @@ export async function saveTaskEdit(itemId: string, patch: TaskPatch): Promise<st
 
   let result: WriteResult
   try {
-    result = await writes.update(itemId, patch)
+    result = await writes().update(itemId, patch)
   } catch (err) {
     untrack()
     mutateTasks((d) => withTask(d, itemId, (t) => revertChange(t, change, before)))
@@ -185,7 +186,7 @@ export async function saveTaskEdit(itemId: string, patch: TaskPatch): Promise<st
 
 /** Creates an issue (added to the project) and adds it to the cached list. */
 export async function createNewTask(input: NewTaskRequest): Promise<WriteResult> {
-  const result = await writes.create(input)
+  const result = await writes().create(input)
   const task = result.task
   if (task) mutateTasks((d) => ({ ...d, tasks: [task, ...d.tasks] }))
   else void loadTasks()

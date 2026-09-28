@@ -139,6 +139,35 @@ describe('/api/auth/callback', () => {
     expect(cookies(res).some((c) => c.startsWith('dawn_oauth_state=;'))).toBe(true) // single-use
   })
 
+  it('sets a production session cookie: HttpOnly, Secure, SameSite=Lax, Path=/, 7 days', async () => {
+    stubGitHub('active')
+    const res = await call('callback', {
+      query: { state: 'the-state', code: 'abc' },
+      cookies: await stateCookie(),
+      headers: { host: 'dawn.vercel.app', 'x-forwarded-proto': 'https' },
+    })
+    const cookie = cookies(res).find((c) => c.startsWith('dawn_session=') && c.length > 20)!
+    const flags = cookie.split('; ').slice(1)
+    expect(flags).toEqual(
+      expect.arrayContaining(['HttpOnly', 'Secure', 'SameSite=Lax', 'Path=/', 'Max-Age=604800']),
+    )
+    expect(cookie).not.toContain('gho_test') // encrypted, not just encoded
+  })
+
+  it.each(['/.//evil.example', '//evil.example', 'https://evil.example'])(
+    'never redirects off-site after sign-in (returnTo=%j)',
+    async (returnTo) => {
+      stubGitHub('active')
+      const login = await call('login', { query: { returnTo } })
+      const state = new URL(String(login.headers.location)).searchParams.get('state')!
+      const res = await call('callback', {
+        query: { state, code: 'abc' },
+        cookies: { dawn_oauth_state: cookieValue(login, 'dawn_oauth_state')! },
+      })
+      expect(res.headers.location).toBe('/tasks')
+    },
+  )
+
   it('rejects a state mismatch before contacting GitHub', async () => {
     const fetchMock = stubGitHub('active')
     const res = await call('callback', {
@@ -200,11 +229,44 @@ describe('/api/auth/me', () => {
     expect(cookies(res).some((c) => c.startsWith('dawn_session=;'))).toBe(true)
   })
 
+  it('rejects a tampered session cookie (one flipped character) and clears it', async () => {
+    const value = await encryptSession(
+      { token: 'gho_secret', user: { login: 'octocat', name: 'Octo', avatarUrl: '' } },
+      SECRET,
+    )
+    // Flip a character inside the ciphertext segment of the compact JWE.
+    const parts = value.split('.')
+    const c = parts[3]
+    parts[3] = c.slice(0, 5) + (c[5] === 'A' ? 'B' : 'A') + c.slice(6)
+    const res = await call('me', { cookies: { dawn_session: parts.join('.') } })
+    expect(res.body).toEqual({ user: null, authAvailable: true })
+    expect(cookies(res).some((c) => c.startsWith('dawn_session=;'))).toBe(true)
+  })
+
+  it('rejects a session sealed with a different secret', async () => {
+    const value = await encryptSession(
+      { token: 'gho_secret', user: { login: 'octocat', name: 'Octo', avatarUrl: '' } },
+      'another-secret-that-is-also-32-characters!',
+    )
+    const res = await call('me', { cookies: { dawn_session: value } })
+    expect(res.body).toEqual({ user: null, authAvailable: true })
+  })
+
   it('reports auth unavailable when OAuth env vars are missing', async () => {
     vi.stubEnv('GITHUB_CLIENT_ID', '')
     vi.stubEnv('GITHUB_CLIENT_SECRET', '')
     const res = await call('me')
     expect(res.body).toEqual({ user: null, authAvailable: false })
+  })
+
+  it('treats missing OAuth env vars as a misconfiguration in production', async () => {
+    vi.stubEnv('VERCEL_ENV', 'production')
+    vi.stubEnv('GITHUB_CLIENT_ID', '')
+    vi.stubEnv('GITHUB_CLIENT_SECRET', '')
+    const res = await call('me')
+    expect(res.statusCode).toBe(500)
+    expect(res.body).toMatchObject({ error: { code: 'server-misconfigured' } })
+    expect(JSON.stringify(res.body)).toContain('GITHUB_CLIENT_ID')
   })
 
   it('names missing variables when the setup is partial', async () => {

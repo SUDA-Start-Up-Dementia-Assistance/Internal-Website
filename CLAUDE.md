@@ -138,6 +138,12 @@ GitHub Project; the site reads and writes them through GitHub's API.
   (America/New_York), never as UTC midnight. Overdue = Estimated done date before today and not Done.
 - Frontend mock: when VITE_TASKS_MOCK=true, the Tasks UI uses src/lib/tasks/mock.ts and
   a fake signed-in user, and writes only update in-memory state. Never used in production.
+- Preview mode: when /api/auth/me says authAvailable: false (a preview deployment without
+  OAuth vars), the Tasks UI runs on the same sample data (src/lib/sampleMode.ts) under a
+  "Preview: sample data" banner. A failing /api is NOT a preview. On VERCEL_ENV=production,
+  missing OAuth vars are a config error, so production can never show sample data.
+- An expired/revoked session (401 session-expired or unauthenticated from any /api call)
+  signs the user out app-wide (src/lib/auth/sessionEvents.ts) with a friendly message.
 
 ## Burndown (built in Prompt 11)
 - Snapshots are VIEW-TRIGGERED: there is no scheduled job and no server-owned GitHub

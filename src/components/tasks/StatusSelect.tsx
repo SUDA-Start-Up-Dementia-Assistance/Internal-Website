@@ -33,7 +33,7 @@ export default function StatusSelect({
   const tokens = tokensForStatusColor(selected?.color)
   const pill = variant === 'pill'
   const box = pill
-    ? `rounded-full py-0.5 pr-7 pl-6 text-xs font-medium ${tokens.bg} ${tokens.text}`
+    ? `min-h-6 rounded-full py-0.5 pr-7 pl-6 text-xs font-medium ${tokens.bg} ${tokens.text}`
     : 'w-full rounded-xl border border-night/15 bg-surface py-2 pr-8 pl-8 text-sm text-night'
 
   return (

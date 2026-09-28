@@ -1,5 +1,13 @@
 import { ChevronRight, CircleAlert, X } from 'lucide-react'
-import { useEffect, useId, useRef, useState, type FormEvent, type ReactNode } from 'react'
+import {
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type FormEvent,
+  type ReactNode,
+  type RefObject,
+} from 'react'
 import {
   createNewTask,
   TasksError,
@@ -28,6 +36,8 @@ interface NewTaskDialogProps {
   onClose: () => void
   /** The issue was created and added (task is null if the server couldn't read it back). */
   onCreated: (task: Task | null, failedFields: string[]) => void
+  /** Where focus goes on close if nothing had focus when it opened (the "n" shortcut). */
+  fallbackFocus?: RefObject<HTMLElement | null>
 }
 
 const byName = (options: Option[] | undefined, name: string) =>
@@ -47,6 +57,7 @@ export default function NewTaskDialog({
   login,
   onClose,
   onCreated,
+  fallbackFocus,
 }: NewTaskDialogProps) {
   const ref = useRef<HTMLDialogElement>(null)
   const titleRef = useRef<HTMLInputElement>(null)
@@ -89,15 +100,21 @@ export default function NewTaskDialog({
 
   useEffect(() => {
     const dialog = ref.current
-    const returnFocus =
-      document.activeElement instanceof HTMLElement ? document.activeElement : null
+    const active = document.activeElement
+    // Not body (the "n" shortcut) and not inside the dialog (StrictMode's second effect run
+    // happens after the title took focus): fall back to the New task button then.
+    const opener =
+      active instanceof HTMLElement && active !== document.body && !dialog?.contains(active)
+        ? active
+        : null
+    const returnFocus = opener ?? fallbackFocus?.current
     if (dialog && !dialog.open) {
       dialog.showModal()
       titleRef.current?.focus()
     }
     // As in PreviewPanel: unmounting ends the modal state; don't call close() here.
     return () => returnFocus?.focus()
-  }, [])
+  }, [fallbackFocus])
 
   function validate(): boolean {
     const trimmed = title.trim()
