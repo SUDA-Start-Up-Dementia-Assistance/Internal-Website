@@ -55,15 +55,15 @@ function chartSeries(
         key: 'scope',
         label: 'Scope',
         values: byDay.map((d) => d?.scope ?? null),
-        stroke: 'stroke-night',
-        fill: 'fill-night',
+        stroke: 'stroke-ink',
+        fill: 'fill-ink',
       },
       {
         key: 'done',
         label: 'Done',
         values: byDay.map((d) => d?.done ?? null),
-        stroke: 'stroke-apricot',
-        fill: 'fill-apricot',
+        stroke: 'stroke-accent',
+        fill: 'fill-accent',
       },
     ]
   }
@@ -74,8 +74,8 @@ function chartSeries(
             key: 'ideal',
             label: 'Ideal',
             values: ideal,
-            stroke: 'stroke-dusk',
-            fill: 'fill-dusk',
+            stroke: 'stroke-ink-muted',
+            fill: 'fill-ink-muted',
             dashed: true,
             reference: true,
           },
@@ -85,8 +85,8 @@ function chartSeries(
       key: 'remaining',
       label: 'Remaining',
       values: byDay.map((d) => d?.remaining ?? null),
-      stroke: 'stroke-ember',
-      fill: 'fill-ember',
+      stroke: 'stroke-link',
+      fill: 'fill-link',
     },
   ]
 }
@@ -203,7 +203,7 @@ export default function BurndownChart({
             y={MARGIN.top - 14}
             textAnchor="end"
             aria-hidden="true"
-            className="fill-dusk text-[11px] font-medium"
+            className="fill-ink-muted text-[11px] font-medium"
           >
             {unitLabel.many[0].toUpperCase() + unitLabel.many.slice(1)}
           </text>
@@ -217,7 +217,7 @@ export default function BurndownChart({
                   x2={width - MARGIN.right}
                   y1={y(t)}
                   y2={y(t)}
-                  className="stroke-night/10"
+                  className="stroke-border"
                   strokeWidth={1}
                   shapeRendering="crispEdges"
                 />
@@ -226,7 +226,7 @@ export default function BurndownChart({
                   y={y(t)}
                   dy="0.32em"
                   textAnchor="end"
-                  className="fill-dusk text-[11px] tabular-nums"
+                  className="fill-ink-muted text-[11px] tabular-nums"
                 >
                   {t}
                 </text>
@@ -239,7 +239,7 @@ export default function BurndownChart({
                   x={x(i)}
                   y={HEIGHT - MARGIN.bottom + 18}
                   textAnchor={i === 0 ? 'start' : i === dates.length - 1 ? 'end' : 'middle'}
-                  className="fill-dusk text-[11px]"
+                  className="fill-ink-muted text-[11px]"
                 >
                   {formatAxisDate(date)}
                 </text>
@@ -255,7 +255,7 @@ export default function BurndownChart({
               x2={x(tooltipIndex)}
               y1={MARGIN.top}
               y2={MARGIN.top + plotH}
-              className="stroke-night/20"
+              className="stroke-ink/20"
               strokeWidth={1}
               shapeRendering="crispEdges"
             />
@@ -311,7 +311,7 @@ export default function BurndownChart({
                 x={x(liveIndex)}
                 y={y(primary.values[liveIndex]!) - 12}
                 textAnchor="middle"
-                className="fill-night text-[11px] font-medium"
+                className="fill-ink text-[11px] font-medium"
               >
                 Today
               </text>
@@ -327,7 +327,7 @@ export default function BurndownChart({
                   x={x(l.i) + 10}
                   y={l.py}
                   dy="0.32em"
-                  className="fill-night text-xs font-semibold tabular-nums"
+                  className="fill-ink text-xs font-semibold tabular-nums"
                 >
                   {Number.isInteger(l.value) ? l.value : l.value.toFixed(1)}
                 </text>
@@ -371,7 +371,7 @@ export default function BurndownChart({
                       r={9}
                       fill="none"
                       strokeWidth={2}
-                      className="stroke-ember"
+                      className="stroke-link"
                     />
                   )}
                 </g>
@@ -457,9 +457,9 @@ function Tooltip({
     <div
       aria-hidden="true"
       style={{ left }}
-      className="pointer-events-none absolute top-0 w-40 -translate-x-1/2 rounded-xl bg-surface px-3 py-2 text-xs shadow-card ring-1 ring-night/10"
+      className="shadow-card pointer-events-none absolute top-0 w-40 -translate-x-1/2 rounded-xl bg-surface px-3 py-2 text-xs ring-1 ring-border"
     >
-      <p className="text-dusk">
+      <p className="text-ink-muted">
         {formatLongDate(date)}
         {live && ' · today'}
       </p>
@@ -467,13 +467,13 @@ function Tooltip({
         <p key={r.key} className="mt-1 flex items-center gap-2">
           <LineKey stroke={r.stroke} dashed={r.dashed} />
           {r.value === null || (!recorded && r.key !== 'ideal') ? (
-            <span className="text-dusk">Not recorded</span>
+            <span className="text-ink-muted">Not recorded</span>
           ) : (
-            <span className="font-semibold text-night tabular-nums">
+            <span className="font-semibold text-ink tabular-nums">
               {formatAmount(r.value, unit)}
             </span>
           )}
-          <span className="ml-auto text-dusk">{r.label}</span>
+          <span className="ml-auto text-ink-muted">{r.label}</span>
         </p>
       ))}
     </div>

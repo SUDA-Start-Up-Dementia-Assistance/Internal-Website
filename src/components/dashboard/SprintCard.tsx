@@ -56,12 +56,12 @@ function SprintBody({ sprint, now }: { sprint: SprintSummary; now: Date }) {
   return (
     <div>
       <p className="font-heading text-2xl font-semibold">{sprint.title}</p>
-      <p className="mt-1 text-sm text-dusk">
+      <p className="mt-1 text-sm text-ink-muted">
         {sprintEndLabel(sprint.endDate, sprint.daysLeft, now)}
       </p>
 
       <div className="mt-4">
-        <div className="flex justify-between text-xs text-dusk">
+        <div className="flex justify-between text-xs text-ink-muted">
           <span id={`${sprint.id}-progress`}>
             Day {progress.day} of {progress.totalDays}
           </span>
@@ -78,10 +78,10 @@ function SprintBody({ sprint, now }: { sprint: SprintSummary; now: Date }) {
           aria-valuemax={progress.totalDays}
           aria-valuenow={progress.day}
           aria-valuetext={`Day ${progress.day} of ${progress.totalDays}`}
-          className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-night/10"
+          className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-ink/10"
         >
           <div
-            className="h-full rounded-full bg-linear-to-r from-gold to-apricot"
+            className="h-full rounded-full bg-horizon"
             style={{ width: `${Math.round(progress.fraction * 100)}%` }}
           />
         </div>
@@ -131,7 +131,7 @@ function Sparkline({ sprint }: { sprint: SprintSummary }) {
           y1={y(first.scope)}
           x2={WIDTH - PAD}
           y2={y(0)}
-          className="stroke-lavender"
+          className="stroke-ink-muted"
           strokeWidth="1"
           strokeDasharray="3 3"
           vectorEffect="non-scaling-stroke"
@@ -139,14 +139,16 @@ function Sparkline({ sprint }: { sprint: SprintSummary }) {
         <polyline
           points={points.join(' ')}
           fill="none"
-          className="stroke-ember"
+          className="stroke-link"
           strokeWidth="2"
           strokeLinejoin="round"
           strokeLinecap="round"
           vectorEffect="non-scaling-stroke"
         />
       </svg>
-      <figcaption className="mt-1 text-xs text-dusk">Remaining hours (dashed: ideal)</figcaption>
+      <figcaption className="mt-1 text-xs text-ink-muted">
+        Remaining hours (dashed: ideal)
+      </figcaption>
     </figure>
   )
 }

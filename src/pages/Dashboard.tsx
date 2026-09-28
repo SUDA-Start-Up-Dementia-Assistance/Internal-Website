@@ -57,7 +57,7 @@ function SignedInDashboard({ user }: { user: AuthUser }) {
       <PreviewBanner />
       <DashboardHeader user={user} query={query} now={now} />
       {query.error ? (
-        <div className="rounded-2xl bg-surface p-6 shadow-card">
+        <div className="shadow-card rounded-2xl bg-surface p-6">
           <ErrorState message={query.error.message} onRetry={query.refetch} />
         </div>
       ) : (

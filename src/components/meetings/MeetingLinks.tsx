@@ -3,7 +3,7 @@ import type { JoinedMeeting } from '../../lib/meetings'
 import ExternalLinkLabel from '../ExternalLinkLabel'
 
 const LINK =
-  'inline-flex items-center gap-1 rounded-sm font-medium text-ember underline-offset-4 hover:underline'
+  'inline-flex items-center gap-1 rounded-sm font-medium text-link underline-offset-4 hover:underline'
 
 const DOCS = {
   agenda: { label: 'Agenda', icon: FileText, missing: 'Agenda not posted yet' },
@@ -27,7 +27,7 @@ export function DocStatus({
   const item = meeting[doc]
   if (meeting.kind !== 'official' || item === undefined) return null
   const { label, icon: Icon, missing } = DOCS[doc]
-  if (!item) return <span className="text-dusk">{missingText ?? missing}</span>
+  if (!item) return <span className="text-ink-muted">{missingText ?? missing}</span>
   return (
     <a href={item.file.webViewLink} target="_blank" rel="noreferrer" className={LINK}>
       <Icon aria-hidden="true" className="size-4" />

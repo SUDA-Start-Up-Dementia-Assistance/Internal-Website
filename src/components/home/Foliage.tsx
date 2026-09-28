@@ -74,7 +74,7 @@ export default function Foliage({ className = '' }: { className?: string }) {
       focusable="false"
       className={`pointer-events-none ${className}`}
     >
-      <g className="fill-night stroke-night">
+      <g className="fill-brand-night stroke-brand-night">
         {STEM_PATHS.map((d) => (
           <path key={d} d={d} fill="none" strokeWidth="2.5" strokeLinecap="round" />
         ))}

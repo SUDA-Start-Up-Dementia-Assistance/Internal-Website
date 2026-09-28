@@ -25,7 +25,7 @@ export default function RecentlyPublished({
         </h2>
         <Link
           to="/artifacts"
-          className="inline-flex items-center gap-1 rounded-sm text-sm font-medium text-ember hover:underline hover:underline-offset-4"
+          className="inline-flex items-center gap-1 rounded-sm text-sm font-medium text-link hover:underline hover:underline-offset-4"
         >
           All artifacts
           <ArrowRight aria-hidden="true" className="size-4" />
@@ -44,7 +44,7 @@ function RecentlyPublishedBody({ categories }: { categories: DriveQuery<Artifact
       <LoadingState>
         <div className="grid gap-6 sm:grid-cols-3">
           {Array.from({ length: RECENT_COUNT }, (_, i) => (
-            <div key={i} className="rounded-2xl bg-surface p-6 shadow-card">
+            <div key={i} className="shadow-card rounded-2xl bg-surface p-6">
               <Skeleton className="h-3 w-20" />
               <Skeleton className="mt-3 h-6 w-full" />
               <Skeleton className="mt-4 h-3 w-24" />
@@ -75,16 +75,16 @@ function RecentlyPublishedBody({ categories }: { categories: DriveQuery<Artifact
             href={file.webViewLink}
             target="_blank"
             rel="noreferrer"
-            className="group flex h-full flex-col rounded-2xl bg-surface p-6 shadow-card transition hover:shadow-card-hover motion-safe:hover:-translate-y-0.5"
+            className="group shadow-card hover:shadow-card-hover flex h-full card-hover flex-col rounded-2xl bg-surface p-6"
           >
-            <span className="flex items-center gap-1.5 text-xs font-semibold tracking-wider text-dusk uppercase">
+            <span className="flex items-center gap-1.5 text-xs font-semibold tracking-wider text-ink-muted uppercase">
               <FileText aria-hidden="true" className="size-3.5" />
               {category.displayName}
             </span>
-            <span className="mt-2 font-heading text-lg leading-snug font-semibold group-hover:text-ember">
+            <span className="mt-2 font-heading text-lg leading-snug font-semibold group-hover:text-link">
               {artifactDisplayName(file.name)}
             </span>
-            <span className="mt-auto flex items-center gap-1.5 pt-4 text-sm text-dusk">
+            <span className="mt-auto flex items-center gap-1.5 pt-4 text-sm text-ink-muted">
               Updated {formatShortDate(file.modifiedTime)}
               <ExternalLinkLabel />
             </span>

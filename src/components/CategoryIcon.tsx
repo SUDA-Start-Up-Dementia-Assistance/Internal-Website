@@ -5,7 +5,7 @@ import { categoryIcon } from '../config/categoryIcons'
 export default function CategoryIcon({ slug, size = 'md' }: { slug: string; size?: 'md' | 'lg' }) {
   return (
     <span
-      className={`flex shrink-0 items-center justify-center rounded-xl bg-apricot/15 text-ember ${
+      className={`flex shrink-0 items-center justify-center rounded-xl bg-accent/15 text-link ${
         size === 'lg' ? 'size-12' : 'size-11'
       }`}
     >

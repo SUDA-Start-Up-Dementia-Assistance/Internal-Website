@@ -13,9 +13,9 @@ export default function SignInPanel({ error, returnTo }: { error?: string; retur
       {error && (
         <p
           role="alert"
-          className="mb-6 flex gap-3 rounded-2xl border border-ember/30 bg-surface p-4 text-night shadow-card"
+          className="shadow-card mb-6 flex gap-3 rounded-2xl border border-link/30 bg-surface p-4 text-ink"
         >
-          <CircleAlert aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-ember" />
+          <CircleAlert aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-link" />
           {error}
         </p>
       )}
@@ -30,7 +30,7 @@ export default function SignInPanel({ error, returnTo }: { error?: string; retur
           Sign in with GitHub
         </button>
       ) : (
-        <p className="mt-4 text-dusk">
+        <p className="mt-4 text-ink-muted">
           Sign-in isn&apos;t available right now. Please try again in a few minutes.
         </p>
       )}

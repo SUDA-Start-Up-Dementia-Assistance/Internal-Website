@@ -107,7 +107,7 @@ function SignedInMeetings() {
               </a>
             )}
           </div>
-          <p id="add-meeting-hint" className="text-sm text-dusk">
+          <p id="add-meeting-hint" className="text-sm text-ink-muted">
             Choose the DAWN Team calendar so everyone sees it.
           </p>
         </div>
@@ -133,7 +133,9 @@ function ViewToggle({ view, onChange }: { view: View; onChange: (view: View) => 
       aria-pressed={view === value}
       onClick={() => onChange(value)}
       className={`inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
-        view === value ? 'bg-night text-cream' : 'text-night hover:text-ember'
+        view === value
+          ? 'bg-ink text-page dark:bg-surface-raised dark:text-ink dark:ring-1 dark:ring-border'
+          : 'text-ink hover:text-link'
       }`}
     >
       <Icon aria-hidden="true" className="size-4" />
@@ -144,7 +146,7 @@ function ViewToggle({ view, onChange }: { view: View; onChange: (view: View) => 
     <div
       role="group"
       aria-label="View"
-      className="inline-flex gap-1 rounded-full border border-night/15 bg-surface p-1"
+      className="inline-flex gap-1 rounded-full border border-border bg-surface p-1"
     >
       {option('list', 'List', List)}
       {option('week', 'Week', Table2)}
@@ -180,7 +182,7 @@ function QueryState({
   if (query.loading) return <>{skeleton}</>
   if (query.error) {
     return (
-      <div className="rounded-2xl bg-surface p-6 shadow-card">
+      <div className="shadow-card rounded-2xl bg-surface p-6">
         <ErrorState message={query.error.message} onRetry={query.refetch} />
       </div>
     )

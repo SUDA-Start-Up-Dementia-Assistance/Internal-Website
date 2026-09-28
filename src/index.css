@@ -1,45 +1,181 @@
 @import 'tailwindcss';
 
-/* "First Light" design tokens. Use via utilities (bg-night, text-dusk, font-heading, …). */
-@theme {
-  --color-night: #1e2140;
-  --color-cream: #fff8ef;
-  --color-surface: #ffffff;
-  --color-dusk: #5b6091;
-  --color-ember: #b4533a;
-  --color-apricot: #e07a5f;
-  --color-gold: #f2b84b;
-  --color-lavender: #8a8fb5;
+@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
+
+/*
+ * "First Light" design tokens. Components use the SEMANTIC tokens (bg-page, bg-surface,
+ * text-ink, text-ink-muted, text-link, bg-accent, border-border, …). The brand palette is
+ * exposed only as brand-* utilities, for decorative art (hero, sun arc, horizon lines, logo).
+ * Light values live on :root, dark values on [data-theme="dark"] (set before first paint by
+ * the inline script in index.html).
+ */
+:root {
+  color-scheme: light;
+
+  --brand-night: #1e2140;
+  --brand-cream: #fff8ef;
+  --brand-dusk: #5b6091;
+  --brand-ember: #b4533a;
+  --brand-apricot: #e07a5f;
+  --brand-gold: #f2b84b;
+  --brand-lavender: #8a8fb5;
+
+  --page: #fff8ef;
+  --surface: #ffffff;
+  --surface-raised: #ffffff;
+  --nav: #1e2140;
+  --on-nav: #fff8ef;
+  --ink: #1e2140;
+  --ink-muted: #5b6091;
+  --link: #b4533a;
+  --accent: #e07a5f;
+  --on-accent: #1e2140;
+  --border: #ede3d6;
+  --focus: #f2b84b;
+  /* Dims the page behind modal dialogs. */
+  --backdrop: rgb(30 33 64 / 0.5);
 
   /*
    * Task status badges: GitHub's single-select option colors, harmonized with First Light.
    * Each text color is at least 5.4:1 on its background (WCAG AA). Use via
    * statusColorTokens in src/lib/tasks, not directly.
    */
-  --color-status-gray-bg: #eeedf2;
-  --color-status-gray-text: #4a4e6e;
-  --color-status-blue-bg: #e4e8f7;
-  --color-status-blue-text: #34427a;
-  --color-status-green-bg: #e3f1e6;
-  --color-status-green-text: #2f6b3f;
-  --color-status-yellow-bg: #fbf0d2;
-  --color-status-yellow-text: #7a5a0e;
-  --color-status-purple-bg: #ece6f6;
-  --color-status-purple-text: #5a3f86;
-  --color-status-orange-bg: #fbe6dc;
-  --color-status-orange-text: #9a4426;
-  --color-status-red-bg: #fbe1e1;
-  --color-status-red-text: #9b2c2c;
-  --color-status-pink-bg: #fbe4ee;
-  --color-status-pink-text: #93325c;
+  --status-gray-bg: #eeedf2;
+  --status-gray-text: #4a4e6e;
+  --status-blue-bg: #e4e8f7;
+  --status-blue-text: #34427a;
+  --status-green-bg: #e3f1e6;
+  --status-green-text: #2f6b3f;
+  --status-yellow-bg: #fbf0d2;
+  --status-yellow-text: #7a5a0e;
+  --status-purple-bg: #ece6f6;
+  --status-purple-text: #5a3f86;
+  --status-orange-bg: #fbe6dc;
+  --status-orange-text: #9a4426;
+  --status-red-bg: #fbe1e1;
+  --status-red-text: #9b2c2c;
+  --status-pink-bg: #fbe4ee;
+  --status-pink-text: #93325c;
 
+  /* Cards: a soft warm shadow and a small lift on hover. */
+  --card-shadow: 0 1px 2px rgb(30 33 64 / 0.06), 0 8px 24px -8px rgb(180 83 58 / 0.18);
+  --card-shadow-hover: 0 2px 4px rgb(30 33 64 / 0.06), 0 14px 32px -10px rgb(180 83 58 / 0.24);
+  --card-lift: -0.125rem;
+  /* Dialogs and the hero photo. */
+  --photo-shadow: 0 4px 10px rgb(30 33 64 / 0.18), 0 28px 56px -18px rgb(120 50 30 / 0.5);
+
+  /* Sunrise hero sky: brief night, then dusk → ember, apricot and gold below the text. */
+  /* Soft dark scrim behind the hero text, on top of the sky (see hero-scrim). */
+  --hero-scrim: rgb(20 22 43 / 0.2);
+  --hero-sky: linear-gradient(
+    to bottom,
+    var(--brand-night) 0%,
+    var(--brand-night) 12%,
+    var(--brand-dusk) 42%,
+    var(--brand-ember) 86%,
+    var(--brand-apricot) 94%,
+    var(--brand-gold) 100%
+  );
+}
+
+[data-theme='dark'] {
+  color-scheme: dark;
+
+  --page: #14162b;
+  --surface: #1e2140;
+  --surface-raised: #272a4f;
+  --nav: #0f1124;
+  --on-nav: #f3ede4;
+  --ink: #f3ede4;
+  --ink-muted: #a9add0;
+  --link: #f2a488;
+  --accent: #e07a5f;
+  --on-accent: #1e2140;
+  --border: #3a3e6b;
+  --focus: #f2b84b;
+  --backdrop: rgb(6 7 18 / 0.7);
+
+  --status-gray-bg: #2e3150;
+  --status-gray-text: #d4d6e8;
+  --status-blue-bg: #23305e;
+  --status-blue-text: #bfcbf5;
+  --status-green-bg: #1f3d2c;
+  --status-green-text: #aeddbc;
+  --status-yellow-bg: #3d3419;
+  --status-yellow-text: #f2d98c;
+  --status-purple-bg: #34295a;
+  --status-purple-text: #d5c6f2;
+  --status-orange-bg: #452a1f;
+  --status-orange-text: #f5bfa6;
+  --status-red-bg: #4a2226;
+  --status-red-text: #f4b4b4;
+  --status-pink-bg: #452337;
+  --status-pink-text: #f2b8d2;
+
+  /* Shadows don't show on dark: cards get a 1px border (drawn as a ring, so no layout shift). */
+  --card-shadow: 0 0 0 1px var(--border);
+  --card-shadow-hover: 0 0 0 1px var(--border);
+  --card-lift: 0;
+  --photo-shadow: 0 0 0 1px var(--border), 0 24px 48px -16px rgb(0 0 0 / 0.6);
+
+  --hero-scrim: rgb(10 11 26 / 0.4);
+  --hero-sky: linear-gradient(
+    to bottom,
+    #14162b 0%,
+    #14162b 10%,
+    var(--brand-night) 22%,
+    var(--brand-dusk) 52%,
+    var(--brand-ember) 86%,
+    #c98f2f 100%
+  );
+}
+
+@theme inline {
+  --color-brand-night: var(--brand-night);
+  --color-brand-cream: var(--brand-cream);
+  --color-brand-dusk: var(--brand-dusk);
+  --color-brand-ember: var(--brand-ember);
+  --color-brand-apricot: var(--brand-apricot);
+  --color-brand-gold: var(--brand-gold);
+  --color-brand-lavender: var(--brand-lavender);
+
+  --color-page: var(--page);
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-nav: var(--nav);
+  --color-on-nav: var(--on-nav);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-link: var(--link);
+  --color-accent: var(--accent);
+  --color-on-accent: var(--on-accent);
+  --color-border: var(--border);
+  --color-focus: var(--focus);
+  --color-backdrop: var(--backdrop);
+
+  --color-status-gray-bg: var(--status-gray-bg);
+  --color-status-gray-text: var(--status-gray-text);
+  --color-status-blue-bg: var(--status-blue-bg);
+  --color-status-blue-text: var(--status-blue-text);
+  --color-status-green-bg: var(--status-green-bg);
+  --color-status-green-text: var(--status-green-text);
+  --color-status-yellow-bg: var(--status-yellow-bg);
+  --color-status-yellow-text: var(--status-yellow-text);
+  --color-status-purple-bg: var(--status-purple-bg);
+  --color-status-purple-text: var(--status-purple-text);
+  --color-status-orange-bg: var(--status-orange-bg);
+  --color-status-orange-text: var(--status-orange-text);
+  --color-status-red-bg: var(--status-red-bg);
+  --color-status-red-text: var(--status-red-text);
+  --color-status-pink-bg: var(--status-pink-bg);
+  --color-status-pink-text: var(--status-pink-text);
+}
+
+@theme {
   --font-heading: 'Fraunces', ui-serif, Georgia, serif;
   --font-body: 'Inter', ui-sans-serif, system-ui, sans-serif;
   --font-sans: var(--font-body);
 
-  --shadow-card: 0 1px 2px rgb(30 33 64 / 0.06), 0 8px 24px -8px rgb(180 83 58 / 0.18);
-  --shadow-card-hover: 0 2px 4px rgb(30 33 64 / 0.06), 0 14px 32px -10px rgb(180 83 58 / 0.24);
-  --shadow-photo: 0 4px 10px rgb(30 33 64 / 0.18), 0 28px 56px -18px rgb(120 50 30 / 0.5);
   --shadow-glow: 0 0 14px rgb(242 184 75 / 0.25);
   --shadow-glow-strong: 0 0 26px 4px rgb(242 184 75 / 0.5);
 
@@ -79,59 +215,73 @@
   }
 }
 
-/* Dark surfaces (navbar, hero, footer): switch the focus ring to gold (8.7:1 on night). */
-@utility on-night {
-  --focus-ring: var(--color-gold);
+/*
+ * Interactive card (pair with shadow-card hover:shadow-card-hover): a small lift on hover in
+ * light; in dark, no lift, and the card brightens to surface-raised instead.
+ */
+@utility card-hover {
+  transition-property: color, background-color, box-shadow, translate;
+  transition-duration: 150ms;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  &:hover {
+    background-color: var(--surface-raised);
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    &:hover {
+      translate: 0 var(--card-lift);
+    }
+  }
 }
 
 /*
- * Focus ring for controls on busy backgrounds (the hero gradient): a cream ring between two
- * night bands, so some part of it is at least 3:1 against whatever color is behind it.
+ * Focus ring for controls on busy backgrounds (the hero gradient): an on-nav ring between two
+ * nav-colored bands, so some part of it is at least 3:1 against whatever color is behind it.
  */
 @utility focus-ring-contrast {
   &:focus-visible {
-    outline: 2px solid var(--color-cream);
+    outline: 2px solid var(--on-nav);
     outline-offset: 2px;
-    box-shadow: 0 0 0 6px var(--color-night);
+    box-shadow: 0 0 0 6px var(--nav);
     /* Show the ring instantly instead of fading it in with the hover-glow transition. */
     transition: none;
   }
 }
 
-/* Thin gold→apricot divider. */
+/* Thin gold→apricot divider (keeps its warm colors in dark). */
 @utility horizon-line {
   height: 2px;
   border: 0;
-  background-image: linear-gradient(to right, var(--color-gold), var(--color-apricot));
+  background-image: linear-gradient(to right, var(--brand-gold), var(--brand-apricot));
 }
 
-/* Sunrise hero gradient, top to bottom: brief night, then lavender → apricot → gold. */
-@utility bg-dawn {
-  background-image: linear-gradient(
-    to bottom,
-    var(--color-night) 0%,
-    var(--color-night) 15%,
-    var(--color-lavender) 40%,
-    var(--color-apricot) 70%,
-    var(--color-gold) 100%
-  );
+/* The horizon line's gold→apricot, as a fill (sprint progress bar). */
+@utility bg-horizon {
+  background-image: linear-gradient(to right, var(--brand-gold), var(--brand-apricot));
 }
 
 /*
- * Hero-only "deep dawn": the same sunrise built from the darker tokens, so cream text
- * passes AA without an overlay (cream is 5.65:1 on dusk, 4.7:1 on ember, and their blends
- * stay above 4.5). Apricot and gold only appear in the bottom band, below the text.
+ * Hero sky. Light: night → dusk → ember, so cream text passes AA without an overlay (cream
+ * is 5.65:1 on dusk, 4.7:1 on ember); apricot and gold only appear in the bottom band, below
+ * the text. Dark: #14162B → night → dusk → ember → #C98F2F.
  */
 @utility bg-dawn-deep {
-  background-image: linear-gradient(
-    to bottom,
-    var(--color-night) 0%,
-    var(--color-night) 12%,
-    var(--color-dusk) 42%,
-    var(--color-ember) 86%,
-    var(--color-apricot) 94%,
-    var(--color-gold) 100%
-  );
+  background-image: var(--hero-sky);
+}
+
+/*
+ * Text scrim for the hero: a soft ellipse of shadow behind the text column, so the copy keeps
+ * AA contrast where it crosses the dusk → ember band. Needs an isolated ancestor (the hero).
+ */
+@utility hero-scrim {
+  position: relative;
+  &::before {
+    content: '';
+    position: absolute;
+    inset: -2.5rem -3rem;
+    z-index: -1;
+    pointer-events: none;
+    background: radial-gradient(ellipse at center, var(--hero-scrim) 55%, transparent 100%);
+  }
 }
 
 @layer base {
@@ -152,7 +302,7 @@
   }
 
   body {
-    @apply bg-cream font-body text-night antialiased;
+    @apply bg-page font-body text-ink antialiased;
   }
 
   h1,
@@ -164,16 +314,24 @@
 
   /*
    * Keep outline-color on the ring color at rest too. Otherwise transition-colors animates
-   * the ring in from the text color (cream on a white card = briefly invisible).
+   * the ring in from the text color.
    */
   *,
   ::before,
   ::after {
-    outline-color: var(--focus-ring, var(--color-ember));
+    outline-color: var(--focus);
   }
 
+  /*
+   * Focus ring: a gold (focus) outline with an ink band inside it. Gold alone is only ~1.6:1
+   * on cream, so the ink band carries the contrast in light; on the navbar and in dark, the
+   * gold does. The band goes through --tw-ring-shadow so it composes with shadow utilities
+   * (cards keep their shadow while focused).
+   */
   :focus-visible {
-    outline: 2px solid var(--focus-ring, var(--color-ember));
+    outline: 2px solid var(--focus);
     outline-offset: 2px;
+    --tw-ring-shadow: 0 0 0 2px var(--ink);
+    box-shadow: var(--tw-ring-shadow);
   }
 }

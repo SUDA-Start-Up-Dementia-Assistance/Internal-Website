@@ -23,15 +23,15 @@ const BADGE = 'inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs
  * least 24px tall (WCAG 2.5.8 target size), which matters on phones.
  */
 const PILL =
-  'min-h-6 rounded-full border border-night/15 bg-surface py-0.5 text-xs font-medium text-dusk hover:border-night/30'
+  'min-h-6 rounded-full border border-border bg-surface py-0.5 text-xs font-medium text-ink-muted hover:border-ink/30'
 
-/** "Done by Tue, Sep 29", in ember with "overdue" when it has passed. */
+/** "Done by Tue, Sep 29", in the link color with "overdue" when it has passed. */
 export function DoneByLabel({ task, today }: { task: Task; today?: Date }) {
   const date = doneByDate(task)
   if (!date) return null
   const overdue = isOverdue(task, today)
   return (
-    <span className={`inline-flex items-center gap-1 ${overdue ? 'font-medium text-ember' : ''}`}>
+    <span className={`inline-flex items-center gap-1 ${overdue ? 'font-medium text-link' : ''}`}>
       <CalendarClock aria-hidden="true" className="size-3.5" />
       Done by {formatCardDate(date, today)}
       {overdue && <span> · overdue</span>}
@@ -65,8 +65,8 @@ export default function TaskRow({ task, meta, team, showIteration = true, today 
   return (
     <li
       // Every row has the 4px left border (transparent unless flagged) so titles line up.
-      className={`rounded-2xl border-l-4 bg-surface p-4 shadow-card sm:px-5 ${
-        overdue || blocked ? 'border-ember' : 'border-transparent'
+      className={`shadow-card rounded-2xl border-l-4 bg-surface p-4 sm:px-5 ${
+        overdue || blocked ? 'border-link' : 'border-transparent'
       }`}
     >
       <div className="flex items-start gap-3">
@@ -79,7 +79,7 @@ export default function TaskRow({ task, meta, team, showIteration = true, today 
               const patch = markDonePatch(task, meta, e.target.checked)
               if (patch) save(patch, 'the status')
             }}
-            className="mt-1 size-4 shrink-0 cursor-pointer accent-ember"
+            className="mt-1 size-4 shrink-0 cursor-pointer accent-link"
           />
         )}
         <div className="min-w-0 flex-1">
@@ -92,7 +92,7 @@ export default function TaskRow({ task, meta, team, showIteration = true, today 
             target="_blank"
             rel="noreferrer"
             title={link.label}
-            className="-m-1.5 shrink-0 rounded-full p-1.5 text-dusk hover:bg-night/5 hover:text-ember"
+            className="-m-1.5 shrink-0 rounded-full p-1.5 text-ink-muted hover:bg-ink/5 hover:text-link"
           >
             <ExternalLink aria-hidden="true" className="size-4" />
             <span className="sr-only">
@@ -102,7 +102,7 @@ export default function TaskRow({ task, meta, team, showIteration = true, today 
         )}
       </div>
 
-      <div className="mt-2.5 flex flex-wrap items-center gap-x-2 gap-y-2 text-sm text-dusk">
+      <div className="mt-2.5 flex flex-wrap items-center gap-x-2 gap-y-2 text-sm text-ink-muted">
         <StatusSelect
           variant="pill"
           aria-label={label('Status')}
@@ -112,7 +112,7 @@ export default function TaskRow({ task, meta, team, showIteration = true, today 
           onChange={(id) => save({ statusOptionId: id }, 'the status')}
         />
         {task.type && (
-          <span className={`${BADGE} border border-night/15 text-dusk`}>
+          <span className={`${BADGE} border border-border text-ink-muted`}>
             <span className="sr-only">Type </span>
             {task.type}
           </span>
@@ -164,7 +164,7 @@ export default function TaskRow({ task, meta, team, showIteration = true, today 
 
 /**
  * The issue's or PR's GitHub labels, read-only. Label colors are arbitrary, so the text
- * stays dusk (AA on white) and the color only fills a decorative swatch.
+ * stays ink-muted (AA in both themes) and the color only fills a decorative swatch.
  */
 function Labels({ labels }: { labels: Label[] }) {
   return (
@@ -172,14 +172,14 @@ function Labels({ labels }: { labels: Label[] }) {
       {labels.map((l) => (
         <li
           key={l.name}
-          className="inline-flex items-center gap-1.5 rounded-full border border-night/15 px-2 py-px text-xs text-dusk"
+          className="inline-flex items-center gap-1.5 rounded-full border border-border px-2 py-px text-xs text-ink-muted"
         >
           {l.color && (
             <span
               aria-hidden="true"
               // Data from GitHub, validated as 6-digit hex on the server.
               style={{ backgroundColor: `#${l.color}` }}
-              className="size-2 shrink-0 rounded-full ring-1 ring-night/15"
+              className="size-2 shrink-0 rounded-full ring-1 ring-border"
             />
           )}
           {l.name}
@@ -207,7 +207,7 @@ function TaskTitle({
   // Enter/Esc end editing, and the blur that follows must not save a second time.
   const finished = useRef(false)
   const returnFocus = useRef(false)
-  const text = `font-medium ${done ? 'text-dusk line-through' : ''}`
+  const text = `font-medium ${done ? 'text-ink-muted line-through' : ''}`
 
   useEffect(() => {
     if (!editing && returnFocus.current) {
@@ -222,12 +222,12 @@ function TaskTitle({
         href={linkHref}
         target="_blank"
         rel="noreferrer"
-        className={`${text} rounded-sm underline-offset-4 hover:text-ember hover:underline`}
+        className={`${text} rounded-sm underline-offset-4 hover:text-link hover:underline`}
       >
         {task.title}
         <ExternalLink
           aria-hidden="true"
-          className="ml-1.5 inline size-3.5 align-[-2px] text-dusk"
+          className="ml-1.5 inline size-3.5 align-[-2px] text-ink-muted"
         />
         <span className="sr-only">
           {' '}
@@ -261,7 +261,7 @@ function TaskTitle({
             if (e.key === 'Enter') finish(e.currentTarget.value, true)
             if (e.key === 'Escape') finish(null, true)
           }}
-          className="-my-1 w-full rounded-lg border border-night/20 px-2 py-1 font-medium"
+          className="-my-1 w-full rounded-lg border border-ink/20 px-2 py-1 font-medium"
         />
       </>
     )
@@ -277,7 +277,7 @@ function TaskTitle({
           finished.current = false
           setEditing(true)
         }}
-        className="ml-1.5 inline-flex size-6 items-center justify-center rounded-full align-middle text-dusk opacity-80 group-hover:opacity-100 hover:bg-night/5 hover:text-ember focus-visible:opacity-100"
+        className="ml-1.5 inline-flex size-6 items-center justify-center rounded-full align-middle text-ink-muted opacity-80 group-hover:opacity-100 hover:bg-ink/5 hover:text-link focus-visible:opacity-100"
       >
         <Pencil aria-hidden="true" className="size-3.5" />
         <span className="sr-only">Rename “{task.title}”</span>
@@ -310,7 +310,7 @@ function OptionPill({
       aria-label={label}
       value={value}
       onChange={(e) => onChange(e.target.value || null)}
-      className={`${PILL} pr-7 pl-2.5 ${urgent ? 'border-ember text-ember' : ''}`}
+      className={`${PILL} pr-7 pl-2.5 ${urgent ? 'border-link text-link' : ''}`}
     >
       <option value="">{emptyLabel}</option>
       {options.map((o) => (
@@ -371,7 +371,10 @@ function Suffixed({ suffix, children }: { suffix: string; children: ReactNode })
   return (
     <span className="relative inline-flex items-center">
       {children}
-      <span aria-hidden="true" className="pointer-events-none absolute right-2.5 text-xs text-dusk">
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute right-2.5 text-xs text-ink-muted"
+      >
         {suffix}
       </span>
     </span>
@@ -405,7 +408,7 @@ function DoneByInput({
   }
 
   return (
-    <span className={`inline-flex items-center gap-1 ${overdue ? 'font-medium text-ember' : ''}`}>
+    <span className={`inline-flex items-center gap-1 ${overdue ? 'font-medium text-link' : ''}`}>
       <CalendarClock aria-hidden="true" className="size-3.5" />
       <input
         type="date"
@@ -417,7 +420,7 @@ function DoneByInput({
           if (e.key === 'Enter') commit()
           if (e.key === 'Escape') setDraft(null)
         }}
-        className={`${PILL} px-2.5 ${overdue ? 'border-ember text-ember' : ''}`}
+        className={`${PILL} px-2.5 ${overdue ? 'border-link text-link' : ''}`}
       />
       {overdue && <span className="text-xs">overdue</span>}
     </span>

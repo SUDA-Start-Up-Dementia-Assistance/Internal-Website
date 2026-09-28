@@ -59,7 +59,7 @@ function MemberSection({
         {member ? (
           <Avatar person={member} size="md" />
         ) : (
-          <span className="inline-flex size-10 items-center justify-center rounded-full bg-night/5 text-dusk">
+          <span className="inline-flex size-10 items-center justify-center rounded-full bg-ink/5 text-ink-muted">
             <UserRound aria-hidden="true" className="size-5" />
           </span>
         )}
@@ -68,13 +68,13 @@ function MemberSection({
             {member ? member.name : 'Unassigned'}
           </h2>
           {member && member.name !== member.login && (
-            <p className="text-sm text-dusk">@{member.login}</p>
+            <p className="text-sm text-ink-muted">@{member.login}</p>
           )}
         </div>
-        <p className="ml-auto text-sm font-medium text-dusk">{summary.join(' · ')}</p>
+        <p className="ml-auto text-sm font-medium text-ink-muted">{summary.join(' · ')}</p>
       </div>
       {tasks.length === 0 ? (
-        <p className="mt-3 text-sm text-dusk">No open tasks.</p>
+        <p className="mt-3 text-sm text-ink-muted">No open tasks.</p>
       ) : (
         <ul className="mt-4 space-y-3">
           {tasks.map((task) => (

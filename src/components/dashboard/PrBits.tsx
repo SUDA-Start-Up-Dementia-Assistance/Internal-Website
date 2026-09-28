@@ -10,7 +10,7 @@ const CI: Record<
   SUCCESS: { label: 'CI passing', icon: CheckCircle2, className: 'text-status-green-text' },
   FAILURE: { label: 'CI failing', icon: XCircle, className: 'text-status-red-text font-medium' },
   PENDING: { label: 'CI running', icon: Clock, className: 'text-status-yellow-text' },
-  NONE: { label: 'No CI', icon: CircleDashed, className: 'text-dusk' },
+  NONE: { label: 'No CI', icon: CircleDashed, className: 'text-ink-muted' },
 }
 
 /** The head commit's checks: an icon plus a text label (never color alone). */
@@ -37,7 +37,7 @@ export function Warning({ children }: { children: ReactNode }) {
 /** A neutral outlined tag ("Draft"). */
 export function Tag({ children }: { children: ReactNode }) {
   return (
-    <span className="inline-flex items-center rounded-full border border-night/15 px-2 py-0.5 text-xs font-medium text-dusk">
+    <span className="inline-flex items-center rounded-full border border-border px-2 py-0.5 text-xs font-medium text-ink-muted">
       {children}
     </span>
   )
@@ -50,10 +50,10 @@ export function PrTitleLink({ pr }: { pr: DashboardPr }) {
       href={pr.url}
       target="_blank"
       rel="noreferrer"
-      className="rounded-sm font-medium underline-offset-4 hover:text-ember hover:underline"
+      className="rounded-sm font-medium underline-offset-4 hover:text-link hover:underline"
     >
       {pr.title}
-      <span className="ml-1.5 inline-block align-[-2px] text-dusk">
+      <span className="ml-1.5 inline-block align-[-2px] text-ink-muted">
         <ExternalLinkLabel />
       </span>
     </a>

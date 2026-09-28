@@ -13,16 +13,16 @@ export default function Breadcrumb({ items }: { items: Crumb[] }) {
       <ol className="flex flex-wrap items-center gap-1.5 text-sm">
         {items.map((item, i) => (
           <li key={`${item.label}-${i}`} className="flex items-center gap-1.5">
-            {i > 0 && <ChevronRight aria-hidden="true" className="size-4 text-dusk" />}
+            {i > 0 && <ChevronRight aria-hidden="true" className="size-4 text-ink-muted" />}
             {item.to ? (
               <Link
                 to={item.to}
-                className="rounded-sm font-medium text-ember hover:underline hover:underline-offset-4"
+                className="rounded-sm font-medium text-link hover:underline hover:underline-offset-4"
               >
                 {item.label}
               </Link>
             ) : (
-              <span aria-current="page" className="text-dusk">
+              <span aria-current="page" className="text-ink-muted">
                 {item.label}
               </span>
             )}

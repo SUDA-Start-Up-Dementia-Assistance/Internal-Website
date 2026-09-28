@@ -12,8 +12,8 @@ export default function ErrorState({
 }: ErrorStateProps) {
   return (
     <div role="alert" className="flex flex-col items-start gap-4">
-      <p className="flex items-center gap-2 text-dusk">
-        <CircleAlert aria-hidden="true" className="size-4 text-ember" />
+      <p className="flex items-center gap-2 text-ink-muted">
+        <CircleAlert aria-hidden="true" className="size-4 text-link" />
         {message}
       </p>
       <button type="button" onClick={onRetry} className={buttonClasses('secondary')}>

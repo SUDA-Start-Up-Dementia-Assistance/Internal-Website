@@ -42,7 +42,7 @@ export default function Agendas() {
         <h1 className="text-4xl font-semibold">Agendas</h1>
         {CONFIGURED && <AutoUpdatedChip />}
       </div>
-      <p className="mt-3 max-w-prose text-dusk">
+      <p className="mt-3 max-w-prose text-ink-muted">
         Meeting agendas and 4Up status reports, straight from the team&apos;s Drive folder.
       </p>
       <div aria-hidden="true" className="mt-6 horizon-line w-24" />
@@ -203,7 +203,7 @@ function MeetingsSkeleton() {
           <Skeleton className={`h-7 ${headingWidth}`} />
           <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {[0, 1, 2].map((i) => (
-              <div key={i} className="rounded-2xl bg-surface p-5 shadow-card">
+              <div key={i} className="shadow-card rounded-2xl bg-surface p-5">
                 <Skeleton className="h-4 w-16" />
                 <Skeleton className="mt-2 h-7 w-32" />
                 <div className="mt-6 flex gap-2">

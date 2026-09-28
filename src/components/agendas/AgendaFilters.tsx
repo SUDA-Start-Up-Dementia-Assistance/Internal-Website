@@ -26,8 +26,8 @@ export default function AgendaFilters({
   return (
     <div className="flex flex-wrap items-center justify-between gap-4">
       <fieldset className="flex items-center gap-3">
-        <legend className="float-left mr-3 text-sm font-medium text-dusk">Show</legend>
-        <div className="inline-flex rounded-full bg-night/5 p-1">
+        <legend className="float-left mr-3 text-sm font-medium text-ink-muted">Show</legend>
+        <div className="inline-flex rounded-full bg-ink/5 p-1">
           {SHOW_OPTIONS.map((option) => (
             <label key={option.value} className="cursor-pointer">
               <input
@@ -38,7 +38,7 @@ export default function AgendaFilters({
                 onChange={() => onShowChange(option.value)}
                 className="peer sr-only"
               />
-              <span className="block rounded-full px-4 py-1.5 text-sm font-medium text-dusk transition-colors peer-checked:bg-surface peer-checked:text-night peer-checked:shadow-card peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-ember hover:text-night">
+              <span className="peer-checked:shadow-card block rounded-full px-4 py-1.5 text-sm font-medium text-ink-muted transition-colors peer-checked:bg-surface peer-checked:text-ink peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-link hover:text-ink">
                 {option.label}
               </span>
             </label>
@@ -46,12 +46,12 @@ export default function AgendaFilters({
         </div>
       </fieldset>
 
-      <label className="flex items-center gap-3 text-sm font-medium text-dusk">
+      <label className="flex items-center gap-3 text-sm font-medium text-ink-muted">
         Month
         <select
           value={month}
           onChange={(e) => onMonthChange(e.target.value)}
-          className="rounded-full border border-night/15 bg-surface py-1.5 pr-8 pl-4 text-night"
+          className="rounded-full border border-border bg-surface py-1.5 pr-8 pl-4 text-ink"
         >
           <option value="all">All months</option>
           {months.map((m) => (

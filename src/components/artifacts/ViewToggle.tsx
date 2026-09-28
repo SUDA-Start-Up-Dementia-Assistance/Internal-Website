@@ -13,7 +13,7 @@ interface ViewToggleProps {
 
 export default function ViewToggle({ view, onChange }: ViewToggleProps) {
   return (
-    <div role="group" aria-label="View" className="inline-flex rounded-full bg-night/5 p-1">
+    <div role="group" aria-label="View" className="inline-flex rounded-full bg-ink/5 p-1">
       {OPTIONS.map(({ value, label, icon: Icon }) => {
         const selected = view === value
         return (
@@ -23,7 +23,7 @@ export default function ViewToggle({ view, onChange }: ViewToggleProps) {
             aria-pressed={selected}
             onClick={() => onChange(value)}
             className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors ${
-              selected ? 'bg-surface text-night shadow-card' : 'text-dusk hover:text-night'
+              selected ? 'shadow-card bg-surface text-ink' : 'text-ink-muted hover:text-ink'
             }`}
           >
             <Icon aria-hidden="true" className="size-4" />

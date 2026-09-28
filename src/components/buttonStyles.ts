@@ -9,8 +9,8 @@ const SIZES: Record<ButtonSize, string> = {
 }
 
 const VARIANTS: Record<ButtonVariant, string> = {
-  primary: 'bg-apricot text-night hover:bg-apricot/85',
-  secondary: 'border border-night/15 text-night hover:border-ember hover:text-ember',
+  primary: 'bg-accent text-on-accent hover:bg-accent/85',
+  secondary: 'border border-border text-ink hover:border-link hover:text-link',
 }
 
 export function buttonClasses(variant: ButtonVariant = 'primary', size: ButtonSize = 'md'): string {

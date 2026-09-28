@@ -5,10 +5,10 @@ const FOOTER_LINKS = [links.repo, links.driveFolder].filter((link) => link.href)
 
 export default function Footer() {
   return (
-    <footer className="bg-night text-cream on-night">
+    <footer className="bg-nav text-on-nav">
       <div className="horizon-line" aria-hidden="true" />
       <div className="mx-auto flex max-w-5xl flex-col gap-4 px-6 py-8 text-sm sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-cream/85">RIT SWEN 561/562 · 2026–27</p>
+        <p className="text-on-nav/85">RIT SWEN 561/562 · 2026–27</p>
         {FOOTER_LINKS.length > 0 && (
           <ul className="flex flex-wrap gap-6">
             {FOOTER_LINKS.map((link) => (
@@ -17,7 +17,7 @@ export default function Footer() {
                   href={link.href}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-1.5 rounded-sm text-cream underline decoration-cream/40 underline-offset-4 hover:decoration-gold"
+                  className="inline-flex items-center gap-1.5 rounded-sm text-on-nav underline decoration-on-nav/40 underline-offset-4 hover:decoration-accent"
                 >
                   {link.label}
                   <ExternalLinkLabel />

@@ -91,7 +91,7 @@ function CategoryView({ slug }: { slug: string }) {
         <CategoryIcon slug={category.slug} size="lg" />
         <h1 className="text-4xl font-semibold">{category.displayName}</h1>
       </div>
-      <p className="mt-3 text-dusk">
+      <p className="mt-3 text-ink-muted">
         {files.length} {files.length === 1 ? 'file' : 'files'}
         {updated && ` · Updated ${formatRelative(updated)}`}
       </p>
@@ -135,7 +135,7 @@ function NotFound({ message }: { message: string }) {
       <PageTitle title="Category not found" />
       <Breadcrumb items={[{ label: 'Artifacts', to: '/artifacts' }, { label: 'Not found' }]} />
       <h1 className="mt-5 text-4xl font-semibold">Category not found</h1>
-      <p className="mt-3 max-w-prose text-dusk">{message}</p>
+      <p className="mt-3 max-w-prose text-ink-muted">{message}</p>
       <Link to="/artifacts" className={`mt-8 ${buttonClasses('secondary')}`}>
         Back to all artifacts
       </Link>

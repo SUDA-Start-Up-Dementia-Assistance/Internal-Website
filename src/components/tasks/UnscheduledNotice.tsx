@@ -36,14 +36,14 @@ export default function UnscheduledNotice({
   return (
     <section
       aria-labelledby="unscheduled-title"
-      className="flex gap-3 rounded-2xl border border-ember/30 bg-surface p-4 shadow-card"
+      className="shadow-card flex gap-3 rounded-2xl border border-link/30 bg-surface p-4"
     >
-      <TriangleAlert aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-ember" />
+      <TriangleAlert aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-link" />
       <div className="min-w-0 flex-1">
         <h2 id="unscheduled-title" className="font-body font-medium">
           {count} in Sprint Backlog without an iteration
         </h2>
-        <p className="mt-1 text-sm text-dusk">
+        <p className="mt-1 text-sm text-ink-muted">
           These won&apos;t count toward the burndown. Set an iteration on each in GitHub.
         </p>
         <ul className="mt-2 space-y-1 text-sm">
@@ -55,7 +55,7 @@ export default function UnscheduledNotice({
                   href={link.href}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-1 text-ember underline-offset-4 hover:underline"
+                  className="inline-flex items-center gap-1 text-link underline-offset-4 hover:underline"
                 >
                   {task.title}
                   <ExternalLinkLabel />
@@ -68,7 +68,7 @@ export default function UnscheduledNotice({
       <button
         type="button"
         onClick={dismiss}
-        className="-m-1 self-start rounded-full p-1.5 text-dusk hover:bg-night/5 hover:text-night"
+        className="-m-1 self-start rounded-full p-1.5 text-ink-muted hover:bg-ink/5 hover:text-ink"
       >
         <X aria-hidden="true" className="size-4" />
         <span className="sr-only">Dismiss this notice</span>

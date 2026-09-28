@@ -14,14 +14,14 @@ export default function HiddenItemsNotice({ count }: { count: number }) {
   return (
     <section
       aria-labelledby="hidden-items-title"
-      className="flex gap-3 rounded-2xl border border-ember/30 bg-surface p-4 shadow-card"
+      className="shadow-card flex gap-3 rounded-2xl border border-link/30 bg-surface p-4"
     >
-      <EyeOff aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-ember" />
+      <EyeOff aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-link" />
       <div className="min-w-0 flex-1">
         <h2 id="hidden-items-title" className="font-body font-medium">
           {items} hidden because GitHub didn&apos;t share {count === 1 ? 'it' : 'them'}
         </h2>
-        <p className="mt-1 text-sm text-dusk">
+        <p className="mt-1 text-sm text-ink-muted">
           These are usually issues in a repository the DAWN Team Site app isn&apos;t installed on
           (ask an org owner to add it) or one you can&apos;t access. If you signed in before the app
           was added, sign in again.

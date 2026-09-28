@@ -101,13 +101,13 @@ function TaskGroups({ data, now }: { data: MyTasks; now: Date }) {
         ))
       )}
       {data.hiddenCount > 0 && (
-        <p className="flex items-start gap-2 text-sm text-dusk">
+        <p className="flex items-start gap-2 text-sm text-ink-muted">
           <EyeOff aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
           <span>
             {data.hiddenCount === 1
               ? '1 project item is hidden because GitHub didn’t share it.'
               : `${data.hiddenCount} project items are hidden because GitHub didn’t share them.`}{' '}
-            <Link to="/tasks" className="font-medium text-ember underline underline-offset-4">
+            <Link to="/tasks" className="font-medium text-link underline underline-offset-4">
               See Tasks
             </Link>
           </span>
@@ -140,14 +140,14 @@ function TaskGroup({
       <h3
         id={headingId}
         className={`flex items-center gap-1.5 font-body text-sm font-semibold tracking-wide uppercase ${
-          accent ? 'text-ember' : 'text-dusk'
+          accent ? 'text-link' : 'text-ink-muted'
         }`}
       >
         {accent && <CircleAlert aria-hidden="true" className="size-4" />}
         {title}
         <span className="font-normal">({open})</span>
       </h3>
-      <ul className="mt-2 divide-y divide-night/10">
+      <ul className="mt-2 divide-y divide-border">
         {tasks.map((task) => (
           <CompactTaskRow key={task.itemId} task={task} statuses={statuses} now={now} />
         ))}
@@ -155,7 +155,7 @@ function TaskGroup({
       {more > 0 && (
         <Link
           to="/tasks"
-          className="mt-1 inline-block text-sm text-ember underline-offset-4 hover:underline"
+          className="mt-1 inline-block text-sm text-link underline-offset-4 hover:underline"
         >
           and {more} more
         </Link>
@@ -188,7 +188,7 @@ function CompactTaskRow({
   const done = isDone(task)
   const status = statusOptionOf(task, { statuses })
   const canMarkDone = statuses.some((s) => s.key === 'done')
-  const title = `font-medium ${done ? 'text-dusk line-through' : ''}`
+  const title = `font-medium ${done ? 'text-ink-muted line-through' : ''}`
 
   return (
     <li className="flex items-start gap-3 py-2.5">
@@ -198,7 +198,7 @@ function CompactTaskRow({
           checked={done}
           aria-label={`Mark “${task.title}” done`}
           onChange={(e) => void toggleDone(task, statuses, e.target.checked)}
-          className="mt-1 size-4 shrink-0 cursor-pointer accent-ember"
+          className="mt-1 size-4 shrink-0 cursor-pointer accent-link"
         />
       )}
       <div className="min-w-0 flex-1">
@@ -207,17 +207,17 @@ function CompactTaskRow({
             href={task.url}
             target="_blank"
             rel="noreferrer"
-            className={`${title} rounded-sm underline-offset-4 hover:text-ember hover:underline`}
+            className={`${title} rounded-sm underline-offset-4 hover:text-link hover:underline`}
           >
             {task.title}
-            <span className="ml-1.5 inline-block align-[-2px] text-dusk">
+            <span className="ml-1.5 inline-block align-[-2px] text-ink-muted">
               <ExternalLinkLabel />
             </span>
           </a>
         ) : (
           <p className={title}>{task.title}</p>
         )}
-        <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-dusk">
+        <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-ink-muted">
           {status && <StatusBadge status={status} />}
           <DoneByLabel task={task} today={now} />
           {task.repo && task.number !== undefined && (

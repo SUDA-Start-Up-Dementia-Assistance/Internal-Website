@@ -22,13 +22,13 @@ export default function TeamStrip() {
           <li key={`${person.name}-${i}`} className="flex items-center gap-3">
             <span
               aria-hidden="true"
-              className="flex size-11 items-center justify-center rounded-full bg-lavender/25 text-sm font-semibold text-night"
+              className="flex size-11 items-center justify-center rounded-full bg-status-purple-bg text-sm font-semibold text-status-purple-text"
             >
               {initials(person.name)}
             </span>
             <span className="flex flex-col">
               <span className="font-medium">{person.name}</span>
-              <span className="text-sm text-dusk">{person.role}</span>
+              <span className="text-sm text-ink-muted">{person.role}</span>
             </span>
           </li>
         ))}

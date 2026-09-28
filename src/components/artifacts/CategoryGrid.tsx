@@ -19,7 +19,9 @@ export default function CategoryGrid({
       <h2 id="published-title" className="text-2xl font-semibold">
         Published artifacts
       </h2>
-      <p className="mt-1 text-sm text-dusk">Final deliverables from each phase of the project.</p>
+      <p className="mt-1 text-sm text-ink-muted">
+        Final deliverables from each phase of the project.
+      </p>
       <div className="mt-5">
         <CategoryGridBody categories={categories} />
       </div>
@@ -33,7 +35,7 @@ function CategoryGridBody({ categories }: { categories: DriveQuery<ArtifactCateg
       <LoadingState>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {[0, 1, 2, 3, 4, 5].map((i) => (
-            <div key={i} className="flex gap-4 rounded-2xl bg-surface p-5 shadow-card">
+            <div key={i} className="shadow-card flex gap-4 rounded-2xl bg-surface p-5">
               <Skeleton className="size-11 rounded-xl" />
               <div className="flex-1">
                 <Skeleton className="h-5 w-32" />
@@ -67,14 +69,14 @@ function CategoryGridBody({ categories }: { categories: DriveQuery<ArtifactCateg
           <li key={category.id}>
             <Link
               to={`/artifacts/${category.slug}`}
-              className="group flex h-full items-start gap-4 rounded-2xl bg-surface p-5 shadow-card transition hover:shadow-card-hover motion-safe:hover:-translate-y-0.5"
+              className="group shadow-card hover:shadow-card-hover flex h-full card-hover items-start gap-4 rounded-2xl bg-surface p-5"
             >
               <CategoryIcon slug={category.slug} />
               <span className="min-w-0">
-                <span className="block font-heading text-lg leading-snug font-semibold group-hover:text-ember">
+                <span className="block font-heading text-lg leading-snug font-semibold group-hover:text-link">
                   {category.displayName}
                 </span>
-                <span className="mt-1 block text-sm text-dusk">
+                <span className="mt-1 block text-sm text-ink-muted">
                   {count === 0 ? 'No files yet' : `${count} ${count === 1 ? 'file' : 'files'}`}
                   {updated && ` · Updated ${formatRelative(updated)}`}
                 </span>

@@ -104,7 +104,7 @@ export default function TasksView({ login }: { login: string }) {
         tasks={selectSprintBacklogWithoutIteration(tasks)}
         projectUrl={meta.projectUrl}
       /> */}
-      <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-3 border-b border-night/10">
+      <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-3 border-b border-border">
         <Tabs selected={tab} onSelect={selectTab} />
         <button
           ref={newTaskButton}
@@ -117,7 +117,7 @@ export default function TasksView({ login }: { login: string }) {
           New task
           <kbd
             aria-hidden="true"
-            className="ml-1 hidden rounded border border-night/20 px-1 font-body text-xs sm:inline"
+            className="ml-1 hidden rounded border border-ink/20 px-1 font-body text-xs sm:inline"
           >
             N
           </kbd>
@@ -214,8 +214,8 @@ function Tabs({ selected, onSelect }: { selected: TabId; onSelect: (id: TabId) =
             onClick={() => onSelect(t.id)}
             className={`-mb-px border-b-2 px-4 py-2.5 text-sm font-medium transition-colors ${
               active
-                ? 'border-ember text-ember'
-                : 'border-transparent text-dusk hover:border-night/20 hover:text-night'
+                ? 'border-link text-link'
+                : 'border-transparent text-ink-muted hover:border-ink/20 hover:text-ink'
             }`}
           >
             {t.label}
@@ -229,7 +229,7 @@ function Tabs({ selected, onSelect }: { selected: TabId; onSelect: (id: TabId) =
 function TasksSkeleton() {
   return (
     <LoadingState>
-      <div className="flex gap-4 border-b border-night/10 pb-3">
+      <div className="flex gap-4 border-b border-border pb-3">
         <Skeleton className="h-5 w-20" />
         <Skeleton className="h-5 w-14" />
         <Skeleton className="h-5 w-16" />
@@ -242,7 +242,7 @@ function TasksSkeleton() {
       <Skeleton className="mt-10 h-6 w-40" />
       <div className="mt-4 space-y-3">
         {[0, 1, 2].map((i) => (
-          <div key={i} className="rounded-2xl bg-surface p-4 shadow-card">
+          <div key={i} className="shadow-card rounded-2xl bg-surface p-4">
             <Skeleton className="h-5 w-3/4" />
             <Skeleton className="mt-3 h-4 w-1/2" />
           </div>

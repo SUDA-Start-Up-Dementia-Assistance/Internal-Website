@@ -55,7 +55,7 @@ function WaitingOnYou({ query }: { query: DashboardQuery }) {
   const counts = waitingCounts(query.data)
   if (isAllCaughtUp(counts)) {
     return (
-      <p className="flex items-center gap-2 text-lg text-dusk">
+      <p className="flex items-center gap-2 text-lg text-ink-muted">
         <SunArc className="h-4 w-8" />
         You&apos;re all caught up.
       </p>
@@ -85,7 +85,7 @@ function WaitingOnYou({ query }: { query: DashboardQuery }) {
             <a
               href={`#${item.id}`}
               onClick={(e) => focusWidget(e, item.id)}
-              className="inline-flex rounded-full bg-surface px-3 py-1 text-sm font-medium text-ember underline decoration-ember/30 underline-offset-4 shadow-card hover:decoration-ember"
+              className="shadow-card inline-flex rounded-full bg-surface px-3 py-1 text-sm font-medium text-link underline decoration-link/30 underline-offset-4 hover:decoration-link"
             >
               {item.text(item.n)}
             </a>
@@ -100,13 +100,13 @@ function RefreshControl({ query, now }: { query: DashboardQuery; now: Date }) {
   const refreshing = query.fetching && !query.loading
   return (
     <div className="flex flex-col items-start gap-1 sm:items-end">
-      <div className="flex items-center gap-3 text-sm text-dusk">
+      <div className="flex items-center gap-3 text-sm text-ink-muted">
         {query.fetchedAt > 0 && <span>Updated {updatedAgo(query.fetchedAt, now.getTime())}</span>}
         <button
           type="button"
           onClick={query.refetch}
           disabled={query.fetching}
-          className="inline-flex items-center gap-1.5 rounded-full border border-night/15 px-3 py-1.5 font-medium text-night transition-colors hover:border-ember hover:text-ember disabled:cursor-wait disabled:opacity-60"
+          className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 font-medium text-ink transition-colors hover:border-link hover:text-link disabled:cursor-wait disabled:opacity-60"
         >
           <RotateCw
             aria-hidden="true"
@@ -117,7 +117,7 @@ function RefreshControl({ query, now }: { query: DashboardQuery; now: Date }) {
       </div>
       <p aria-live="polite" className="text-sm">
         {query.refreshError && (
-          <span className="text-ember">Couldn&apos;t refresh: {query.refreshError.message}</span>
+          <span className="text-link">Couldn&apos;t refresh: {query.refreshError.message}</span>
         )}
         <span className="sr-only">{refreshing ? 'Refreshing the dashboard' : ''}</span>
       </p>

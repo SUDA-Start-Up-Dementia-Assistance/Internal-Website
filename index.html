@@ -2,6 +2,24 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <!-- Set the theme before any CSS loads, so the first paint is already right. Mirrors
+         src/lib/theme/theme.ts (preference in localStorage "theme"; "system" follows the OS). -->
+    <script>
+      ;(function () {
+        var t
+        try {
+          t = localStorage.getItem('theme')
+        } catch (e) {}
+        if (t !== 'light' && t !== 'dark') {
+          try {
+            t = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+          } catch (e) {
+            t = 'light'
+          }
+        }
+        document.documentElement.setAttribute('data-theme', t)
+      })()
+    </script>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="theme-color" content="#1E2140" />
     <meta

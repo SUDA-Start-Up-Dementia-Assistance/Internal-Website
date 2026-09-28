@@ -84,21 +84,21 @@ export default function PreviewPanel({ title, documents, initialId, onClose }: P
         // A click on the backdrop lands on the <dialog> element itself.
         if (e.target === e.currentTarget) ref.current?.close()
       }}
-      className="m-0 ml-auto h-dvh max-h-none w-full max-w-none bg-surface text-night shadow-photo backdrop:bg-night/50 open:flex open:flex-col motion-safe:animate-panel-in sm:w-[min(56rem,75vw)] sm:rounded-l-2xl"
+      className="shadow-photo m-0 ml-auto h-dvh max-h-none w-full max-w-none bg-surface text-ink backdrop:bg-backdrop open:flex open:flex-col motion-safe:animate-panel-in sm:w-[min(56rem,75vw)] sm:rounded-l-2xl"
     >
-      <header className="border-b border-night/10 px-5 pt-4 sm:px-6">
+      <header className="border-b border-border px-5 pt-4 sm:px-6">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
             <h2 id={titleId} className="truncate text-xl font-semibold">
               {title}
             </h2>
-            <p className="truncate text-sm text-dusk">{displayName}</p>
+            <p className="truncate text-sm text-ink-muted">{displayName}</p>
           </div>
           <button
             type="button"
             onClick={() => ref.current?.close()}
             data-initial-focus={hasTabs ? undefined : true}
-            className="-mr-2 shrink-0 rounded-md p-2 text-dusk hover:text-night"
+            className="-mr-2 shrink-0 rounded-md p-2 text-ink-muted hover:text-ink"
           >
             <X aria-hidden="true" className="size-5" />
             <span className="sr-only">Close preview</span>
@@ -124,8 +124,8 @@ export default function PreviewPanel({ title, documents, initialId, onClose }: P
                     onKeyDown={onTabKeyDown}
                     className={`-mb-px rounded-t-sm border-b-2 pb-2.5 text-sm font-medium transition-colors ${
                       selected
-                        ? 'border-ember text-night'
-                        : 'border-transparent text-dusk hover:text-night'
+                        ? 'border-link text-ink'
+                        : 'border-transparent text-ink-muted hover:text-ink'
                     }`}
                   >
                     {doc.label}
@@ -140,7 +140,7 @@ export default function PreviewPanel({ title, documents, initialId, onClose }: P
             href={active.file.webViewLink}
             target="_blank"
             rel="noreferrer"
-            className="mb-2.5 inline-flex shrink-0 items-center gap-1.5 rounded-sm text-sm font-medium text-ember hover:underline hover:underline-offset-4"
+            className="mb-2.5 inline-flex shrink-0 items-center gap-1.5 rounded-sm text-sm font-medium text-link hover:underline hover:underline-offset-4"
           >
             Open in Drive
             <ExternalLinkLabel />
@@ -152,19 +152,20 @@ export default function PreviewPanel({ title, documents, initialId, onClose }: P
         id={panelId}
         role={hasTabs ? 'tabpanel' : undefined}
         aria-labelledby={hasTabs ? tabId(active.id) : undefined}
-        className="min-h-0 flex-1 bg-cream"
+        className="min-h-0 flex-1 bg-page p-2 sm:p-3"
       >
         {src ? (
+          // Google's preview is always white: the border keeps it from bleeding into a dark page.
           <iframe
             key={active.file.id}
             src={src}
             title={`Preview of ${displayName}`}
-            className="size-full"
+            className="size-full rounded-lg border border-border"
           />
         ) : (
           <div className="flex h-full flex-col items-center justify-center gap-2 px-6 text-center">
             <p className="font-heading text-lg">Preview unavailable for sample data</p>
-            <p className="max-w-sm text-dusk">
+            <p className="max-w-sm text-ink-muted">
               Once Drive is connected, &ldquo;{displayName}&rdquo; will appear here.
             </p>
           </div>

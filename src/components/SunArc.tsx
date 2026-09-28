@@ -29,7 +29,7 @@ export default function SunArc({ className, horizon = false }: SunArcProps) {
     >
       <path
         d={`M20 54 A${R} ${R} 0 0 1 80 54`}
-        className="stroke-gold"
+        className="stroke-brand-gold"
         strokeWidth="2"
         strokeLinecap="round"
         vectorEffect="non-scaling-stroke"
@@ -38,7 +38,7 @@ export default function SunArc({ className, horizon = false }: SunArcProps) {
         <path
           key={angle}
           d={rayPath(angle)}
-          className="stroke-gold"
+          className="stroke-brand-gold"
           strokeWidth="2"
           strokeLinecap="round"
           vectorEffect="non-scaling-stroke"
@@ -47,7 +47,7 @@ export default function SunArc({ className, horizon = false }: SunArcProps) {
       {horizon && (
         <path
           d="M4 54 H96"
-          className="stroke-gold"
+          className="stroke-brand-gold"
           strokeWidth="2"
           strokeLinecap="round"
           vectorEffect="non-scaling-stroke"

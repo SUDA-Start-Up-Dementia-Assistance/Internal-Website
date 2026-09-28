@@ -26,16 +26,16 @@ export function WidgetCard({ id, title, icon: Icon, badge, footer, children }: W
       id={id}
       aria-labelledby={headingId}
       tabIndex={-1}
-      className="scroll-mt-24 rounded-2xl bg-surface p-5 shadow-card transition hover:shadow-card-hover motion-safe:hover:-translate-y-0.5 sm:p-6"
+      className="shadow-card hover:shadow-card-hover card-hover scroll-mt-24 rounded-2xl bg-surface p-5 sm:p-6"
     >
       <h2 id={headingId} className="flex items-center gap-2 text-xl font-semibold">
-        <Icon aria-hidden="true" className="size-5 shrink-0 text-dusk" />
+        <Icon aria-hidden="true" className="size-5 shrink-0 text-ink-muted" />
         {title}
         {badge}
       </h2>
       <div className="mt-4">{children}</div>
       {footer && (
-        <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 border-t border-night/10 pt-4 text-sm">
+        <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 border-t border-border pt-4 text-sm">
           {footer}
         </div>
       )}
@@ -46,7 +46,7 @@ export function WidgetCard({ id, title, icon: Icon, badge, footer, children }: W
 /** "(3)" after a widget title. */
 export function CountBadge({ count, label }: { count: number; label: string }) {
   return (
-    <span className="font-body text-base font-normal text-dusk">
+    <span className="font-body text-base font-normal text-ink-muted">
       <span aria-hidden="true">({count})</span>
       <span className="sr-only">, {label}</span>
     </span>
@@ -70,4 +70,4 @@ export function WidgetBody<T>({ query, value, skeleton, children }: WidgetBodyPr
 }
 
 export const FOOTER_LINK =
-  'inline-flex items-center gap-1 rounded-sm font-medium text-ember underline-offset-4 hover:underline'
+  'inline-flex items-center gap-1 rounded-sm font-medium text-link underline-offset-4 hover:underline'

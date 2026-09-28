@@ -4,6 +4,7 @@ import { MemoryRouter } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { AuthState } from '../lib/auth'
 import { AuthContext } from '../lib/auth/context'
+import { ThemeProvider } from '../lib/theme'
 import Navbar from './Navbar'
 
 afterEach(cleanup)
@@ -20,11 +21,13 @@ function renderNavbar(auth: Partial<AuthState>) {
     ...auth,
   }
   render(
-    <AuthContext value={value}>
-      <MemoryRouter>
-        <Navbar />
-      </MemoryRouter>
-    </AuthContext>,
+    <ThemeProvider>
+      <AuthContext value={value}>
+        <MemoryRouter>
+          <Navbar />
+        </MemoryRouter>
+      </AuthContext>
+    </ThemeProvider>,
   )
 }
 

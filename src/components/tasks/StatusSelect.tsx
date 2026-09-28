@@ -34,7 +34,7 @@ export default function StatusSelect({
   const pill = variant === 'pill'
   const box = pill
     ? `min-h-6 rounded-full py-0.5 pr-7 pl-6 text-xs font-medium ${tokens.bg} ${tokens.text}`
-    : 'w-full rounded-xl border border-night/15 bg-surface py-2 pr-8 pl-8 text-sm text-night'
+    : 'w-full rounded-xl border border-border bg-surface py-2 pr-8 pl-8 text-sm text-ink'
 
   return (
     <span className={`relative items-center ${pill ? 'inline-flex' : 'flex'}`}>

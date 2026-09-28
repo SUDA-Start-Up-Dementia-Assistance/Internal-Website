@@ -29,21 +29,21 @@ function ToastCard({ toast }: { toast: Toast }) {
   const error = toast.kind === 'error'
   return (
     <div
-      className={`pointer-events-auto flex max-w-sm items-start gap-2 rounded-2xl bg-surface text-sm shadow-card ${
-        error ? 'border border-ember/40 py-3 pr-2 pl-4 text-night' : 'px-4 py-2 text-dusk'
+      className={`shadow-card pointer-events-auto flex max-w-sm items-start gap-2 rounded-2xl bg-surface text-sm ${
+        error ? 'border border-link/40 py-3 pr-2 pl-4 text-ink' : 'px-4 py-2 text-ink-muted'
       }`}
     >
       {error ? (
-        <CircleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-ember" />
+        <CircleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-link" />
       ) : (
-        <Check aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-ember" />
+        <Check aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-link" />
       )}
       <p className="min-w-0 flex-1">{toast.message}</p>
       {error && (
         <button
           type="button"
           onClick={() => dismissToast(toast.id)}
-          className="-my-1 shrink-0 rounded-full p-1 text-dusk hover:bg-night/5 hover:text-night"
+          className="-my-1 shrink-0 rounded-full p-1 text-ink-muted hover:bg-ink/5 hover:text-ink"
         >
           <X aria-hidden="true" className="size-4" />
           <span className="sr-only">Dismiss</span>

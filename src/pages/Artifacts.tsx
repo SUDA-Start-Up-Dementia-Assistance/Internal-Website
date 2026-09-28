@@ -16,7 +16,7 @@ export default function Artifacts() {
     <div className="mx-auto max-w-5xl px-6 py-12 sm:py-16">
       <PageTitle title="Artifacts" />
       <h1 className="text-4xl font-semibold">Artifacts</h1>
-      <p className="mt-3 max-w-prose text-dusk">
+      <p className="mt-3 max-w-prose text-ink-muted">
         The team&apos;s published deliverables, organized by category.
       </p>
       <div aria-hidden="true" className="mt-6 horizon-line w-24" />
@@ -49,7 +49,7 @@ function PublishedView() {
         <div className="relative max-w-xl">
           <Search
             aria-hidden="true"
-            className="pointer-events-none absolute top-1/2 left-4 size-5 -translate-y-1/2 text-dusk"
+            className="pointer-events-none absolute top-1/2 left-4 size-5 -translate-y-1/2 text-ink-muted"
           />
           <input
             id="artifact-search"
@@ -60,7 +60,7 @@ function PublishedView() {
             }
             placeholder="Search published files"
             autoComplete="off"
-            className="w-full rounded-full border border-night/15 bg-surface py-3 pr-4 pl-12 text-night shadow-card placeholder:text-dusk"
+            className="shadow-card w-full rounded-full border border-border bg-surface py-3 pr-4 pl-12 text-ink placeholder:text-ink-muted"
           />
         </div>
       </search>

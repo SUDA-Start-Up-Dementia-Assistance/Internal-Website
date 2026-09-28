@@ -2,18 +2,18 @@ const LAYERS = [
   {
     // Back: palest, highest ridge.
     d: 'M0 150 C160 118 330 92 540 118 S880 84 1080 110 S1340 92 1440 104 V320 H0 Z',
-    className: 'fill-apricot/25',
+    className: 'fill-brand-apricot/25',
     delay: '0ms',
   },
   {
     d: 'M0 205 C190 172 380 222 610 190 S1000 160 1210 196 S1390 186 1440 176 V320 H0 Z',
-    className: 'fill-apricot/35',
+    className: 'fill-brand-apricot/35',
     delay: '150ms',
   },
   {
     // Front: strongest, lowest.
     d: 'M0 262 C230 236 470 276 760 252 S1170 228 1440 256 V320 H0 Z',
-    className: 'fill-apricot/50',
+    className: 'fill-brand-apricot/50',
     delay: '300ms',
   },
 ]

@@ -22,7 +22,7 @@ export default function Layout() {
     <div className="flex min-h-screen flex-col">
       <a
         href="#main"
-        className="sr-only z-50 rounded-md bg-surface px-4 py-2 text-ember shadow-card focus:not-sr-only focus:fixed focus:top-3 focus:left-3"
+        className="shadow-card sr-only z-50 rounded-md bg-surface px-4 py-2 text-link focus:not-sr-only focus:fixed focus:top-3 focus:left-3"
       >
         Skip to content
       </a>

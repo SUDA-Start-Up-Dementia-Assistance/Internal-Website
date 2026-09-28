@@ -23,19 +23,19 @@ export default function QuickLinks() {
                 href={link.href}
                 target="_blank"
                 rel="noreferrer"
-                className="flex h-full flex-col gap-3 rounded-2xl bg-surface p-5 shadow-card transition hover:text-ember hover:shadow-card-hover motion-safe:hover:-translate-y-0.5"
+                className="shadow-card hover:shadow-card-hover flex h-full card-hover flex-col gap-3 rounded-2xl bg-surface p-5 hover:text-link"
               >
-                <Icon aria-hidden="true" className="size-6 text-ember" />
+                <Icon aria-hidden="true" className="size-6 text-link" />
                 <span className="flex items-center gap-1.5 font-medium">
                   {link.label}
                   <ExternalLinkLabel />
                 </span>
               </a>
             ) : (
-              <div className="flex h-full flex-col gap-3 rounded-2xl border border-dashed border-night/20 p-5">
-                <Icon aria-hidden="true" className="size-6 text-dusk" />
+              <div className="flex h-full flex-col gap-3 rounded-2xl border border-dashed border-ink/20 p-5">
+                <Icon aria-hidden="true" className="size-6 text-ink-muted" />
                 <span className="font-medium">{link.label}</span>
-                <span className="text-sm text-dusk">Not set yet</span>
+                <span className="text-sm text-ink-muted">Not set yet</span>
               </div>
             )}
           </li>

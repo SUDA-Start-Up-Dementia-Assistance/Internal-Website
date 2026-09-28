@@ -30,7 +30,7 @@ export default function MyPrsWidget({ query }: { query: DashboardQuery }) {
           list.length === 0 ? (
             <EmptyState>You don&apos;t have any open pull requests.</EmptyState>
           ) : (
-            <ul className="divide-y divide-night/10">
+            <ul className="divide-y divide-border">
               {list.map((pr) => (
                 <MyPrRow key={pr.id} pr={pr} />
               ))}
@@ -54,14 +54,14 @@ function MyPrRow({ pr }: { pr: MyPr }) {
   const base = baseWarning(pr)
   return (
     <li className="py-3">
-      <p className="text-xs text-dusk">
+      <p className="text-xs text-ink-muted">
         {repoRef(pr)} <span aria-hidden="true">·</span> {pr.headRefName} → {pr.baseRefName}
       </p>
       <PrTitleLink pr={pr} />
       <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs">
         {pr.isDraft && <Tag>Draft</Tag>}
         <CiStatus state={pr.ciState} />
-        <span className={approved ? 'font-medium text-status-green-text' : 'text-dusk'}>
+        <span className={approved ? 'font-medium text-status-green-text' : 'text-ink-muted'}>
           {pr.reviewsApproved}/{pr.requiredReviewers} approvals
         </span>
         {pr.changesRequested > 0 && (

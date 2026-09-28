@@ -42,13 +42,13 @@ function Day({
       <Heading
         id={headingId}
         className={`font-body text-sm font-semibold tracking-wide uppercase ${
-          today ? 'text-ember' : 'text-dusk'
+          today ? 'text-link' : 'text-ink-muted'
         }`}
       >
         {day.label}
         {today && <span className="normal-case">{' · Today'}</span>}
       </Heading>
-      <ul className="mt-2 divide-y divide-night/10 rounded-2xl bg-surface px-4 shadow-card sm:px-5">
+      <ul className="shadow-card mt-2 divide-y divide-border rounded-2xl bg-surface px-4 sm:px-5">
         {day.meetings.map((meeting) => (
           <MeetingListRow key={meeting.id} meeting={meeting} now={now} />
         ))}
@@ -60,7 +60,7 @@ function Day({
 export function MeetingListRow({ meeting, now }: { meeting: JoinedMeeting; now: Date }) {
   return (
     <li className="flex flex-col gap-1 py-3.5 sm:flex-row sm:gap-5">
-      <p className="shrink-0 text-sm font-medium whitespace-nowrap text-dusk sm:w-36">
+      <p className="shrink-0 text-sm font-medium whitespace-nowrap text-ink-muted sm:w-36">
         {meetingTimeRange(meeting)}
       </p>
       <div className="min-w-0 flex-1">

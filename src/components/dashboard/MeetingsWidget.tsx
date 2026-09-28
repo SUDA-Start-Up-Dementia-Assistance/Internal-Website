@@ -86,17 +86,17 @@ function MeetingRow({ meeting, next, now }: { meeting: JoinedMeeting; next: bool
   const live = isHappeningNow(meeting, now)
   const day = meetingDayLabel(meeting, now)
   return (
-    <li className={`flex gap-4 rounded-xl p-3 ${next ? 'bg-cream ring-1 ring-apricot/60' : ''}`}>
+    <li className={`flex gap-4 rounded-xl p-3 ${next ? 'bg-page ring-1 ring-accent/60' : ''}`}>
       <div className="w-28 shrink-0 text-sm">
-        <p className={`font-semibold ${day === 'Today' ? 'text-ember' : ''}`}>{day}</p>
-        <p className="text-xs whitespace-nowrap text-dusk">{meetingTimeRange(meeting)}</p>
+        <p className={`font-semibold ${day === 'Today' ? 'text-link' : ''}`}>{day}</p>
+        <p className="text-xs whitespace-nowrap text-ink-muted">{meetingTimeRange(meeting)}</p>
       </div>
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
           {live ? (
             <HappeningNowBadge />
           ) : (
-            next && <span className="text-xs font-semibold text-ember">Next up</span>
+            next && <span className="text-xs font-semibold text-link">Next up</span>
           )}
           <MeetingTag meeting={meeting} />
         </div>
@@ -104,11 +104,11 @@ function MeetingRow({ meeting, next, now }: { meeting: JoinedMeeting; next: bool
           href={meeting.htmlLink}
           target="_blank"
           rel="noreferrer"
-          className="mt-1 block rounded-sm font-medium underline-offset-4 hover:text-ember hover:underline"
+          className="mt-1 block rounded-sm font-medium underline-offset-4 hover:text-link hover:underline"
         >
           {meeting.title}
           <span className="sr-only"> (details in Google Calendar)</span>
-          <span className="ml-1.5 inline-block align-[-2px] text-dusk">
+          <span className="ml-1.5 inline-block align-[-2px] text-ink-muted">
             <ExternalLinkLabel />
           </span>
         </a>

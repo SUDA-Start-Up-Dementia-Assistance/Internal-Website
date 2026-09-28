@@ -116,9 +116,9 @@ function SprintDetails({
           {warnings.map((w, i) => (
             <li
               key={i}
-              className="flex gap-2.5 rounded-2xl border border-ember/30 bg-surface px-4 py-3 text-sm shadow-card"
+              className="shadow-card flex gap-2.5 rounded-2xl border border-link/30 bg-surface px-4 py-3 text-sm"
             >
-              <TriangleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-ember" />
+              <TriangleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-link" />
               {w}
             </li>
           ))}
@@ -133,7 +133,7 @@ function SprintDetails({
           label="Blocked items"
           value={String(blocked)}
           icon={
-            blocked > 0 ? <CircleAlert aria-hidden="true" className="size-4 text-ember" /> : null
+            blocked > 0 ? <CircleAlert aria-hidden="true" className="size-4 text-link" /> : null
           }
         />
         <Tile
@@ -143,19 +143,19 @@ function SprintDetails({
         />
       </dl>
       {latest && !data.isCurrent && (
-        <p className="-mt-5 text-sm text-dusk">
+        <p className="-mt-5 text-sm text-ink-muted">
           Totals are from the last snapshot, on {formatLongDate(latest.date)}.
         </p>
       )}
 
       <section
         aria-labelledby="burndown-heading"
-        className="rounded-2xl bg-surface p-4 shadow-card sm:p-6"
+        className="shadow-card rounded-2xl bg-surface p-4 sm:p-6"
       >
         <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
           <h2 id="burndown-heading" className="text-xl font-semibold">
             {iteration.title}
-            <span className="ml-3 font-body text-sm font-normal text-dusk">
+            <span className="ml-3 font-body text-sm font-normal text-ink-muted">
               {formatLongDate(iteration.startDate)} – {formatLongDate(lastDay)}
             </span>
           </h2>
@@ -191,13 +191,13 @@ function Tile({
   icon?: ReactNode
 }) {
   return (
-    <div className="rounded-2xl bg-surface p-4 shadow-card">
-      <dt className="text-sm text-dusk">{label}</dt>
-      <dd className="mt-1 flex items-center gap-1.5 font-body text-2xl font-semibold text-night">
+    <div className="shadow-card rounded-2xl bg-surface p-4">
+      <dt className="text-sm text-ink-muted">{label}</dt>
+      <dd className="mt-1 flex items-center gap-1.5 font-body text-2xl font-semibold text-ink">
         {icon}
         {value}
       </dd>
-      {note && <dd className="mt-0.5 text-xs text-dusk">{note}</dd>}
+      {note && <dd className="mt-0.5 text-xs text-ink-muted">{note}</dd>}
     </div>
   )
 }
@@ -206,15 +206,15 @@ function Legend({ view }: { view: ChartView }) {
   const items =
     view === 'burnup'
       ? [
-          { label: 'Scope', stroke: 'stroke-night' },
-          { label: 'Done', stroke: 'stroke-apricot' },
+          { label: 'Scope', stroke: 'stroke-ink' },
+          { label: 'Done', stroke: 'stroke-accent' },
         ]
       : [
-          { label: 'Remaining', stroke: 'stroke-ember' },
-          { label: 'Ideal', stroke: 'stroke-dusk', dashed: true },
+          { label: 'Remaining', stroke: 'stroke-link' },
+          { label: 'Ideal', stroke: 'stroke-ink-muted', dashed: true },
         ]
   return (
-    <ul aria-label="Legend" className="flex flex-wrap gap-4 text-sm text-dusk">
+    <ul aria-label="Legend" className="flex flex-wrap gap-4 text-sm text-ink-muted">
       {items.map((item) => (
         <li key={item.label} className="flex items-center gap-1.5">
           <LineKey stroke={item.stroke} dashed={item.dashed} />
@@ -234,7 +234,7 @@ function ViewToggle({ view, onChange }: { view: ChartView; onChange: (v: ChartVi
     <div
       role="group"
       aria-label="Chart view"
-      className="flex rounded-full border border-night/15 p-0.5"
+      className="flex rounded-full border border-border p-0.5"
     >
       {options.map((o) => (
         <button
@@ -243,7 +243,9 @@ function ViewToggle({ view, onChange }: { view: ChartView; onChange: (v: ChartVi
           aria-pressed={view === o.id}
           onClick={() => onChange(o.id)}
           className={`rounded-full px-3.5 py-1 text-sm font-medium transition-colors ${
-            view === o.id ? 'bg-night text-cream' : 'text-dusk hover:text-night'
+            view === o.id
+              ? 'bg-ink text-page dark:bg-surface-raised dark:text-ink dark:ring-1 dark:ring-border'
+              : 'text-ink-muted hover:text-ink'
           }`}
         >
           {o.label}
@@ -276,13 +278,13 @@ function SprintPicker({
   if (options.length === 0) return <span />
 
   return (
-    <label htmlFor={id} className="flex items-center gap-2 text-sm font-medium text-dusk">
+    <label htmlFor={id} className="flex items-center gap-2 text-sm font-medium text-ink-muted">
       Sprint
       <select
         id={id}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="rounded-full border border-night/15 bg-surface py-1.5 pr-8 pl-3.5 text-sm text-night"
+        className="rounded-full border border-border bg-surface py-1.5 pr-8 pl-3.5 text-sm text-ink"
       >
         {!options.some((o) => o.id === value) && <option value={value}>Choose a sprint</option>}
         {options.map((o) => (

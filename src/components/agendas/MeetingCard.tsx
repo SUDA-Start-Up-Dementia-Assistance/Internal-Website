@@ -27,17 +27,17 @@ export default function MeetingCard({ meeting, show, upcoming, today, onOpen }: 
   return (
     <article
       aria-labelledby={dateId}
-      className={`flex h-full flex-col rounded-2xl bg-surface p-5 shadow-card transition hover:shadow-card-hover motion-safe:hover:-translate-y-0.5 ${
-        today ? 'ring-2 ring-gold' : ''
+      className={`shadow-card hover:shadow-card-hover flex h-full card-hover flex-col rounded-2xl bg-surface p-5 ${
+        today ? 'ring-2 ring-accent' : ''
       }`}
     >
       {today ? (
-        <p className="flex items-center gap-1.5 text-sm font-semibold text-ember">
+        <p className="flex items-center gap-1.5 text-sm font-semibold text-link">
           <SunArc horizon className="h-3.5 w-6" />
           Today
         </p>
       ) : (
-        upcoming && <p className="text-sm text-dusk">{relativeDayLabel(meeting.date)}</p>
+        upcoming && <p className="text-sm text-ink-muted">{relativeDayLabel(meeting.date)}</p>
       )}
       <h3 id={dateId} className="text-xl font-semibold">
         <time dateTime={toDateKey(meeting.date)}>{formatCardDate(meeting.date)}</time>
@@ -51,13 +51,13 @@ export default function MeetingCard({ meeting, show, upcoming, today, onOpen }: 
               aria-haspopup="dialog"
               aria-describedby={dateId}
               onClick={() => onOpen(meeting, 'agenda')}
-              className={`${BADGE} bg-apricot text-night hover:bg-apricot/85`}
+              className={`${BADGE} bg-accent text-on-accent hover:bg-accent/85`}
             >
               <FileText aria-hidden="true" className="size-4" />
               Agenda
             </button>
           ) : (
-            upcoming && <p className="py-2 text-sm text-dusk italic">Agenda not posted yet</p>
+            upcoming && <p className="py-2 text-sm text-ink-muted italic">Agenda not posted yet</p>
           ))}
         {showFourUp && meeting.fourUp && (
           <button
@@ -65,7 +65,7 @@ export default function MeetingCard({ meeting, show, upcoming, today, onOpen }: 
             aria-haspopup="dialog"
             aria-describedby={dateId}
             onClick={() => onOpen(meeting, 'fourUp')}
-            className={`${BADGE} bg-night text-cream hover:bg-night/85`}
+            className={`${BADGE} bg-ink text-page hover:bg-ink/85 dark:bg-surface-raised dark:text-ink dark:ring-1 dark:ring-border dark:hover:bg-ink/15`}
           >
             <LayoutGrid aria-hidden="true" className="size-4" />
             4Up

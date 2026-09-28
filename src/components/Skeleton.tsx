@@ -3,7 +3,7 @@ export default function Skeleton({ className = '' }: { className?: string }) {
   return (
     <div
       aria-hidden="true"
-      className={`rounded-md bg-night/10 motion-safe:animate-pulse ${className}`}
+      className={`rounded-md bg-ink/10 motion-safe:animate-pulse ${className}`}
     />
   )
 }

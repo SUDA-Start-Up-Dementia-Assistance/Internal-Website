@@ -4,6 +4,7 @@ import { Link, NavLink } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
 import AuthControl from './AuthControl'
 import SunArc from './SunArc'
+import ThemeToggle from './ThemeToggle'
 
 const NAV_ITEMS = [
   // Signed in, the Dashboard comes first.
@@ -16,13 +17,13 @@ const NAV_ITEMS = [
   { to: '/tasks', label: 'Tasks', end: false, signedInOnly: true },
 ]
 
-// Active underline is gold, not ember: gold is 8.7:1 on night, ember only 3.15:1.
+// Active underline is accent, not link: link (ember) is only 3.15:1 on the light navbar.
 function linkClass({ isActive }: { isActive: boolean }) {
   return [
     'rounded-sm decoration-2 underline-offset-8 transition-colors',
     isActive
-      ? 'text-cream underline decoration-gold'
-      : 'text-cream/85 hover:text-cream hover:underline hover:decoration-cream/40',
+      ? 'text-on-nav underline decoration-accent'
+      : 'text-on-nav/85 hover:text-on-nav hover:underline hover:decoration-on-nav/40',
   ].join(' ')
 }
 
@@ -50,7 +51,7 @@ export default function Navbar() {
   }, [open])
 
   return (
-    <header className="sticky top-0 z-40 bg-night text-cream on-night">
+    <header className="sticky top-0 z-40 bg-nav text-on-nav">
       <nav
         aria-label="Main"
         className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4"
@@ -75,12 +76,15 @@ export default function Navbar() {
             ))}
           </ul>
 
-          <AuthControl />
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <AuthControl />
+          </div>
 
           <button
             ref={buttonRef}
             type="button"
-            className="-mr-2 rounded-md p-2 text-cream md:hidden"
+            className="-mr-2 rounded-md p-2 text-on-nav md:hidden"
             aria-expanded={open}
             aria-controls="mobile-nav"
             onClick={() => setOpen((o) => !o)}
@@ -92,7 +96,7 @@ export default function Navbar() {
       </nav>
 
       {open && (
-        <div id="mobile-nav" ref={menuRef} className="border-t border-cream/10 md:hidden">
+        <div id="mobile-nav" ref={menuRef} className="border-t border-on-nav/10 md:hidden">
           <ul className="mx-auto flex max-w-5xl flex-col gap-1 px-6 py-4">
             {navItems.map((item) => (
               <li key={item.to}>

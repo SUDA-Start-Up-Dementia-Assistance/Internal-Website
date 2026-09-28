@@ -9,11 +9,11 @@ import {
 import { FILE_KIND_LABEL, fileKind, type FileKind } from '../lib/files'
 
 const STYLE: Record<FileKind, { icon: LucideIcon; className: string }> = {
-  doc: { icon: FileText, className: 'bg-lavender/20 text-dusk' },
-  slides: { icon: Presentation, className: 'bg-apricot/20 text-ember' },
-  sheet: { icon: FileSpreadsheet, className: 'bg-gold/25 text-night' },
-  pdf: { icon: FileType, className: 'bg-ember/10 text-ember' },
-  other: { icon: File, className: 'bg-night/5 text-dusk' },
+  doc: { icon: FileText, className: 'bg-status-purple-bg text-status-purple-text' },
+  slides: { icon: Presentation, className: 'bg-accent/20 text-link' },
+  sheet: { icon: FileSpreadsheet, className: 'bg-status-yellow-bg text-status-yellow-text' },
+  pdf: { icon: FileType, className: 'bg-link/10 text-link' },
+  other: { icon: File, className: 'bg-ink/5 text-ink-muted' },
 }
 
 interface FileTypeIconProps {

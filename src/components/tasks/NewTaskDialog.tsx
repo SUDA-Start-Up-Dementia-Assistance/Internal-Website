@@ -25,8 +25,8 @@ import StatusSelect from './StatusSelect'
 const TITLE_MAX = 256
 const ESTIMATE_MAX = 200
 
-const FIELD = 'w-full rounded-xl border border-night/15 bg-surface px-3.5 py-2 text-sm text-night'
-const LABEL = 'block text-sm font-medium text-night'
+const FIELD = 'w-full rounded-xl border border-border bg-surface px-3.5 py-2 text-sm text-ink'
+const LABEL = 'block text-sm font-medium text-ink'
 
 interface NewTaskDialogProps {
   meta: TaskMeta
@@ -188,7 +188,7 @@ export default function NewTaskDialog({
       onClick={(e) => {
         if (e.target === e.currentTarget && !submitting) ref.current?.close()
       }}
-      className="m-auto max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-xl overflow-y-auto rounded-2xl bg-surface p-0 text-night shadow-photo backdrop:bg-night/50"
+      className="shadow-photo m-auto max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-xl overflow-y-auto rounded-2xl bg-surface p-0 text-ink backdrop:bg-backdrop"
     >
       <form noValidate onSubmit={submit} className="p-6 sm:p-8">
         <div className="flex items-start justify-between gap-4">
@@ -199,13 +199,13 @@ export default function NewTaskDialog({
             type="button"
             onClick={() => ref.current?.close()}
             disabled={submitting}
-            className="-mt-1 -mr-2 shrink-0 rounded-md p-2 text-dusk hover:text-night disabled:opacity-50"
+            className="-mt-1 -mr-2 shrink-0 rounded-md p-2 text-ink-muted hover:text-ink disabled:opacity-50"
           >
             <X aria-hidden="true" className="size-5" />
             <span className="sr-only">Close</span>
           </button>
         </div>
-        <p className="mt-1 text-sm text-dusk">
+        <p className="mt-1 text-sm text-ink-muted">
           {meta.issueRepository ? (
             <>
               Creates an issue in <span className="font-medium">{meta.issueRepository}</span> and
@@ -217,8 +217,8 @@ export default function NewTaskDialog({
         </p>
 
         {cannotCreate && (
-          <p className="mt-5 flex gap-2 rounded-xl border border-ember/40 p-3 text-sm">
-            <CircleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-ember" />
+          <p className="mt-5 flex gap-2 rounded-xl border border-link/40 p-3 text-sm">
+            <CircleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-link" />
             {meta.issueSetupError}
           </p>
         )}
@@ -226,8 +226,8 @@ export default function NewTaskDialog({
         {/* Server errors are announced as soon as they appear. */}
         <div aria-live="assertive" aria-atomic="true">
           {formError && (
-            <p className="mt-5 flex gap-2 rounded-xl border border-ember/40 p-3 text-sm">
-              <CircleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-ember" />
+            <p className="mt-5 flex gap-2 rounded-xl border border-link/40 p-3 text-sm">
+              <CircleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-link" />
               {formError}
             </p>
           )}
@@ -236,7 +236,7 @@ export default function NewTaskDialog({
         <div className="mt-6 space-y-5">
           <div>
             <label htmlFor={id('title')} className={LABEL}>
-              Title <span className="font-normal text-dusk">(required)</span>
+              Title <span className="font-normal text-ink-muted">(required)</span>
             </label>
             <input
               ref={titleRef}
@@ -250,7 +250,7 @@ export default function NewTaskDialog({
               maxLength={TITLE_MAX}
               aria-invalid={titleError ? true : undefined}
               aria-describedby={describedBy(titleError !== null && id('title-error'))}
-              className={`mt-1.5 ${FIELD} ${titleError ? 'border-ember' : ''}`}
+              className={`mt-1.5 ${FIELD} ${titleError ? 'border-link' : ''}`}
             />
             <FieldError id={id('title-error')} message={titleError} />
           </div>
@@ -354,7 +354,7 @@ export default function NewTaskDialog({
                 />
               </div>
               {chosenStatusId === null && (
-                <p className="mt-1 text-xs text-dusk">Set from the sprint choice.</p>
+                <p className="mt-1 text-xs text-ink-muted">Set from the sprint choice.</p>
               )}
             </div>
           </div>
@@ -365,12 +365,12 @@ export default function NewTaskDialog({
               const open = e.currentTarget.open
               if (open !== sizingOpen) setChosenSizingOpen(open)
             }}
-            className="group rounded-xl border border-night/10 px-4 py-3"
+            className="group rounded-xl border border-border px-4 py-3"
           >
             <summary className="flex cursor-pointer list-none items-center gap-1.5 text-sm font-medium [&::-webkit-details-marker]:hidden">
               <ChevronRight
                 aria-hidden="true"
-                className="size-4 text-dusk transition-transform group-open:rotate-90 motion-reduce:transition-none"
+                className="size-4 text-ink-muted transition-transform group-open:rotate-90 motion-reduce:transition-none"
               />
               Sizing
             </summary>
@@ -393,7 +393,7 @@ export default function NewTaskDialog({
                   }}
                   aria-invalid={estimateError ? true : undefined}
                   aria-describedby={describedBy(estimateError !== null && id('estimate-error'))}
-                  className={`mt-1.5 ${FIELD} ${estimateError ? 'border-ember' : ''}`}
+                  className={`mt-1.5 ${FIELD} ${estimateError ? 'border-link' : ''}`}
                 />
                 <FieldError id={id('estimate-error')} message={estimateError} />
               </div>
@@ -478,7 +478,7 @@ function OptionSelect({
 /** A field's error, announced when it appears (the region exists before the message). */
 function FieldError({ id, message }: { id: string; message: string | null }) {
   return (
-    <p id={id} aria-live="polite" className={message ? 'mt-1 text-sm text-ember' : ''}>
+    <p id={id} aria-live="polite" className={message ? 'mt-1 text-sm text-link' : ''}>
       {message}
     </p>
   )

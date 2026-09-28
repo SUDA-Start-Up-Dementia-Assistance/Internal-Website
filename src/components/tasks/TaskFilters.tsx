@@ -10,8 +10,7 @@ interface TaskFiltersProps {
   showDoneToggle: boolean
 }
 
-const SELECT =
-  'rounded-full border border-night/15 bg-surface py-1.5 pr-8 pl-3.5 text-sm text-night'
+const SELECT = 'rounded-full border border-border bg-surface py-1.5 pr-8 pl-3.5 text-sm text-ink'
 
 export default function TaskFilters({ filters, onChange, meta, showDoneToggle }: TaskFiltersProps) {
   const set = <K extends keyof Filters>(key: K, value: Filters[K]) =>
@@ -71,7 +70,7 @@ export default function TaskFilters({ filters, onChange, meta, showDoneToggle }:
         <button
           type="button"
           onClick={() => onChange(DEFAULT_FILTERS)}
-          className="text-sm font-medium text-ember underline-offset-4 hover:underline"
+          className="text-sm font-medium text-link underline-offset-4 hover:underline"
         >
           Reset filters
         </button>
@@ -95,7 +94,7 @@ function FilterSelect({
   dot?: ReactNode
 }) {
   return (
-    <label className="flex items-center gap-2 text-sm font-medium text-dusk">
+    <label className="flex items-center gap-2 text-sm font-medium text-ink-muted">
       {label}
       <span className="relative inline-flex items-center">
         {dot && (
@@ -135,17 +134,17 @@ function Checkbox({
 }) {
   return (
     <label
-      className={`flex items-center gap-2 text-sm font-medium ${disabled ? 'text-dusk/70' : 'cursor-pointer text-night'}`}
+      className={`flex items-center gap-2 text-sm font-medium ${disabled ? 'text-ink-muted/70' : 'cursor-pointer text-ink'}`}
     >
       <input
         type="checkbox"
         checked={checked}
         disabled={disabled}
         onChange={(e) => onChange(e.target.checked)}
-        className="size-4 accent-ember"
+        className="size-4 accent-link"
       />
       {label}
-      {hint && <span className="font-normal text-dusk">({hint})</span>}
+      {hint && <span className="font-normal text-ink-muted">({hint})</span>}
     </label>
   )
 }

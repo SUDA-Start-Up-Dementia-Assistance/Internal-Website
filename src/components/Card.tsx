@@ -12,11 +12,11 @@ export default function Card({ title, icon: Icon, children }: CardProps) {
   return (
     <section
       aria-labelledby={headingId}
-      className="rounded-2xl bg-surface p-6 shadow-card transition hover:shadow-card-hover motion-safe:hover:-translate-y-0.5 sm:p-8"
+      className="shadow-card hover:shadow-card-hover card-hover rounded-2xl bg-surface p-6 sm:p-8"
     >
       <h2
         id={headingId}
-        className="flex items-center gap-2 font-body text-sm font-semibold tracking-wider text-dusk uppercase"
+        className="flex items-center gap-2 font-body text-sm font-semibold tracking-wider text-ink-muted uppercase"
       >
         {Icon && <Icon aria-hidden="true" className="size-4" />}
         {title}

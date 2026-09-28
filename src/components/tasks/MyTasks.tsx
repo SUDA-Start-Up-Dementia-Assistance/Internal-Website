@@ -35,7 +35,7 @@ export default function MyTasks({ tasks, meta, team, filtered, showIteration }: 
       <Group title="No date" tasks={groups.noDate} {...rowProps} />
       {groups.done.length > 0 && (
         <details>
-          <summary className="cursor-pointer font-heading text-xl font-semibold text-dusk marker:text-dusk">
+          <summary className="cursor-pointer font-heading text-xl font-semibold text-ink-muted marker:text-ink-muted">
             Done <span className="font-body text-base font-normal">({groups.done.length})</span>
           </summary>
           <ul className="mt-4 space-y-3">
@@ -70,11 +70,11 @@ function Group({
     <section aria-labelledby={headingId}>
       <h2
         id={headingId}
-        className={`flex items-center gap-2 text-xl font-semibold ${accent ? 'text-ember' : ''}`}
+        className={`flex items-center gap-2 text-xl font-semibold ${accent ? 'text-link' : ''}`}
       >
         {Icon && <Icon aria-hidden="true" className="size-5" />}
         {title}
-        <span className="font-body text-base font-normal text-dusk">({tasks.length})</span>
+        <span className="font-body text-base font-normal text-ink-muted">({tasks.length})</span>
       </h2>
       <ul className="mt-4 space-y-3">
         {tasks.map((task) => (

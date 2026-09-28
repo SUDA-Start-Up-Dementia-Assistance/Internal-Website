@@ -22,13 +22,15 @@ export default function FileList({ files, view, onPreview }: FileListProps) {
           <li key={file.id}>
             <article
               aria-labelledby={`file-${file.id}`}
-              className="flex h-full flex-col rounded-2xl bg-surface p-5 shadow-card transition hover:shadow-card-hover motion-safe:hover:-translate-y-0.5"
+              className="shadow-card hover:shadow-card-hover flex h-full card-hover flex-col rounded-2xl bg-surface p-5"
             >
               <FileTypeIcon mimeType={file.mimeType} size="lg" />
               <h2 id={`file-${file.id}`} className="mt-4 text-lg leading-snug font-semibold">
                 {artifactDisplayName(file.name)}
               </h2>
-              <p className="mt-1 text-sm text-dusk">Updated {formatShortDate(file.modifiedTime)}</p>
+              <p className="mt-1 text-sm text-ink-muted">
+                Updated {formatShortDate(file.modifiedTime)}
+              </p>
               <FileActions file={file} onPreview={onPreview} className="mt-auto pt-5" />
             </article>
           </li>
@@ -38,7 +40,7 @@ export default function FileList({ files, view, onPreview }: FileListProps) {
   }
 
   return (
-    <ul className="divide-y divide-night/10 overflow-hidden rounded-2xl bg-surface shadow-card">
+    <ul className="shadow-card divide-y divide-border overflow-hidden rounded-2xl bg-surface">
       {files.map((file) => (
         <li key={file.id} className="flex flex-wrap items-center gap-x-4 gap-y-3 px-5 py-4">
           <FileTypeIcon mimeType={file.mimeType} />
@@ -46,7 +48,7 @@ export default function FileList({ files, view, onPreview }: FileListProps) {
             <h2 id={`file-${file.id}`} className="truncate font-body text-base font-medium">
               {artifactDisplayName(file.name)}
             </h2>
-            <p className="text-sm text-dusk">
+            <p className="text-sm text-ink-muted">
               <span className="sr-only">Updated </span>
               {formatShortDate(file.modifiedTime)}
             </p>

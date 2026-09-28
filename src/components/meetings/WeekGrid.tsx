@@ -20,9 +20,9 @@ function hourLabel(hour: number): string {
 }
 
 const BLOCK: Record<JoinedMeeting['kind'], string> = {
-  official: 'border-apricot bg-apricot/20',
-  retro: 'border-lavender bg-lavender/20',
-  adhoc: 'border-dusk/40 bg-night/5',
+  official: 'border-accent bg-accent/20',
+  retro: 'border-status-purple-text bg-status-purple-bg',
+  adhoc: 'border-ink-muted/40 bg-ink/5',
 }
 
 interface WeekGridProps {
@@ -63,23 +63,23 @@ export default function WeekGrid({ weekStart, meetings, todayKey, now }: WeekGri
 
   return (
     <div className="space-y-8">
-      <div aria-hidden="true" className="overflow-x-auto rounded-2xl bg-surface shadow-card">
+      <div aria-hidden="true" className="shadow-card overflow-x-auto rounded-2xl bg-surface">
         <div className="min-w-[44rem]">
           {/* Day headers */}
-          <div className="grid grid-cols-[3.5rem_repeat(7,1fr)] border-b border-night/10">
+          <div className="grid grid-cols-[3.5rem_repeat(7,1fr)] border-b border-border">
             <div />
             {days.map((day) => (
               <div
                 key={day}
                 className={`px-2 py-2.5 text-center text-sm ${
-                  day === todayKey ? 'font-semibold text-ember' : 'text-dusk'
+                  day === todayKey ? 'font-semibold text-link' : 'text-ink-muted'
                 }`}
               >
                 {WEEKDAYS[weekdayOf(day)]}{' '}
                 <span
                   className={
                     day === todayKey
-                      ? 'inline-flex size-7 items-center justify-center rounded-full bg-apricot text-night'
+                      ? 'inline-flex size-7 items-center justify-center rounded-full bg-accent text-on-accent'
                       : ''
                   }
                 >
@@ -90,10 +90,10 @@ export default function WeekGrid({ weekStart, meetings, todayKey, now }: WeekGri
           </div>
 
           {allDay.length > 0 && (
-            <div className="grid grid-cols-[3.5rem_repeat(7,1fr)] border-b border-night/10">
-              <div className="px-1 py-2 text-right text-xs text-dusk">All day</div>
+            <div className="grid grid-cols-[3.5rem_repeat(7,1fr)] border-b border-border">
+              <div className="px-1 py-2 text-right text-xs text-ink-muted">All day</div>
               {days.map((day) => (
-                <div key={day} className="space-y-1 border-l border-night/10 p-1">
+                <div key={day} className="space-y-1 border-l border-border p-1">
                   {allDay
                     .filter((m) => allDayCovers(m, day))
                     .map((m) => (
@@ -122,7 +122,7 @@ export default function WeekGrid({ weekStart, meetings, todayKey, now }: WeekGri
               {Array.from({ length: hourCount }, (_, i) => (
                 <span
                   key={i}
-                  className="absolute right-2 text-xs text-dusk"
+                  className="absolute right-2 text-xs text-ink-muted"
                   style={{ top: i * HOUR_PX + 4 }}
                 >
                   {hourLabel(hours.start + i)}
@@ -132,12 +132,12 @@ export default function WeekGrid({ weekStart, meetings, todayKey, now }: WeekGri
             {days.map((day, i) => (
               <div
                 key={day}
-                className={`relative border-l border-night/10 ${day === todayKey ? 'bg-cream/70' : ''}`}
+                className={`relative border-l border-border ${day === todayKey ? 'bg-page/70' : ''}`}
               >
                 {Array.from({ length: hourCount - 1 }, (_, h) => (
                   <div
                     key={h}
-                    className="absolute right-0 left-0 border-t border-night/10"
+                    className="absolute right-0 left-0 border-t border-border"
                     style={{ top: (h + 1) * HOUR_PX }}
                   />
                 ))}
@@ -149,7 +149,7 @@ export default function WeekGrid({ weekStart, meetings, todayKey, now }: WeekGri
                     rel="noreferrer"
                     tabIndex={-1}
                     title={`${meeting.title} · ${meetingTimeRange(meeting)}`}
-                    className={`absolute overflow-hidden rounded-md border-l-4 px-1.5 py-1 text-xs leading-tight hover:shadow-card ${BLOCK[meeting.kind]}`}
+                    className={`hover:shadow-card absolute overflow-hidden rounded-md border-l-4 px-1.5 py-1 text-xs leading-tight ${BLOCK[meeting.kind]}`}
                     style={{
                       top: `${top}%`,
                       height: `${height}%`,
@@ -158,12 +158,12 @@ export default function WeekGrid({ weekStart, meetings, todayKey, now }: WeekGri
                     }}
                   >
                     <span className="block font-medium">{meeting.title}</span>
-                    <span className="block text-dusk">{meetingTimeRange(meeting)}</span>
+                    <span className="block text-ink-muted">{meetingTimeRange(meeting)}</span>
                   </a>
                 ))}
                 {day === zonedDateKey(now) && nowTop !== null && (
                   <div
-                    className="absolute right-0 left-0 border-t-2 border-ember"
+                    className="absolute right-0 left-0 border-t-2 border-link"
                     style={{ top: `${nowTop}%` }}
                   />
                 )}
@@ -178,7 +178,7 @@ export default function WeekGrid({ weekStart, meetings, todayKey, now }: WeekGri
           Meetings this week
         </h3>
         {listDays.length === 0 ? (
-          <p className="text-dusk">No meetings this week.</p>
+          <p className="text-ink-muted">No meetings this week.</p>
         ) : (
           <MeetingDayList days={listDays} todayKey={todayKey} now={now} level={4} />
         )}

@@ -268,18 +268,59 @@ GitHub Project; the site reads and writes them through GitHub's API.
 - Missing calendar env vars: meetings UI shows "Calendar not connected" (mock meetings
   when VITE_TASKS_MOCK=true), never a crash.
 
-## Design system: "First Light"
-Tokens (define in @theme, use via Tailwind utilities; no raw hex in components):
-night #1E2140, cream #FFF8EF, surface #FFFFFF, dusk #5B6091, ember #B4533A,
-apricot #E07A5F, gold #F2B84B, lavender #8A8FB5.
-- Text: night (primary), dusk (secondary). Links/active states: ember.
-- apricot is a fill color with night text on top. gold and lavender are decorative only,
+## Design system: "First Light" (light + dark)
+Brand palette (raw values; use ONLY inside token definitions and decorative art like the
+hero gradient, sun arc, horizon lines, logo): night #1E2140, cream #FFF8EF, dusk
+#5B6091, ember #B4533A, apricot #E07A5F, gold #F2B84B, lavender #8A8FB5.
+
+Components use SEMANTIC tokens only, never brand colors or raw hex:
+| token          | light              | dark                         |
+| page           | #FFF8EF (cream)    | #14162B                      |
+| surface        | #FFFFFF            | #1E2140 (night)              |
+| surface-raised | #FFFFFF            | #272A4F                      |
+| nav            | #1E2140 (night)    | #0F1124                      |
+| on-nav         | #FFF8EF            | #F3EDE4                      |
+| ink            | #1E2140 (night)    | #F3EDE4                      |
+| ink-muted      | #5B6091 (dusk)     | #A9ADD0                      |
+| link           | #B4533A (ember)    | #F2A488                      |
+| accent         | #E07A5F (apricot)  | #E07A5F                      |
+| on-accent      | #1E2140            | #1E2140                      |
+| border         | #EDE3D6            | #3A3E6B                      |
+| focus          | #F2B84B (gold)     | #F2B84B                      |
+Status badge tokens (status-<color>-bg / -text) have light and dark values; dark values:
+GRAY #2E3150/#D4D6E8, BLUE #23305E/#BFCBF5, GREEN #1F3D2C/#AEDDBC, YELLOW #3D3419/#F2D98C,
+PURPLE #34295A/#D5C6F2, ORANGE #452A1F/#F5BFA6, RED #4A2226/#F4B4B4, PINK #452337/#F2B8D2.
+
+Implementation:
+- src/index.css: light values on :root, dark values on [data-theme="dark"], exposed to
+  Tailwind with `@theme inline { --color-page: var(--page); ... }` so utilities are
+  bg-page, text-ink, text-link, border-border, etc. Add
+  `@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));` for the rare
+  one-off override. Set `color-scheme: light` / `dark` per theme (native controls,
+  scrollbars).
+- Theme preference: "system" (default) | "light" | "dark", stored in localStorage key
+  "theme" (wrapped in try/catch). An inline script in index.html, before the CSS, resolves
+  it (system → prefers-color-scheme) and sets data-theme on <html> before first paint.
+  In system mode, follow live OS changes via matchMedia.
+- src/lib/theme: ThemeProvider + useTheme() → { preference, resolved, setPreference }.
+- Toggle: icon button in the navbar (Sun / Moon / Monitor from lucide), cycling
+  system → light → dark, with an aria-label stating the current mode and a tooltip.
+  Also listed in the avatar menu for signed-in users.
+- Charts (hand-built SVG) use currentColor / CSS vars, never hardcoded colors.
+
+Rules (both themes):
+- Text: ink (primary), ink-muted (secondary). Links/active states: link.
+- accent is a fill with on-accent text on top. gold and lavender are decorative only,
   never text.
 - Fonts: Fraunces (headings), Inter (body).
-- Cards: white, rounded-2xl, soft warm shadow, subtle hover lift.
-- Signature motifs: sunrise hero gradient (night → lavender → apricot → gold),
-  thin gold→apricot "horizon line" dividers, sun-arc SVG behind the wordmark.
-- Respect prefers-reduced-motion. Meet WCAG AA. Fully keyboard navigable, visible focus rings.
+- Cards: surface, rounded-2xl. Light: soft warm shadow, hover lift. Dark: 1px border,
+  hover → surface-raised (shadows are invisible on dark).
+- Signature motifs: sunrise hero gradient (light: night → lavender → apricot → gold;
+  dark: #14162B → #1E2140 → #5B6091 → #B4533A → #C98F2F), gold→apricot "horizon line"
+  dividers, sun-arc SVG behind the wordmark. The motifs keep their warm colors in dark.
+- Embedded Google previews stay white; frame them with a border.
+- Respect prefers-reduced-motion. Meet WCAG AA in BOTH themes. Fully keyboard
+  navigable, visible focus rings (focus token).
 - Color is never the only signal: every badge/tag also has a text label.
 
 ## Conventions

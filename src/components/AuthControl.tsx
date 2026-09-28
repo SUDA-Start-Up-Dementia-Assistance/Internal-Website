@@ -2,7 +2,9 @@ import { ChevronDown, LayoutDashboard, ListTodo, LogIn, LogOut } from 'lucide-re
 import { useEffect, useId, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth, type AuthUser } from '../lib/auth'
+import { THEME_PREFERENCES, useTheme } from '../lib/theme'
 import Avatar from './Avatar'
+import { THEME_OPTIONS } from './themeOptions'
 
 /** Navbar right side: "Sign in with GitHub", or the user's avatar with an account menu. */
 export default function AuthControl() {
@@ -18,7 +20,7 @@ export default function AuthControl() {
       type="button"
       // Signing in always lands on the Dashboard.
       onClick={() => signIn()}
-      className="inline-flex items-center gap-1.5 rounded-full border border-cream/40 px-3.5 py-1.5 text-sm font-medium text-cream transition-colors hover:border-cream hover:bg-cream/10"
+      className="inline-flex items-center gap-1.5 rounded-full border border-on-nav/40 px-3.5 py-1.5 text-sm font-medium text-on-nav transition-colors hover:border-on-nav hover:bg-on-nav/10"
     >
       <LogIn aria-hidden="true" className="size-4" />
       <span className="sm:hidden">Sign in</span>
@@ -67,7 +69,7 @@ function UserMenu({ user }: { user: AuthUser }) {
         aria-expanded={open}
         aria-controls={panelId}
         onClick={() => setOpen((o) => !o)}
-        className="flex items-center gap-1 rounded-full p-0.5 text-cream/85 hover:text-cream"
+        className="flex items-center gap-1 rounded-full p-0.5 text-on-nav/85 hover:text-on-nav"
       >
         <Avatar person={user} size="sm" />
         <ChevronDown aria-hidden="true" className="size-4" />
@@ -75,27 +77,27 @@ function UserMenu({ user }: { user: AuthUser }) {
       </button>
 
       {open && (
-        // Light panel inside the dark header: switch the focus ring back to ember.
         <div
           id={panelId}
           ref={panelRef}
-          className="absolute right-0 z-50 mt-3 w-64 overflow-hidden rounded-2xl bg-surface text-night shadow-card-hover [--focus-ring:var(--color-ember)]"
+          className="shadow-photo absolute right-0 z-50 mt-3 w-64 overflow-hidden rounded-2xl bg-surface-raised text-ink"
         >
-          <div className="flex items-center gap-3 border-b border-night/10 px-4 py-3">
+          <div className="flex items-center gap-3 border-b border-border px-4 py-3">
             <Avatar person={user} size="md" />
             <div className="min-w-0">
               <p className="truncate font-medium">{user.name}</p>
-              <p className="truncate text-sm text-dusk">@{user.login}</p>
+              <p className="truncate text-sm text-ink-muted">@{user.login}</p>
             </div>
           </div>
-          <ul className="p-1.5">
+          <ThemeChoice />
+          <ul className="border-t border-border p-1.5">
             <li>
               <Link
                 to="/dashboard"
                 onClick={() => setOpen(false)}
-                className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm hover:bg-night/5"
+                className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm hover:bg-ink/5"
               >
-                <LayoutDashboard aria-hidden="true" className="size-4 text-dusk" />
+                <LayoutDashboard aria-hidden="true" className="size-4 text-ink-muted" />
                 Dashboard
               </Link>
             </li>
@@ -103,22 +105,22 @@ function UserMenu({ user }: { user: AuthUser }) {
               <Link
                 to="/tasks"
                 onClick={() => setOpen(false)}
-                className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm hover:bg-night/5"
+                className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm hover:bg-ink/5"
               >
-                <ListTodo aria-hidden="true" className="size-4 text-dusk" />
+                <ListTodo aria-hidden="true" className="size-4 text-ink-muted" />
                 My tasks
               </Link>
             </li>
             {preview ? (
-              <li className="px-3 py-2 text-sm text-dusk">Preview: sample data, no sign-in</li>
+              <li className="px-3 py-2 text-sm text-ink-muted">Preview: sample data, no sign-in</li>
             ) : (
               <li>
                 <button
                   type="button"
                   onClick={signOut}
-                  className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm hover:bg-night/5"
+                  className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm hover:bg-ink/5"
                 >
-                  <LogOut aria-hidden="true" className="size-4 text-dusk" />
+                  <LogOut aria-hidden="true" className="size-4 text-ink-muted" />
                   Sign out
                 </button>
               </li>
@@ -126,6 +128,39 @@ function UserMenu({ user }: { user: AuthUser }) {
           </ul>
         </div>
       )}
+    </div>
+  )
+}
+
+/** The theme as a three-way choice (the navbar toggle cycles through the same options). */
+function ThemeChoice() {
+  const { preference, setPreference } = useTheme()
+  return (
+    <div role="group" aria-label="Theme" className="flex items-center gap-3 px-4 py-3">
+      <span aria-hidden="true" className="text-sm text-ink-muted">
+        Theme
+      </span>
+      <div className="ml-auto inline-flex rounded-full bg-ink/5 p-1">
+        {THEME_PREFERENCES.map((option) => {
+          const { label, icon: Icon } = THEME_OPTIONS[option]
+          const selected = option === preference
+          return (
+            <button
+              key={option}
+              type="button"
+              aria-pressed={selected}
+              aria-label={label}
+              title={label}
+              onClick={() => setPreference(option)}
+              className={`flex rounded-full p-1.5 transition-colors ${
+                selected ? 'shadow-card bg-surface text-ink' : 'text-ink-muted hover:text-ink'
+              }`}
+            >
+              <Icon aria-hidden="true" className="size-4" />
+            </button>
+          )
+        })}
+      </div>
     </div>
   )
 }

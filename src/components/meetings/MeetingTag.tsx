@@ -23,10 +23,10 @@ export default function MeetingTag({ meeting }: { meeting: Meeting }) {
 /** Shown while a meeting is in progress. Text, with a decorative pulsing dot. */
 export function HappeningNowBadge() {
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full bg-apricot px-2 py-0.5 text-xs font-semibold text-night">
+    <span className="inline-flex items-center gap-1.5 rounded-full bg-accent px-2 py-0.5 text-xs font-semibold text-ink">
       <span
         aria-hidden="true"
-        className="size-1.5 rounded-full bg-night motion-safe:animate-pulse"
+        className="size-1.5 rounded-full bg-on-accent motion-safe:animate-pulse"
       />
       Happening now
     </span>

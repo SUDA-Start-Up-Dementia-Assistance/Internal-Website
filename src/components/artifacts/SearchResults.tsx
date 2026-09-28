@@ -17,7 +17,7 @@ interface SearchResultsProps {
 export default function SearchResults({ query, results, onPreview }: SearchResultsProps) {
   return (
     <div>
-      <p role="status" className="text-sm text-dusk">
+      <p role="status" className="text-sm text-ink-muted">
         {results.length === 0
           ? `No files match “${query}”.`
           : `${results.length} ${results.length === 1 ? 'file matches' : 'files match'} “${query}”.`}
@@ -30,17 +30,17 @@ export default function SearchResults({ query, results, onPreview }: SearchResul
             return (
               <li
                 key={file.id}
-                className="flex flex-wrap items-center gap-x-4 gap-y-3 rounded-2xl bg-surface px-5 py-4 shadow-card"
+                className="shadow-card flex flex-wrap items-center gap-x-4 gap-y-3 rounded-2xl bg-surface px-5 py-4"
               >
                 <FileTypeIcon mimeType={file.mimeType} />
                 <div className="min-w-0 flex-1">
                   <p id={nameId} className="truncate font-medium">
                     {name}
                   </p>
-                  <p className="text-sm text-dusk">
+                  <p className="text-sm text-ink-muted">
                     <Link
                       to={`/artifacts/${category.slug}`}
-                      className="rounded-sm text-ember underline decoration-ember/40 underline-offset-2 hover:decoration-ember"
+                      className="rounded-sm text-link underline decoration-link/40 underline-offset-2 hover:decoration-link"
                     >
                       {category.displayName}
                     </Link>

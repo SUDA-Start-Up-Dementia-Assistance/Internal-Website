@@ -46,7 +46,7 @@ export default function ReviewQueueWidget({ query, now }: { query: DashboardQuer
           prs.length === 0 ? (
             <EmptyState>No reviews waiting on you. Nice.</EmptyState>
           ) : (
-            <ul className="divide-y divide-night/10">
+            <ul className="divide-y divide-border">
               {[...prs].sort(byMostOverdue(now)).map((pr) => (
                 <ReviewRow key={pr.id} pr={pr} now={now} />
               ))}
@@ -65,17 +65,17 @@ function ReviewRow({ pr, now }: { pr: ReviewQueuePr; now: Date }) {
     <li className="flex gap-3 py-3">
       <Avatar person={{ name: author, avatarUrl: pr.authorAvatarUrl ?? '' }} size="sm" />
       <div className="min-w-0 flex-1">
-        <p className="text-xs text-dusk">
+        <p className="text-xs text-ink-muted">
           {repoRef(pr)} <span className="sr-only">by</span>
           <span aria-hidden="true">·</span> @{author}
         </p>
         <PrTitleLink pr={pr} />
         <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs">
-          <span className={late ? 'font-medium text-ember' : 'text-dusk'}>
+          <span className={late ? 'font-medium text-link' : 'text-ink-muted'}>
             waiting {formatBusinessWait(pr.waitingSince, now)}
           </span>
           {late && (
-            <span className="rounded-full bg-ember px-2 py-0.5 font-semibold text-surface">
+            <span className="rounded-full bg-link px-2 py-0.5 font-semibold text-surface">
               Overdue
             </span>
           )}

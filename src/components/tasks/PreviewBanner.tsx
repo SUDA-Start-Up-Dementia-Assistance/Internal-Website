@@ -10,9 +10,9 @@ export default function PreviewBanner() {
   return (
     <section
       aria-labelledby="preview-banner-title"
-      className="flex gap-3 rounded-2xl bg-apricot/25 p-4 text-night"
+      className="flex gap-3 rounded-2xl bg-accent/25 p-4 text-ink"
     >
-      <FlaskConical aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-ember" />
+      <FlaskConical aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-link" />
       <div className="min-w-0">
         <h2 id="preview-banner-title" className="font-body font-semibold">
           Preview: sample data

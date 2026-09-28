@@ -41,11 +41,11 @@ function HomeContent() {
           </h2>
           {/* TODO: replace with the real project overview. */}
           {ABOUT.split('\n').map((line, i) => (
-            <p key={i} className="mt-4 max-w-prose text-dusk">
+            <p key={i} className="mt-4 max-w-prose text-ink-muted">
               {line}
             </p>
           ))}
-          {CURRENT_STATE && <p className="mt-4 max-w-prose text-dusk">{CURRENT_STATE}</p>}
+          {CURRENT_STATE && <p className="mt-4 max-w-prose text-ink-muted">{CURRENT_STATE}</p>}
         </section>
         {SHOW_PUBLISHED && <RecentlyPublished categories={published} />}
         <QuickLinks />

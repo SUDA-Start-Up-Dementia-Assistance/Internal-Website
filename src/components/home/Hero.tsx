@@ -6,21 +6,21 @@ import Foliage from './Foliage'
 import Hills from './Hills'
 
 /**
- * Uses bg-dawn-deep rather than bg-dawn: cream text fails AA on lavender/apricot (~3:1),
- * so the hero's sky is built from dusk and ember instead. Ratios were checked against
- * rendered pixels.
+ * The sky (bg-dawn-deep) is built from night, dusk and ember so light text can pass AA, with
+ * a soft scrim (hero-scrim) behind the text for the dusk → ember band. Ratios were checked
+ * against rendered pixels in both themes.
  */
 export default function Hero() {
   return (
     <section
       aria-labelledby="hero-title"
-      className="relative isolate overflow-hidden bg-dawn-deep text-cream on-night"
+      className="relative isolate overflow-hidden bg-dawn-deep text-on-nav"
     >
       <Hills className="absolute inset-x-0 bottom-0 -z-10 h-[20%] min-h-24" />
       <Foliage className="absolute right-0 bottom-0 -z-10 h-28 w-auto opacity-40 blur-[1.5px] lg:h-[32%]" />
 
       <div className="mx-auto grid max-w-[1400px] items-center gap-10 px-6 pt-12 pb-16 lg:min-h-[560px] lg:grid-cols-[minmax(0,48fr)_minmax(0,52fr)] lg:gap-12 lg:px-10 lg:py-10">
-        <div className="lg:order-2">
+        <div className="hero-scrim lg:order-2">
           <div aria-hidden="true" className="-ml-3 w-40 overflow-hidden sm:w-48">
             <SunArc className="block w-full motion-safe:animate-sun-rise" />
           </div>
@@ -36,7 +36,7 @@ export default function Hero() {
           >
             A familiar place to begin each day.
           </h1>
-          <p className="mt-3 max-w-prose text-lg leading-normal text-cream">
+          <p className="mt-3 max-w-prose text-lg leading-normal text-on-nav">
             D.A.W.N. is a tablet-based experience designed to help people living with dementia feel
             more oriented, engaged, and connected. Through a simple, personalized interface, it
             brings together daily information, meaningful content, and the people they love in one
@@ -44,7 +44,7 @@ export default function Hero() {
           </p>
           <a
             href="#about"
-            className="mt-7 inline-flex items-center gap-2 rounded-full border border-gold bg-night px-7 py-2.5 font-heading text-lg text-cream shadow-glow focus-ring-contrast transition-shadow hover:shadow-glow-strong"
+            className="mt-7 inline-flex items-center gap-2 rounded-full border border-brand-gold bg-nav px-7 py-2.5 font-heading text-lg text-on-nav shadow-glow focus-ring-contrast transition-shadow hover:shadow-glow-strong"
           >
             Learn More
             <ArrowRight aria-hidden="true" className="size-5" />
@@ -62,7 +62,7 @@ export default function Hero() {
             alt="An older woman smiles from her bed at a wall-mounted tablet running D.A.W.N. It greets her by name and shows a video message from her daughter, the people caring for her, and her plan for the day."
             width={1280}
             height={960}
-            className="aspect-[4/3] w-full rounded-2xl object-cover shadow-photo"
+            className="shadow-photo aspect-[4/3] w-full rounded-2xl object-cover"
           />
         </div>
       </div>
