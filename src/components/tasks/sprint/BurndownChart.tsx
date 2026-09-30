@@ -495,40 +495,44 @@ function DataTable({
   unit: BurndownUnit
 }) {
   const unitName = UNIT_LABELS[unit].many
+  // sr-only goes on a wrapper, not the <table>: tables ignore the 1px width/height and
+  // overflow, so a hidden table keeps its full size and stretches the page below the footer.
   return (
-    <table className="sr-only">
-      <caption className="sr-only">
-        {title} data, in {unitName}
-      </caption>
-      <thead>
-        <tr>
-          <th scope="col">Date</th>
-          <th scope="col">Remaining</th>
-          <th scope="col">Done</th>
-          <th scope="col">Scope</th>
-          {ideal && <th scope="col">Ideal</th>}
-        </tr>
-      </thead>
-      <tbody>
-        {dates.map((date, i) => {
-          const d = byDay[i]
-          return (
-            <tr key={date}>
-              <th scope="row">{formatLongDate(date)}</th>
-              {d ? (
-                <>
-                  <td>{d.remaining}</td>
-                  <td>{d.done}</td>
-                  <td>{d.scope}</td>
-                </>
-              ) : (
-                <td colSpan={3}>Not recorded</td>
-              )}
-              {ideal && <td>{ideal[i]}</td>}
-            </tr>
-          )
-        })}
-      </tbody>
-    </table>
+    <div className="sr-only">
+      <table>
+        <caption>
+          {title} data, in {unitName}
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col">Date</th>
+            <th scope="col">Remaining</th>
+            <th scope="col">Done</th>
+            <th scope="col">Scope</th>
+            {ideal && <th scope="col">Ideal</th>}
+          </tr>
+        </thead>
+        <tbody>
+          {dates.map((date, i) => {
+            const d = byDay[i]
+            return (
+              <tr key={date}>
+                <th scope="row">{formatLongDate(date)}</th>
+                {d ? (
+                  <>
+                    <td>{d.remaining}</td>
+                    <td>{d.done}</td>
+                    <td>{d.scope}</td>
+                  </>
+                ) : (
+                  <td colSpan={3}>Not recorded</td>
+                )}
+                {ideal && <td>{ideal[i]}</td>}
+              </tr>
+            )
+          })}
+        </tbody>
+      </table>
+    </div>
   )
 }
