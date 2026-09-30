@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { compareTodos, filterTodos, groupTodos, type TodoLike } from './selectors'
+import { assigneesLabel } from './format'
+import { compareTodos, filterTodos, groupTodos, sameLogins, type TodoLike } from './selectors'
 
 const todo = (id: string, fields: Partial<TodoLike & { doneAt: string }> = {}) => ({
   id,
   title: id,
   done: false,
+  assignees: [],
   createdAt: `2026-09-01T00:00:0${id.length}Z`,
   ...fields,
 })
@@ -34,11 +36,12 @@ describe('groupTodos', () => {
 })
 
 describe('filterTodos', () => {
-  const todos = [todo('a', { assignee: 'Ada' }), todo('b', { assignee: 'grace' }), todo('c')]
-  it('filters to mine (any case) or unassigned', () => {
-    expect(filterTodos(todos, 'all', 'ada')).toHaveLength(3)
-    expect(filterTodos(todos, 'mine', 'ada').map((t) => t.id)).toEqual(['a'])
-    expect(filterTodos(todos, 'unassigned', 'ada').map((t) => t.id)).toEqual(['c'])
+  const todos = [todo('a', { assignees: ['Ada'] }), todo('b', { assignees: ['grace'] }), todo('c')]
+  it('filters to mine (any case, including shared) or for everyone (no assignees)', () => {
+    const withShared = [...todos, todo('d', { assignees: ['grace', 'ADA'] })]
+    expect(filterTodos(withShared, 'all', 'ada')).toHaveLength(4)
+    expect(filterTodos(withShared, 'mine', 'ada').map((t) => t.id)).toEqual(['a', 'd'])
+    expect(filterTodos(withShared, 'everyone', 'ada').map((t) => t.id)).toEqual(['c'])
   })
 })
 
@@ -46,5 +49,28 @@ describe('compareTodos', () => {
   it('puts no due date last', () => {
     const sorted = [todo('x'), todo('y', { dueDate: '2026-12-01' })].sort(compareTodos)
     expect(sorted.map((t) => t.id)).toEqual(['y', 'x'])
+  })
+})
+
+describe('assigneesLabel', () => {
+  const names: Record<string, string> = { priya: 'Priya', river: 'River', sam: 'Sam', ada: 'Ada' }
+  const label = (assignees: string[]) => assigneesLabel(assignees, 'ada', (l) => names[l] ?? l)
+
+  it('is null for a to-do that is for everyone', () => {
+    expect(label([])).toBeNull()
+  })
+
+  it('names people, me first as "You", and shortens long lists', () => {
+    expect(label(['ADA'])).toBe('You')
+    expect(label(['priya'])).toBe('Priya')
+    expect(label(['priya', 'ada'])).toBe('You and Priya')
+    expect(label(['river', 'sam', 'priya', 'ada'])).toBe('You, River +2')
+  })
+})
+
+describe('sameLogins', () => {
+  it('ignores order and case', () => {
+    expect(sameLogins(['Ada', 'grace'], ['grace', 'ada'])).toBe(true)
+    expect(sameLogins(['ada'], ['ada', 'grace'])).toBe(false)
   })
 })

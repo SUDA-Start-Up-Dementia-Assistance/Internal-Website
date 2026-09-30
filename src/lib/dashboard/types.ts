@@ -60,8 +60,18 @@ export interface MeetingsWidget {
   meetings: Meeting[]
 }
 
-/** Open team to-dos assigned to me or to nobody: up to 5, soonest due first, plus counts. */
-export type TodosWidget = DashboardTodos<Todo>
+/** A person named in the to-dos widget. */
+export interface TodoPerson {
+  login: string
+  name: string
+  avatarUrl: string
+}
+
+/**
+ * Up to 5 open team to-dos (mine and everyone's first), plus counts, and the names of the
+ * people they're assigned to ([] if the team list couldn't be read: show logins).
+ */
+export type TodosWidget = DashboardTodos<Todo> & { people: TodoPerson[] }
 
 export type CiState = 'SUCCESS' | 'FAILURE' | 'PENDING'
 

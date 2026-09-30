@@ -74,6 +74,11 @@ function sources(overrides: Partial<DashboardSources> = {}): DashboardSources {
     myPrs: vi.fn(async () => [] as MyPr[]),
     meetings: vi.fn(async () => [] as Meeting[]),
     todos: vi.fn(async () => [] as Todo[]),
+    team: vi.fn(async () => [
+      { login: 'ada', name: 'Ada Lovelace', avatarUrl: '' },
+      { login: 'grace', name: 'Grace Hopper', avatarUrl: '' },
+      { login: 'alan', name: 'Alan Turing', avatarUrl: '' },
+    ]),
     ...overrides,
   }
 }
@@ -310,6 +315,7 @@ describe('todos widget', () => {
       id: `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`,
       title: `todo ${n}`,
       done: false,
+      assignees: [],
       createdBy: 'grace',
       createdAt: `2026-09-${String(n).padStart(2, '0')}T12:00:00Z`,
       updatedBy: 'grace',
@@ -319,15 +325,75 @@ describe('todos widget', () => {
     }
   }
 
-  it('selects open to-dos for me or nobody, soonest due first (no date last), max 5', async () => {
+  it('shows every open team to-do: mine and unassigned first, then others, max 5', async () => {
     const todos = [
-      todo({ title: 'mine, no date', assignee: 'ada' }),
-      todo({ title: 'unassigned, due 10/05', dueDate: '2026-10-05' }),
-      todo({ title: 'someone else', assignee: 'grace', dueDate: '2026-09-01' }),
-      todo({ title: 'mine, overdue', assignee: 'ADA', dueDate: '2026-09-28' }),
-      todo({ title: 'done', assignee: 'ada', dueDate: '2026-09-02', done: true }),
+      todo({ title: 'grace, overdue', assignees: ['grace'], dueDate: '2026-09-01' }),
+      todo({ title: 'grace, due today', assignees: ['grace'], dueDate: TODAY }),
+      todo({ title: 'mine, overdue', assignees: ['ADA'], dueDate: '2026-09-28' }),
       todo({ title: 'unassigned, no date' }),
-      todo({ title: 'mine, due today', assignee: 'ada', dueDate: TODAY }),
+      todo({ title: 'done', assignees: ['ada'], dueDate: '2026-09-02', done: true }),
+      todo({ title: 'mine, due today', assignees: ['ada'], dueDate: TODAY }),
+      todo({ title: 'unassigned, overdue', dueDate: '2026-09-29' }),
+    ]
+    const res = await getDashboard(ctx(), sources({ todos: vi.fn(async () => todos) }))
+    if (isWidgetError(res.todos)) throw new Error('todos failed')
+    expect(res.todos.items.map((t) => t.title)).toEqual([
+      'mine, overdue',
+      'unassigned, overdue',
+      'mine, due today',
+      'unassigned, no date',
+      'grace, overdue',
+    ])
+    expect(res.todos.counts).toEqual({
+      open: 6,
+      overdue: 3,
+      // Grace's overdue to-do isn't waiting on Ada.
+      overdueForMe: 2,
+      mine: 2,
+      everyone: 2,
+      others: 2,
+    })
+    // Names for the people listed, and only them.
+    expect(res.todos.people).toEqual([
+      { login: 'ada', name: 'Ada Lovelace', avatarUrl: '' },
+      { login: 'grace', name: 'Grace Hopper', avatarUrl: '' },
+    ])
+  })
+
+  it('fills the slots with teammates’ to-dos when I have none', async () => {
+    const todos = [
+      todo({ title: 'alan, later', assignees: ['alan'], dueDate: '2026-10-20' }),
+      todo({ title: 'grace, soon', assignees: ['grace'], dueDate: '2026-10-01' }),
+    ]
+    const res = await getDashboard(ctx(), sources({ todos: vi.fn(async () => todos) }))
+    if (isWidgetError(res.todos)) throw new Error('todos failed')
+    expect(res.todos.items.map((t) => t.title)).toEqual(['grace, soon', 'alan, later'])
+  })
+
+  it('still lists to-dos (without names) when the team list fails', async () => {
+    const res = await getDashboard(
+      ctx(),
+      sources({
+        todos: vi.fn(async () => [todo({ title: 'grace', assignees: ['grace'] })]),
+        team: vi.fn(async () => {
+          throw new Error('github down')
+        }),
+      }),
+    )
+    if (isWidgetError(res.todos)) throw new Error('todos failed')
+    expect(res.todos.items).toHaveLength(1)
+    expect(res.todos.people).toEqual([])
+  })
+
+  it('sorts by due date within a group (no date last)', async () => {
+    const todos = [
+      todo({ title: 'mine, no date', assignees: ['ada'] }),
+      todo({ title: 'unassigned, due 10/05', dueDate: '2026-10-05' }),
+      todo({ title: 'someone else', assignees: ['grace'], dueDate: '2026-09-01' }),
+      todo({ title: 'mine, overdue', assignees: ['ADA'], dueDate: '2026-09-28' }),
+      todo({ title: 'done', assignees: ['ada'], dueDate: '2026-09-02', done: true }),
+      todo({ title: 'unassigned, no date' }),
+      todo({ title: 'mine, due today', assignees: ['ada'], dueDate: TODAY }),
       todo({ title: 'unassigned, due 10/20', dueDate: '2026-10-20' }),
     ]
     const res = await getDashboard(ctx(), sources({ todos: vi.fn(async () => todos) }))
@@ -340,7 +406,6 @@ describe('todos widget', () => {
       'unassigned, due 10/20',
       'mine, no date',
     ])
-    expect(res.todos.counts).toEqual({ open: 6, overdue: 1, mine: 3, unassigned: 3 })
   })
 
   it('is isolated: a Blob failure only fails the todos widget', async () => {

@@ -9,19 +9,21 @@ import {
 import { useEffect, useId, useRef, useState, type FocusEvent, type KeyboardEvent } from 'react'
 import type { TeamMember } from '../../lib/tasks'
 import {
+  assigneesLabel,
   doneLabel,
   dueLabel,
   editTodo,
   isPendingTodo,
   isTodoOverdue,
   personName,
+  sameLogins,
   removeTodo,
   type Todo,
   type TodoChanges,
 } from '../../lib/todos'
 import Avatar from '../Avatar'
 import ConfirmDeleteDialog from './ConfirmDeleteDialog'
-import { AssigneeSelect } from './TodoFields'
+import { AssigneePicker } from './TodoFields'
 import { DESCRIPTION_MAX, TITLE_MAX, TODO_FIELD } from './todoFieldStyles'
 
 interface TodoRowProps {
@@ -34,7 +36,8 @@ interface TodoRowProps {
 }
 
 /**
- * One team to-do: a done checkbox, the title (click to edit inline), due date, assignee, an
+ * One team to-do: a done checkbox, the title (click to edit inline), due date, assignees (none
+ * shown when it's for everyone), an
  * expandable description, and an overflow menu with Edit and Delete. Every change is
  * optimistic; failures roll back with a toast (see useTodos).
  */
@@ -97,7 +100,7 @@ export default function TodoRow({ todo, login, team, today, now }: TodoRowProps)
               />
               <span className="sr-only"> (edit)</span>
             </button>
-            <RowDetails todo={todo} team={team} overdue={overdue} now={now} />
+            <RowDetails todo={todo} login={login} team={team} overdue={overdue} now={now} />
             {expanded && todo.description && (
               <p
                 id={descriptionId}
@@ -146,50 +149,58 @@ export default function TodoRow({ todo, login, team, today, now }: TodoRowProps)
   )
 }
 
+/** Avatars shown before a stack collapses into the text label. */
+const AVATARS_SHOWN = 3
+
 function RowDetails({
   todo,
+  login,
   team,
   overdue,
   now,
 }: {
   todo: Todo
+  login: string
   team: readonly TeamMember[]
   overdue: boolean
   now: Date
 }) {
-  const member = todo.assignee
-    ? team.find((m) => m.login.toLowerCase() === todo.assignee!.toLowerCase())
-    : undefined
+  const due = !todo.done && todo.dueDate
+  // No assignees = it's for everyone: nothing to label.
+  const assigned = assigneesLabel(todo.assignees, login, (l) => personName(l, team))
+  if (!todo.done && !due && !assigned) return null
+  const avatarOf = (l: string) => ({
+    name: personName(l, team),
+    avatarUrl: team.find((m) => m.login.toLowerCase() === l.toLowerCase())?.avatarUrl ?? '',
+  })
   return (
     <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-ink-muted">
-      {todo.done ? (
-        <span>{doneLabel(todo, team, now)}</span>
-      ) : (
-        todo.dueDate && (
-          <span
-            className={`inline-flex items-center gap-1 ${overdue ? 'font-medium text-link' : ''}`}
-          >
-            {overdue ? (
-              <CircleAlert aria-hidden="true" className="size-3.5" />
-            ) : (
-              <CalendarClock aria-hidden="true" className="size-3.5" />
-            )}
-            {overdue && <span>Overdue ·</span>}
-            {dueLabel(todo.dueDate, now)}
-          </span>
-        )
-      )}
-      {todo.assignee ? (
-        <span className="inline-flex items-center gap-1.5">
-          <Avatar
-            person={{ name: personName(todo.assignee, team), avatarUrl: member?.avatarUrl ?? '' }}
-            size="sm"
-          />
-          <span className="sr-only">Assigned to </span>
-          {personName(todo.assignee, team)}
+      {todo.done && <span>{doneLabel(todo, team, now)}</span>}
+      {due && (
+        <span
+          className={`inline-flex items-center gap-1 ${overdue ? 'font-medium text-link' : ''}`}
+        >
+          {overdue ? (
+            <CircleAlert aria-hidden="true" className="size-3.5" />
+          ) : (
+            <CalendarClock aria-hidden="true" className="size-3.5" />
+          )}
+          {overdue && <span>Overdue ·</span>}
+          {dueLabel(due, now)}
         </span>
-      ) : (
-        <span>Unassigned</span>
+      )}
+      {assigned && (
+        <span className="inline-flex items-center gap-1.5">
+          <span className="flex -space-x-1.5">
+            {todo.assignees.slice(0, AVATARS_SHOWN).map((l) => (
+              <span key={l} className="rounded-full ring-2 ring-surface">
+                <Avatar person={avatarOf(l)} size="xs" />
+              </span>
+            ))}
+          </span>
+          <span className="sr-only">Assigned to </span>
+          {assigned}
+        </span>
       )}
     </div>
   )
@@ -211,7 +222,7 @@ function EditForm({
   const [title, setTitle] = useState(todo.title)
   const [description, setDescription] = useState(todo.description ?? '')
   const [dueDate, setDueDate] = useState(todo.dueDate ?? '')
-  const [assignee, setAssignee] = useState(todo.assignee ?? '')
+  const [assignees, setAssignees] = useState<string[]>(todo.assignees)
   const finished = useRef(false)
 
   function save(refocus: boolean) {
@@ -225,7 +236,7 @@ function EditForm({
       changes.description = trimmedDescription || null
     }
     if (dueDate !== (todo.dueDate ?? '')) changes.dueDate = dueDate || null
-    if (assignee !== (todo.assignee ?? '')) changes.assignee = assignee || null
+    if (!sameLogins(assignees, todo.assignees)) changes.assignees = assignees
     if (Object.keys(changes).length > 0) void editTodo(todo.id, changes, login)
     onDone(refocus)
   }
@@ -303,19 +314,14 @@ function EditForm({
           className={`mt-1 ${TODO_FIELD}`}
         />
       </div>
-      <div>
-        <label htmlFor={`${id}-assignee`} className="text-xs font-medium text-ink-muted">
-          Assignee
-        </label>
-        <div className="mt-1">
-          <AssigneeSelect
-            id={`${id}-assignee`}
-            value={assignee}
-            onChange={setAssignee}
-            team={team}
-            login={login}
-          />
-        </div>
+      <div className="sm:col-span-2">
+        <AssigneePicker
+          value={assignees}
+          onChange={setAssignees}
+          team={team}
+          login={login}
+          labelClassName="text-xs font-medium text-ink-muted"
+        />
       </div>
       <p className="text-xs text-ink-muted sm:col-span-2">
         Enter saves · Esc cancels · Shift+Enter adds a line to the description

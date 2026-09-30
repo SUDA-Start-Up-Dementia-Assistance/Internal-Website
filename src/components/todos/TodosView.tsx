@@ -13,7 +13,7 @@ import TodoRow from './TodoRow'
 const FILTERS: { id: TodoFilter; label: string }[] = [
   { id: 'all', label: 'All' },
   { id: 'mine', label: 'Mine' },
-  { id: 'unassigned', label: 'Unassigned' },
+  { id: 'everyone', label: 'For everyone' },
 ]
 
 interface TodosViewProps {

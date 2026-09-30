@@ -11,7 +11,8 @@ export interface TodoLike {
   id: string
   title: string
   dueDate?: string
-  assignee?: string
+  /** GitHub logins; [] = for everyone on the team. */
+  assignees: readonly string[]
   done: boolean
   createdAt: string
 }
@@ -24,7 +25,17 @@ export const isTodoOverdue = (todo: TodoLike, today: string) =>
   !todo.done && todo.dueDate !== undefined && todo.dueDate < today
 
 export const isAssignedToLogin = (todo: TodoLike, login: string) =>
-  todo.assignee !== undefined && todo.assignee.toLowerCase() === login.toLowerCase()
+  todo.assignees.some((a) => a.toLowerCase() === login.toLowerCase())
+
+/** The same people, in any order and case. */
+export function sameLogins(a: readonly string[], b: readonly string[]): boolean {
+  const key = (list: readonly string[]) =>
+    [...new Set(list.map((l) => l.toLowerCase()))].sort().join(' ')
+  return key(a) === key(b)
+}
+
+/** Assigned to nobody in particular: it's for the whole team. */
+export const isForEveryone = (todo: TodoLike) => todo.assignees.length === 0
 
 /** Soonest due date first (no date last), then oldest first. */
 export function compareTodos(a: TodoLike, b: TodoLike): number {
@@ -37,37 +48,54 @@ export function compareTodos(a: TodoLike, b: TodoLike): number {
 }
 
 export interface DashboardTodos<T> {
-  /** Up to 5 open to-dos assigned to me or to nobody, most urgent first. */
+  /**
+   * Up to 5 open team to-dos, whoever they're assigned to. Mine and everyone's come first
+   * (they're the ones to act on), then other people's; soonest due first within each.
+   */
   items: T[]
   counts: {
-    /** Open to-dos assigned to me or to nobody (the full count; `items` is capped). */
+    /** Every open team to-do (the full count; `items` is capped). */
     open: number
+    /** Every open overdue team to-do. */
     overdue: number
+    /** Open overdue to-dos that include me or are for everyone: the "Waiting on you" count. */
+    overdueForMe: number
+    /** Assigned to me (possibly with others). */
     mine: number
-    unassigned: number
+    /** For everyone (no assignees). */
+    everyone: number
+    /** Assigned only to other people. */
+    others: number
   }
 }
+
+/** Assigned to `login`, or for everyone: the to-dos that are this person's to pick up. */
+export const isForLogin = (todo: TodoLike, login: string) =>
+  isForEveryone(todo) || isAssignedToLogin(todo, login)
 
 export function selectDashboardTodos<T extends TodoLike>(
   todos: readonly T[],
   login: string,
   today: string,
 ): DashboardTodos<T> {
-  const relevant = todos.filter(
-    (t) => !t.done && (t.assignee === undefined || isAssignedToLogin(t, login)),
-  )
+  const open = todos.filter((t) => !t.done)
+  const byRelevance = (a: T, b: T) =>
+    Number(!isForLogin(a, login)) - Number(!isForLogin(b, login)) || compareTodos(a, b)
+  const overdue = open.filter((t) => isTodoOverdue(t, today))
   return {
-    items: [...relevant].sort(compareTodos).slice(0, DASHBOARD_TODOS_LIMIT),
+    items: [...open].sort(byRelevance).slice(0, DASHBOARD_TODOS_LIMIT),
     counts: {
-      open: relevant.length,
-      overdue: relevant.filter((t) => isTodoOverdue(t, today)).length,
-      mine: relevant.filter((t) => t.assignee !== undefined).length,
-      unassigned: relevant.filter((t) => t.assignee === undefined).length,
+      open: open.length,
+      overdue: overdue.length,
+      overdueForMe: overdue.filter((t) => isForLogin(t, login)).length,
+      mine: open.filter((t) => isAssignedToLogin(t, login)).length,
+      everyone: open.filter(isForEveryone).length,
+      others: open.filter((t) => !isForLogin(t, login)).length,
     },
   }
 }
 
-export type TodoFilter = 'all' | 'mine' | 'unassigned'
+export type TodoFilter = 'all' | 'mine' | 'everyone'
 
 export function filterTodos<T extends TodoLike>(
   todos: readonly T[],
@@ -75,7 +103,7 @@ export function filterTodos<T extends TodoLike>(
   login: string,
 ): T[] {
   if (filter === 'mine') return todos.filter((t) => isAssignedToLogin(t, login))
-  if (filter === 'unassigned') return todos.filter((t) => t.assignee === undefined)
+  if (filter === 'everyone') return todos.filter(isForEveryone)
   return [...todos]
 }
 

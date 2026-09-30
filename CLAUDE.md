@@ -196,11 +196,14 @@ GitHub Project; the site reads and writes them through GitHub's API.
   Blob store, one JSON file per item: todos/<id>.json (id = crypto.randomUUID()). They
   never touch the GitHub Project, the burndown, or GitHub at all.
 - Shape: { id, title, description?, dueDate? ("YYYY-MM-DD", America/New_York calendar
-  date), assignee? (GitHub login), done, doneBy?, doneAt?, createdBy, createdAt,
-  updatedBy, updatedAt, version }. createdBy/updatedBy/doneBy come from the session,
-  never from the request body.
+  date), assignees (GitHub logins, one or more; [] = for everyone), done, doneBy?,
+  doneAt?, createdBy, createdAt, updatedBy, updatedAt, version }. createdBy/updatedBy/doneBy
+  come from the session, never from the request body. A to-do with no assignees is for the
+  whole team and is shown with no assignee label (never "Unassigned"). Older files with a
+  single `assignee` are read as [assignee] and saved in the new shape on their next write.
 - Validation (server): title 1–200 chars (trimmed), description ≤ 2000, dueDate valid
-  YYYY-MM-DD, assignee must be a current org member login (from the team list).
+  YYYY-MM-DD, assignees ≤ 20, each a current org member login (from the team list),
+  de-duplicated. PATCH `assignees` replaces the whole list.
 - Concurrency: one file per item so different items never collide. PATCH/DELETE must
   send the item's current `version`; if it doesn't match what's stored, respond 409
   "changed by someone else, reload" and change nothing. Writes bump version.

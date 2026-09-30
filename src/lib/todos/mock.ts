@@ -8,7 +8,8 @@ import type { NewTodo, Todo, TodoChanges } from './types'
  * Sample to-dos and an in-memory stand-in for /api/todos, used in sample mode
  * (VITE_TASKS_MOCK=true, or a preview deployment). Writes only change this tab's memory. It
  * checks versions like the server, so conflicts can be exercised too. Covers: an overdue
- * to-do, an unassigned one, one with a description, and one done recently.
+ * to-do, ones for everyone (no assignees), one with two assignees, one with a description,
+ * and one done recently.
  */
 
 const HOUR_MS = 3_600_000
@@ -21,6 +22,7 @@ function sampleTodos(now = new Date()): Todo[] {
     id,
     title,
     done: false,
+    assignees: [] as string[],
     createdBy,
     createdAt: ago(createdHoursAgo),
     updatedBy: createdBy,
@@ -36,7 +38,7 @@ function sampleTodos(now = new Date()): Todo[] {
         'river-b',
       ),
       dueDate: addDaysToDateKey(today, -2),
-      assignee: MOCK_USER.login,
+      assignees: [MOCK_USER.login],
     },
     {
       ...base('9b1c7a52-6a0e-4f0e-9d41-0a6f3c1e2b02', "Set up next St. Ann's visit", 72, 'priya-n'),
@@ -52,7 +54,7 @@ function sampleTodos(now = new Date()): Todo[] {
       description:
         'Golisano 1400 or the library study rooms. Needs a TV with HDMI for the tablet mirror, and seats for Gerry and Drew.',
       dueDate: addDaysToDateKey(today, 10),
-      assignee: MOCK_USER.login,
+      assignees: [MOCK_USER.login, 'priya-n'],
     },
     {
       ...base(
@@ -61,7 +63,7 @@ function sampleTodos(now = new Date()): Todo[] {
         30,
         'sam-k',
       ),
-      assignee: 'sam-k',
+      assignees: ['sam-k'],
     },
     {
       ...base(
@@ -78,7 +80,7 @@ function sampleTodos(now = new Date()): Todo[] {
         200,
         MOCK_USER.login,
       ),
-      assignee: 'river-b',
+      assignees: ['river-b'],
       done: true,
       doneBy: 'river-b',
       doneAt: ago(26),
@@ -129,6 +131,7 @@ export const mockTodosApi = {
     const todo: Todo = {
       id: crypto.randomUUID(),
       ...input,
+      assignees: input.assignees ?? [],
       done: false,
       createdBy: MOCK_USER.login,
       createdAt: at,

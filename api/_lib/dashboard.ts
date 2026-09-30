@@ -17,7 +17,7 @@ import {
 import { listMyPrs, listReviewQueue, type MyPr, type ReviewQueuePr } from './github/pulls.js'
 import type { StatusOption, Task } from './github/types.js'
 import type { SessionUser } from './session.js'
-import { listTodos, type Todo } from './todos.js'
+import { listTodos, teamMembers, type Todo } from './todos.js'
 
 /*
  * GET /api/dashboard: every widget's data in one response. Each widget is computed on its
@@ -78,8 +78,19 @@ export interface MeetingsWidget {
   meetings: Meeting[]
 }
 
-/** Open team to-dos assigned to me or to nobody: up to 5, soonest due first, plus counts. */
-export type TodosWidget = DashboardTodos<Todo>
+/** A person named in the to-dos widget. */
+export interface TodoPerson {
+  login: string
+  name: string
+  avatarUrl: string
+}
+
+/**
+ * Up to 5 open team to-dos (mine and everyone's first), plus counts, and the names of the
+ * people they're assigned to. `people` is [] if the team list couldn't be read: the widget
+ * then shows logins instead of failing.
+ */
+export type TodosWidget = DashboardTodos<Todo> & { people: TodoPerson[] }
 
 /** Mirrored for the browser with the dashboard UI. */
 export interface DashboardResponse {
@@ -102,6 +113,7 @@ export interface DashboardSources {
   myPrs(token: string, org: string): Promise<MyPr[]>
   meetings(fromKey: string, throughKey: string): Promise<Meeting[] | null>
   todos(now: Date): Promise<Todo[]>
+  team(token: string): Promise<TodoPerson[]>
 }
 
 export const defaultSources: DashboardSources = {
@@ -111,6 +123,7 @@ export const defaultSources: DashboardSources = {
   myPrs: listMyPrs,
   meetings: listMeetings,
   todos: listTodos,
+  team: teamMembers,
 }
 
 export interface DashboardContext {
@@ -229,7 +242,16 @@ async function meetingsWidget(
 
 async function todosWidget(ctx: DashboardContext, sources: DashboardSources): Promise<TodosWidget> {
   const todos = await sources.todos(ctx.now)
-  return selectDashboardTodos(todos, ctx.user.login, todayKey(ctx.now))
+  const selected = selectDashboardTodos(todos, ctx.user.login, todayKey(ctx.now))
+  const logins = new Set(selected.items.flatMap((t) => t.assignees.map((a) => a.toLowerCase())))
+  if (logins.size === 0) return { ...selected, people: [] }
+  // Names are a nicety: a team-list failure shows logins, never fails the widget. A dead
+  // session still surfaces through the other widgets.
+  const team = await sources.team(ctx.token).catch(() => [])
+  const people = team
+    .filter((m) => logins.has(m.login.toLowerCase()))
+    .map(({ login, name, avatarUrl }) => ({ login, name, avatarUrl }))
+  return { ...selected, people }
 }
 
 // ─── Assembly ────────────────────────────────────────────────────────────────

@@ -204,7 +204,10 @@ export async function mockDashboard(now = new Date()): Promise<DashboardResponse
       meetings: calendar.meetings.filter((m) => isUpcoming(m, now)).slice(0, LIMIT),
     },
     // The same in-memory to-dos as /tasks, so a check-off here shows up there too.
-    todos: selectDashboardTodos(await mockTodosApi.list(now), MOCK_USER.login, today),
+    todos: {
+      ...selectDashboardTodos(await mockTodosApi.list(now), MOCK_USER.login, today),
+      people: data.team.map(({ login, name, avatarUrl }) => ({ login, name, avatarUrl })),
+    },
     generatedAt: now.toISOString(),
   }
 }

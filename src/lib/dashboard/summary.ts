@@ -1,6 +1,6 @@
 import { isDone } from '../tasks/selectors'
 import type { Task } from '../tasks/types'
-import { isTodoOverdue } from '../todos/selectors'
+import { isForLogin, isTodoOverdue } from '../todos/selectors'
 import { zonedDateKey } from '../teamTime'
 import { isWidgetError, type DashboardResponse, type MyTasks, type TodosWidget } from './types'
 
@@ -31,14 +31,21 @@ export function taskCounts(tasks: MyTasks) {
   }
 }
 
-/** The to-do widget's full counts, minus the listed to-dos checked off here since it loaded. */
-export function todoCounts(widget: TodosWidget, now = new Date()) {
+/**
+ * The to-do widget's full counts, minus the listed to-dos checked off here since it loaded.
+ * `overdueForMe` (mine or everyone's) is what "Waiting on you" shows; a teammate's overdue
+ * chore isn't waiting on me.
+ */
+export function todoCounts(widget: TodosWidget, login: string, now = new Date()) {
   const today = zonedDateKey(now)
   const checked = widget.items.filter((t) => t.done)
   const checkedOverdue = checked.filter((t) => isTodoOverdue({ ...t, done: false }, today))
   return {
     open: Math.max(0, widget.counts.open - checked.length),
-    overdue: Math.max(0, widget.counts.overdue - checkedOverdue.length),
+    overdueForMe: Math.max(
+      0,
+      widget.counts.overdueForMe - checkedOverdue.filter((t) => isForLogin(t, login)).length,
+    ),
   }
 }
 
@@ -51,7 +58,9 @@ export function waitingCounts(data: DashboardResponse, now = new Date()): Waitin
     failingCi: isWidgetError(data.myPrs)
       ? null
       : data.myPrs.filter((pr) => pr.ciState === 'FAILURE').length,
-    overdueTodos: isWidgetError(data.todos) ? null : todoCounts(data.todos, now).overdue,
+    overdueTodos: isWidgetError(data.todos)
+      ? null
+      : todoCounts(data.todos, data.me.login, now).overdueForMe,
   }
 }
 

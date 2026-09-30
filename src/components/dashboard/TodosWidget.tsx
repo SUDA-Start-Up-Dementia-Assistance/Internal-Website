@@ -6,6 +6,7 @@ import {
   setTodoOverride,
   todoCounts,
   type DashboardQuery,
+  type TodoPerson,
   type TodosWidget as TodosData,
 } from '../../lib/dashboard'
 import { TasksError } from '../../lib/tasks'
@@ -13,6 +14,7 @@ import { zonedDateKey } from '../../lib/teamTime'
 import {
   applyServerTodo,
   applyTodoChanges,
+  assigneesLabel,
   CONFLICT_MESSAGE,
   dueLabel,
   invalidateTodos,
@@ -27,11 +29,14 @@ import { CountBadge, FOOTER_LINK, WidgetBody, WidgetCard } from './Widget'
 
 const TODOS_TAB = '/tasks?tab=todos'
 
-/** Up to 5 open team to-dos for me or nobody, completable in place. */
+/**
+ * Up to 5 open team to-dos, whoever they're assigned to (mine and everyone's first),
+ * completable in place.
+ */
 export default function TodosWidget({ query, now }: { query: DashboardQuery; now: Date }) {
   const todos = query.data?.todos
-  const open = todos && !('error' in todos) ? todoCounts(todos, now).open : undefined
   const login = query.data?.me.login ?? ''
+  const open = todos && !('error' in todos) ? todoCounts(todos, login, now).open : undefined
   return (
     <WidgetCard
       id="team-todos"
@@ -70,7 +75,7 @@ export default function TodosWidget({ query, now }: { query: DashboardQuery; now
 
 function TodoList({ data, login, now }: { data: TodosData; login: string; now: Date }) {
   if (data.items.length === 0) {
-    return <EmptyState>No open to-dos for you or the team. Nice.</EmptyState>
+    return <EmptyState>No open team to-dos. Nice.</EmptyState>
   }
   const today = zonedDateKey(now)
   const more = data.counts.open - data.items.length
@@ -78,7 +83,14 @@ function TodoList({ data, login, now }: { data: TodosData; login: string; now: D
     <>
       <ul className="divide-y divide-border">
         {data.items.map((todo) => (
-          <TodoItem key={todo.id} todo={todo} login={login} today={today} now={now} />
+          <TodoItem
+            key={todo.id}
+            todo={todo}
+            owner={ownerLabel(todo, login, data.people)}
+            login={login}
+            today={today}
+            now={now}
+          />
         ))}
       </ul>
       {more > 0 && (
@@ -123,13 +135,28 @@ async function toggleDone(todo: Todo, done: boolean, login: string): Promise<voi
   }
 }
 
+/**
+ * "You", "You and Priya", "River, Sam +2"; null for a to-do with no assignees (it's for
+ * everyone). Names fall back to @login if the team list didn't load.
+ */
+function ownerLabel(todo: Todo, login: string, people: TodoPerson[]): string | null {
+  return assigneesLabel(
+    todo.assignees,
+    login,
+    (l) => people.find((p) => p.login.toLowerCase() === l.toLowerCase())?.name ?? `@${l}`,
+  )
+}
+
 function TodoItem({
   todo,
+  owner,
   login,
   today,
   now,
 }: {
   todo: Todo
+  /** Who it's assigned to, as shown; null when it's for everyone. */
+  owner: string | null
   login: string
   today: string
   now: Date
@@ -148,21 +175,28 @@ function TodoItem({
         <p className={`font-medium break-words ${todo.done ? 'text-ink-muted line-through' : ''}`}>
           {todo.title}
         </p>
-        <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-ink-muted">
-          {overdue && (
-            <span className="inline-flex items-center gap-1 font-medium text-link">
-              <CircleAlert aria-hidden="true" className="size-3.5" />
-              Overdue
-            </span>
-          )}
-          {todo.dueDate && (
-            <span className="inline-flex items-center gap-1">
-              {!overdue && <CalendarClock aria-hidden="true" className="size-3.5" />}
-              {dueLabel(todo.dueDate, now)}
-            </span>
-          )}
-          <span>{todo.assignee ? 'Yours' : 'Unassigned'}</span>
-        </div>
+        {(todo.dueDate || owner) && (
+          <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-ink-muted">
+            {overdue && (
+              <span className="inline-flex items-center gap-1 font-medium text-link">
+                <CircleAlert aria-hidden="true" className="size-3.5" />
+                Overdue
+              </span>
+            )}
+            {todo.dueDate && (
+              <span className="inline-flex items-center gap-1">
+                {!overdue && <CalendarClock aria-hidden="true" className="size-3.5" />}
+                {dueLabel(todo.dueDate, now)}
+              </span>
+            )}
+            {owner && (
+              <span>
+                <span className="sr-only">Assigned to </span>
+                {owner}
+              </span>
+            )}
+          </div>
+        )}
       </div>
     </li>
   )

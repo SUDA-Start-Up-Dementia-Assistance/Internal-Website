@@ -15,7 +15,7 @@ import {
 /**
  * /api/todos and /api/todos/:id (vercel.json rewrites the latter to ?id=:id). One function for every team to-do operation (Vercel Hobby
  * allows only 12). Signed-in only; writes must come from the site itself. To-dos live in the
- * private Blob store and never touch GitHub, except for checking an assignee is on the team.
+ * private Blob store and never touch GitHub, except for checking assignees are on the team.
  *
  *   GET    /api/todos       → { todos }
  *   POST   /api/todos       → 201 { todo }

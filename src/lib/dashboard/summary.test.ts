@@ -38,7 +38,11 @@ function response(fields: Partial<DashboardResponse> = {}): DashboardResponse {
     reviewQueue: [],
     myPrs: [],
     meetings: { connected: true, meetings: [] },
-    todos: { items: [], counts: { open: 0, overdue: 0, mine: 0, unassigned: 0 } },
+    todos: {
+      items: [],
+      counts: { open: 0, overdue: 0, overdueForMe: 0, mine: 0, everyone: 0, others: 0 },
+      people: [],
+    },
     generatedAt: '2026-09-30T14:00:00.000Z',
     ...fields,
   }
@@ -74,6 +78,7 @@ describe('to-do counts', () => {
     id,
     title: id,
     done: false,
+    assignees: [],
     createdBy: 'ada',
     createdAt: '2026-09-01T00:00:00Z',
     updatedBy: 'ada',
@@ -83,19 +88,26 @@ describe('to-do counts', () => {
   })
   const NOW = new Date('2026-09-30T14:00:00Z')
 
-  it('counts overdue to-dos toward "Waiting on you", minus ones checked off here', () => {
+  it('counts only my and unassigned overdue to-dos toward "Waiting on you"', () => {
     const data = response({
       todos: {
         items: [
           todo('a', { dueDate: '2026-09-28' }),
-          todo('b', { dueDate: '2026-09-29', done: true }),
+          // Checked off here since the dashboard loaded.
+          todo('b', { dueDate: '2026-09-29', done: true, assignees: ['ada'] }),
+          todo('c', { dueDate: '2026-09-29', done: true, assignees: ['grace'] }),
         ],
-        counts: { open: 4, overdue: 3, mine: 2, unassigned: 2 },
+        counts: { open: 6, overdue: 5, overdueForMe: 3, mine: 2, everyone: 2, others: 2 },
+        people: [],
       },
     })
+    // 3 of mine/unassigned overdue on the server, minus b; c is Grace's, so doesn't count.
     expect(waitingCounts(data, NOW).overdueTodos).toBe(2)
     expect(isAllCaughtUp(waitingCounts(data, NOW))).toBe(false)
-    expect(todoCounts(data.todos as TodosWidget, NOW)).toEqual({ open: 3, overdue: 2 })
+    expect(todoCounts(data.todos as TodosWidget, 'ada', NOW)).toEqual({
+      open: 4,
+      overdueForMe: 2,
+    })
   })
 
   it('is unknown when the to-dos widget failed', () => {

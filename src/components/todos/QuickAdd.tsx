@@ -3,7 +3,7 @@ import { useId, useRef, useState, type FormEvent } from 'react'
 import type { TeamMember } from '../../lib/tasks'
 import { addTodo, type NewTodo } from '../../lib/todos'
 import { buttonClasses } from '../buttonStyles'
-import { AssigneeSelect } from './TodoFields'
+import { AssigneePicker } from './TodoFields'
 import { DESCRIPTION_MAX, TITLE_MAX, TODO_FIELD } from './todoFieldStyles'
 
 interface QuickAddProps {
@@ -14,7 +14,7 @@ interface QuickAddProps {
 
 /**
  * "Add a to-do…": Enter creates it with just the title. "More" reveals the description, due
- * date, and assignee (unassigned by default) first. The new row shows at once.
+ * date, and assignees (none by default: it's for everyone) first. The new row shows at once.
  */
 export default function QuickAdd({ login, team, autoFocus = false }: QuickAddProps) {
   const id = useId()
@@ -23,7 +23,7 @@ export default function QuickAdd({ login, team, autoFocus = false }: QuickAddPro
   const [more, setMore] = useState(false)
   const [description, setDescription] = useState('')
   const [dueDate, setDueDate] = useState('')
-  const [assignee, setAssignee] = useState('')
+  const [assignees, setAssignees] = useState<string[]>([])
 
   function submit(e: FormEvent) {
     e.preventDefault()
@@ -33,13 +33,13 @@ export default function QuickAdd({ login, team, autoFocus = false }: QuickAddPro
     if (more) {
       if (description.trim()) input.description = description.trim()
       if (dueDate) input.dueDate = dueDate
-      if (assignee) input.assignee = assignee
+      if (assignees.length > 0) input.assignees = assignees
     }
     void addTodo(input, login)
     setTitle('')
     setDescription('')
     setDueDate('')
-    setAssignee('')
+    setAssignees([])
     titleRef.current?.focus()
   }
 
@@ -109,19 +109,8 @@ export default function QuickAdd({ login, team, autoFocus = false }: QuickAddPro
               className={`mt-1.5 ${TODO_FIELD}`}
             />
           </div>
-          <div>
-            <label htmlFor={`${id}-assignee`} className="text-sm font-medium">
-              Assignee
-            </label>
-            <div className="mt-1.5">
-              <AssigneeSelect
-                id={`${id}-assignee`}
-                value={assignee}
-                onChange={setAssignee}
-                team={team}
-                login={login}
-              />
-            </div>
+          <div className="sm:col-span-2">
+            <AssigneePicker value={assignees} onChange={setAssignees} team={team} login={login} />
           </div>
           <div className="sm:col-span-2">
             <button

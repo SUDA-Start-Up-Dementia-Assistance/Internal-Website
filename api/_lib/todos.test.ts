@@ -103,6 +103,7 @@ function stored(overrides: Partial<Todo> = {}): Todo {
     id: `00000000-0000-4000-8000-${String(nextId).padStart(12, '0')}`,
     title: `Stored ${nextId}`,
     done: false,
+    assignees: [],
     createdBy: 'ada',
     createdAt: '2026-09-01T12:00:00Z',
     updatedBy: 'ada',
@@ -160,22 +161,51 @@ describe('validation', () => {
   })
 
   it('rejects an assignee who is not a current org member', async () => {
-    await expect(createTodo({ title: 'a', assignee: 'mallory' }, ADA, members)).rejects.toThrow(
+    await expect(createTodo({ title: 'a', assignees: ['mallory'] }, ADA, members)).rejects.toThrow(
       /isn’t a member/,
     )
     expect(blob.puts).toHaveLength(0)
     // Case-insensitive, stored as the team list spells it.
-    const todo = await createTodo({ title: 'a', assignee: 'grace-h' }, ADA, members)
-    expect(todo.assignee).toBe('Grace-H')
+    const todo = await createTodo({ title: 'a', assignees: ['grace-h'] }, ADA, members)
+    expect(todo.assignees).toEqual(['Grace-H'])
+  })
+
+  it('takes several assignees, all checked against the team, without repeats', async () => {
+    const todo = await createTodo(
+      { title: 'a', assignees: ['ADA', 'grace-h', 'ada'] },
+      ADA,
+      members,
+    )
+    expect(todo.assignees).toEqual(['ada', 'Grace-H'])
+    // One non-member sinks the whole request, and nothing is written.
+    const puts = blob.puts.length
+    await expect(
+      createTodo({ title: 'b', assignees: ['ada', 'mallory'] }, ADA, members),
+    ).rejects.toThrow(/mallory isn’t a member/)
+    expect(blob.puts).toHaveLength(puts)
+    expect(() => parseCreateTodo({ title: 'a', assignees: 'ada' })).toThrow(/list/)
+    expect(() => parseCreateTodo({ title: 'a', assignees: Array(21).fill('ada') })).toThrow(/20/)
+  })
+
+  it('defaults to no assignees: the to-do is for everyone', async () => {
+    const lookup = vi.fn(members)
+    const todo = await createTodo({ title: 'Team lunch' }, ADA, lookup)
+    expect(todo.assignees).toEqual([])
+    // No team lookup is needed when nobody is being assigned.
+    expect(lookup).not.toHaveBeenCalled()
   })
 
   it('patches need a version and at least one change', () => {
     expect(() => parsePatchTodo({ title: 'a' })).toThrow(/version/)
     expect(() => parsePatchTodo({ version: 1 })).toThrow(/nothing to change/)
-    expect(parsePatchTodo({ version: 2, dueDate: null, assignee: '' })).toEqual({
+    expect(parsePatchTodo({ version: 2, dueDate: null, assignees: [] })).toEqual({
       version: 2,
-      changes: { dueDate: null, assignee: null },
+      changes: { dueDate: null, assignees: [] },
     })
+    // Blank logins are dropped.
+    expect(parsePatchTodo({ version: 2, assignees: [' ', 'ada'] }).changes.assignees).toEqual([
+      'ada',
+    ])
   })
 })
 
@@ -234,18 +264,42 @@ describe('writes', () => {
     const { id } = stored({
       description: 'Ask about Oct 14',
       dueDate: '2026-10-02',
-      assignee: 'ada',
+      assignees: ['ada'],
     })
     const next = await updateTodo(id, { version: 1, title: 'Email Gerry again' }, ADA, members)
     expect(next).toMatchObject({
       title: 'Email Gerry again',
       description: 'Ask about Oct 14',
       dueDate: '2026-10-02',
-      assignee: 'ada',
+      assignees: ['ada'],
     })
     const cleared = await updateTodo(id, { version: 2, dueDate: null }, ADA, members)
     expect(cleared).not.toHaveProperty('dueDate')
     expect(cleared.description).toBe('Ask about Oct 14')
+  })
+
+  it('replaces the assignee list on PATCH; [] makes it for everyone', async () => {
+    const { id } = stored({ assignees: ['ada'] })
+    const both = await updateTodo(id, { version: 1, assignees: ['ada', 'grace-h'] }, ADA, members)
+    expect(both.assignees).toEqual(['ada', 'Grace-H'])
+    const none = await updateTodo(id, { version: 2, assignees: [] }, ADA, members)
+    expect(none.assignees).toEqual([])
+    expect(read(id).assignees).toEqual([])
+  })
+
+  it('reads files from before multiple assignees, and saves them in the new shape', async () => {
+    const legacy = stored()
+    const { assignees: _drop, ...rest } = legacy
+    void _drop
+    blob.files.set(todoPath(legacy.id), {
+      body: JSON.stringify({ ...rest, assignee: 'ada' }),
+      etag: '"legacy"',
+    })
+    expect((await listTodos(NOW)).find((t) => t.id === legacy.id)?.assignees).toEqual(['ada'])
+    await updateTodo(legacy.id, { version: 1, title: 'Renamed' }, ADA, members)
+    const saved = JSON.parse(blob.files.get(todoPath(legacy.id))!.body)
+    expect(saved.assignees).toEqual(['ada'])
+    expect(saved).not.toHaveProperty('assignee')
   })
 
   it('answers 409 on a version mismatch and writes nothing', async () => {
@@ -398,7 +452,7 @@ describe('/api/todos', () => {
   })
 
   it('answers 400 for a non-member assignee and 404 for a missing to-do', async () => {
-    const bad = await call({ method: 'POST', body: { title: 'x', assignee: 'mallory' } })
+    const bad = await call({ method: 'POST', body: { title: 'x', assignees: ['mallory'] } })
     expect(bad.statusCode).toBe(400)
     const missing = await call({
       method: 'PATCH',

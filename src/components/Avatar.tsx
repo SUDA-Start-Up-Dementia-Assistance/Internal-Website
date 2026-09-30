@@ -1,11 +1,13 @@
 interface AvatarProps {
   person: { name: string; avatarUrl: string }
-  size: 'sm' | 'md'
+  size: 'xs' | 'sm' | 'md'
 }
+
+const BOX = { xs: 'size-6 text-[0.625rem]', sm: 'size-8 text-xs', md: 'size-10 text-sm' }
 
 /** A round GitHub avatar, or initials on purple when there's no image. Decorative. */
 export default function Avatar({ person, size }: AvatarProps) {
-  const box = size === 'md' ? 'size-10 text-sm' : 'size-8 text-xs'
+  const box = BOX[size]
   if (person.avatarUrl) {
     return (
       <img src={person.avatarUrl} alt="" className={`${box} shrink-0 rounded-full bg-ink/10`} />

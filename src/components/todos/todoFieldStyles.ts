@@ -8,19 +8,21 @@ export const DESCRIPTION_MAX = 2000
 
 /**
  * Who a to-do can be assigned to: the team list, or (if it hasn't loaded) just the signed-in
- * user. An assignee missing from the list is kept as an option so a save never drops it.
+ * user. Current assignees missing from the list are kept as options so a save never drops them.
  */
 export function assigneeOptions(
   team: readonly TeamMember[],
   login: string,
-  current?: string,
-): { login: string; name: string }[] {
+  current: readonly string[] = [],
+): { login: string; name: string; avatarUrl: string }[] {
   const options =
     team.length > 0
-      ? team.map((m) => ({ login: m.login, name: m.name }))
-      : [{ login, name: `${login} (me)` }]
-  if (current && !options.some((o) => o.login.toLowerCase() === current.toLowerCase())) {
-    options.push({ login: current, name: current })
+      ? team.map((m) => ({ login: m.login, name: m.name, avatarUrl: m.avatarUrl }))
+      : [{ login, name: login, avatarUrl: '' }]
+  for (const a of current) {
+    if (!options.some((o) => o.login.toLowerCase() === a.toLowerCase())) {
+      options.push({ login: a, name: a, avatarUrl: '' })
+    }
   }
   return options
 }

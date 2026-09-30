@@ -18,6 +18,7 @@ const TODO: Todo = {
   id: '00000000-0000-4000-8000-000000000001',
   title: 'Email Gerry',
   done: false,
+  assignees: [],
   createdBy: 'ada',
   createdAt: '2026-09-01T12:00:00Z',
   updatedBy: 'ada',

@@ -167,6 +167,7 @@ export async function addTodo(input: NewTodo, login: string): Promise<boolean> {
   const temp: Todo = {
     id: `temp-${++tempIds}`,
     ...input,
+    assignees: input.assignees ?? [],
     done: false,
     createdBy: login,
     createdAt: at,

@@ -24,3 +24,27 @@ export function doneLabel(todo: Todo, team: readonly TeamMember[], now = new Dat
   const when = todo.doneAt ? ` · ${formatRelative(todo.doneAt, now)}` : ''
   return `Done${who}${when}`
 }
+
+/** Up to this many names are spelled out; beyond it, "+N". */
+const NAMES_SHOWN = 2
+
+/**
+ * Who a to-do is assigned to, e.g. "You", "You and Priya", "River, Sam +2". Me first, as
+ * "You". Null when it has no assignees: it's for everyone, so there's nothing to label.
+ */
+export function assigneesLabel(
+  assignees: readonly string[],
+  login: string,
+  nameOf: (login: string) => string,
+): string | null {
+  if (assignees.length === 0) return null
+  const isMe = (a: string) => a.toLowerCase() === login.toLowerCase()
+  const names = [
+    ...assignees.filter(isMe).map(() => 'You'),
+    ...assignees.filter((a) => !isMe(a)).map(nameOf),
+  ]
+  if (names.length === 1) return names[0]
+  if (names.length === 2) return `${names[0]} and ${names[1]}`
+  const extra = names.length - NAMES_SHOWN
+  return `${names.slice(0, NAMES_SHOWN).join(', ')} +${extra}`
+}

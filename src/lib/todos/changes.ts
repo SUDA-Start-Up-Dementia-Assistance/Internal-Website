@@ -7,7 +7,8 @@ import type { Todo, TodoChanges } from './types'
 export function applyChanges(todo: Todo, changes: TodoChanges, login: string, now: Date): Todo {
   const next: Todo = { ...todo, updatedBy: login, updatedAt: now.toISOString() }
   if (changes.title !== undefined) next.title = changes.title
-  for (const key of ['description', 'dueDate', 'assignee'] as const) {
+  if (changes.assignees !== undefined) next.assignees = [...changes.assignees]
+  for (const key of ['description', 'dueDate'] as const) {
     const value = changes[key]
     if (value === null) delete next[key]
     else if (value !== undefined) next[key] = value

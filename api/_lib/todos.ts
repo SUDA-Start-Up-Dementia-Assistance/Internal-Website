@@ -2,6 +2,7 @@ import { BlobPreconditionFailedError, del, list, put } from '@vercel/blob'
 import { blobToken, readJsonBlob } from './blob.js'
 import { parseDateKey } from './dates.js'
 import { listTeam } from './github/project.js'
+import type { TeamMember } from './github/types.js'
 import type { SessionUser } from './session.js'
 import { InputError } from './taskInput.js'
 
@@ -18,8 +19,8 @@ export interface Todo {
   description?: string
   /** "YYYY-MM-DD", a calendar date in America/New_York. */
   dueDate?: string
-  /** GitHub login. */
-  assignee?: string
+  /** GitHub logins. [] = not assigned to anyone in particular: it's for the whole team. */
+  assignees: string[]
   done: boolean
   doneBy?: string
   /** ISO instant. */
@@ -33,6 +34,8 @@ export interface Todo {
 
 export const TODO_TITLE_MAX = 200
 export const TODO_DESCRIPTION_MAX = 2000
+/** More than a team's worth is a mistake. */
+export const TODO_ASSIGNEES_MAX = 20
 /** Done items older than this stay stored but aren't listed. */
 export const DONE_VISIBLE_DAYS = 14
 export const LIST_CACHE_MS = 15_000
@@ -97,10 +100,17 @@ function parseDueDate(value: unknown): string | undefined {
   return value
 }
 
-function parseAssigneeLogin(value: unknown): string | undefined {
-  if (value === null || value === '') return undefined
-  if (typeof value !== 'string') throw new InputError('The assignee must be a GitHub login.')
-  return value.trim()
+/** A list of logins (null means none). Membership is checked later, against the team list. */
+function parseAssignees(value: unknown): string[] {
+  if (value === null) return []
+  if (!Array.isArray(value) || !value.every((v) => typeof v === 'string')) {
+    throw new InputError('Assignees must be a list of GitHub logins.')
+  }
+  const logins = value.map((v: string) => v.trim()).filter(Boolean)
+  if (logins.length > TODO_ASSIGNEES_MAX) {
+    throw new InputError(`A to-do can have at most ${TODO_ASSIGNEES_MAX} assignees.`)
+  }
+  return logins
 }
 
 function parseVersion(value: unknown): number {
@@ -118,19 +128,20 @@ export interface CreateTodoInput {
   title: string
   description?: string
   dueDate?: string
-  assignee?: string
+  assignees: string[]
 }
 
 /** POST body → input. Anything else in the body (createdBy, done, …) is ignored. */
 export function parseCreateTodo(body: unknown): CreateTodoInput {
   if (!isObject(body)) throw new InputError('Send the to-do as JSON.')
-  const input: CreateTodoInput = { title: parseTitle(body.title) }
+  const input: CreateTodoInput = {
+    title: parseTitle(body.title),
+    assignees: parseAssignees(body.assignees ?? null),
+  }
   const description = parseDescription(body.description ?? null)
   const dueDate = parseDueDate(body.dueDate ?? null)
-  const assignee = parseAssigneeLogin(body.assignee ?? null)
   if (description) input.description = description
   if (dueDate) input.dueDate = dueDate
-  if (assignee) input.assignee = assignee
   return input
 }
 
@@ -144,7 +155,8 @@ export interface PatchTodoInput {
     title?: string
     description?: string | null
     dueDate?: string | null
-    assignee?: string | null
+    /** The full new list; [] unassigns everyone. */
+    assignees?: string[]
     done?: boolean
   }
 }
@@ -157,7 +169,7 @@ export function parsePatchTodo(body: unknown): PatchTodoInput {
   if (has('title')) changes.title = parseTitle(body.title)
   if (has('description')) changes.description = parseDescription(body.description) ?? null
   if (has('dueDate')) changes.dueDate = parseDueDate(body.dueDate) ?? null
-  if (has('assignee')) changes.assignee = parseAssigneeLogin(body.assignee) ?? null
+  if (has('assignees')) changes.assignees = parseAssignees(body.assignees)
   if (has('done')) {
     if (typeof body.done !== 'boolean') throw new InputError('"done" must be true or false.')
     changes.done = body.done
@@ -173,10 +185,17 @@ export function checkAssignee(login: string, members: readonly string[]): string
   return match
 }
 
+/** Every login checked against the team list, spelled as it spells them, without repeats. */
+export function checkAssignees(logins: readonly string[], members: readonly string[]): string[] {
+  const checked = logins.map((login) => checkAssignee(login, members))
+  return checked.filter((login, i) => checked.indexOf(login) === i)
+}
+
 /** A stored file as a Todo, or null if it isn't one. */
 export function parseStoredTodo(raw: unknown): Todo | null {
   if (!isObject(raw)) return null
-  const t = raw as Partial<Todo>
+  // Files written before multiple assignees stored one login as `assignee`.
+  const t = raw as Partial<Todo> & { assignee?: unknown }
   const ok =
     isTodoId(t.id) &&
     typeof t.title === 'string' &&
@@ -196,11 +215,15 @@ export function parseStoredTodo(raw: unknown): Todo | null {
     updatedBy: t.updatedBy!,
     updatedAt: t.updatedAt!,
     version: t.version!,
+    assignees: Array.isArray(t.assignees)
+      ? t.assignees.filter((a): a is string => typeof a === 'string')
+      : typeof t.assignee === 'string'
+        ? [t.assignee]
+        : [],
   }
   if (typeof t.description === 'string') todo.description = t.description
   if (typeof t.dueDate === 'string' && parseDateKey(t.dueDate) === t.dueDate)
     todo.dueDate = t.dueDate
-  if (typeof t.assignee === 'string') todo.assignee = t.assignee
   if (typeof t.doneBy === 'string') todo.doneBy = t.doneBy
   if (typeof t.doneAt === 'string') todo.doneAt = t.doneAt
   return todo
@@ -216,14 +239,19 @@ export function isListed(todo: Todo, now: Date): boolean {
 
 // ─── Team (assignee check) ───────────────────────────────────────────────────
 
-let teamCache: { expires: number; logins: string[] } | null = null
+let teamCache: { expires: number; members: TeamMember[] } | null = null
 
-/** Current org member logins (cached briefly per instance; the team is team-wide data). */
+/** Current org members (cached briefly per instance; the team is team-wide data). */
+export async function teamMembers(token: string, now = Date.now()): Promise<TeamMember[]> {
+  if (teamCache && teamCache.expires > now) return teamCache.members
+  const members = await listTeam(token)
+  teamCache = { expires: now + TEAM_CACHE_MS, members }
+  return members
+}
+
+/** Current org member logins, for the assignee check. */
 export async function teamLogins(token: string, now = Date.now()): Promise<string[]> {
-  if (teamCache && teamCache.expires > now) return teamCache.logins
-  const logins = (await listTeam(token)).map((m) => m.login)
-  teamCache = { expires: now + TEAM_CACHE_MS, logins }
-  return logins
+  return (await teamMembers(token, now)).map((m) => m.login)
 }
 
 // ─── Storage ─────────────────────────────────────────────────────────────────
@@ -311,7 +339,7 @@ export async function listTodos(now = new Date()): Promise<Todo[]> {
     .sort((a, b) => a.createdAt.localeCompare(b.createdAt) || a.id.localeCompare(b.id))
 }
 
-/** Looks up org members only when an assignee is being set. */
+/** Looks up org members only when assignees are being set. */
 export type MembersLookup = () => Promise<readonly string[]>
 
 export async function createTodo(
@@ -321,7 +349,7 @@ export async function createTodo(
   now = new Date(),
 ): Promise<Todo> {
   const input = parseCreateTodo(body)
-  if (input.assignee) input.assignee = checkAssignee(input.assignee, await members())
+  if (input.assignees.length > 0) input.assignees = checkAssignees(input.assignees, await members())
   const at = now.toISOString()
   const todo: Todo = {
     id: crypto.randomUUID(),
@@ -345,7 +373,7 @@ export function applyTodoPatch(
   now: Date,
 ): Todo {
   const next: Todo = { ...todo }
-  const setOptional = <K extends 'description' | 'dueDate' | 'assignee'>(
+  const setOptional = <K extends 'description' | 'dueDate'>(
     key: K,
     value: string | null | undefined,
   ) => {
@@ -356,7 +384,7 @@ export function applyTodoPatch(
   if (changes.title !== undefined) next.title = changes.title
   setOptional('description', changes.description)
   setOptional('dueDate', changes.dueDate)
-  setOptional('assignee', changes.assignee)
+  if (changes.assignees !== undefined) next.assignees = changes.assignees
   if (changes.done === true && !todo.done) {
     next.done = true
     next.doneBy = user.login
@@ -383,7 +411,9 @@ export async function updateTodo(
   const current = await readTodo(id)
   if (!current) throw new TodoNotFoundError()
   if (current.todo.version !== version) throw new TodoConflictError()
-  if (changes.assignee) changes.assignee = checkAssignee(changes.assignee, await members())
+  if (changes.assignees?.length) {
+    changes.assignees = checkAssignees(changes.assignees, await members())
+  }
   const next = applyTodoPatch(current.todo, changes, user, now)
   await writeTodo(next, current.etag)
   return next

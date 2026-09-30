@@ -8,8 +8,8 @@ export interface Todo {
   description?: string
   /** "YYYY-MM-DD", a calendar date in America/New_York. */
   dueDate?: string
-  /** GitHub login. */
-  assignee?: string
+  /** GitHub logins. [] = not assigned to anyone in particular: it's for the whole team. */
+  assignees: string[]
   done: boolean
   doneBy?: string
   /** ISO instant. */
@@ -25,7 +25,8 @@ export interface NewTodo {
   title: string
   description?: string
   dueDate?: string
-  assignee?: string
+  /** Omitted or [] = for everyone. */
+  assignees?: string[]
 }
 
 /** Only the fields that changed. null clears an optional field. */
@@ -33,6 +34,7 @@ export interface TodoChanges {
   title?: string
   description?: string | null
   dueDate?: string | null
-  assignee?: string | null
+  /** The full new list; [] = for everyone. */
+  assignees?: string[]
   done?: boolean
 }
