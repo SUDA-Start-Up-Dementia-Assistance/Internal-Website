@@ -30,7 +30,7 @@ import { CountBadge, FOOTER_LINK, WidgetBody, WidgetCard } from './Widget'
 const TODOS_TAB = '/tasks?tab=todos'
 
 /**
- * Up to 5 open team to-dos, whoever they're assigned to (mine and everyone's first),
+ * Up to 5 open team to-dos, whoever they're assigned to (soonest due first),
  * completable in place.
  */
 export default function TodosWidget({ query, now }: { query: DashboardQuery; now: Date }) {

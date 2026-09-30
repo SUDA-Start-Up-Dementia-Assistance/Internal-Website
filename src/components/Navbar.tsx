@@ -9,12 +9,12 @@ import ThemeToggle from './ThemeToggle'
 const NAV_ITEMS = [
   // Signed in, the Dashboard comes first.
   { to: '/dashboard', label: 'Dashboard', end: false, signedInOnly: true },
+    // Team-only. The /tasks route still exists: sign-in (and its errors) land there.
+  { to: '/tasks', label: 'Tasks', end: false, signedInOnly: true },
   { to: '/meetings', label: 'Meetings', end: false, signedInOnly: true },
   { to: '/', label: 'Home', end: true },
   { to: '/agendas', label: 'Agendas', end: false },
   { to: '/artifacts', label: 'Artifacts', end: false },
-  // Team-only. The /tasks route still exists: sign-in (and its errors) land there.
-  { to: '/tasks', label: 'Tasks', end: false, signedInOnly: true },
 ]
 
 // Active underline is accent, not link: link (ember) is only 3.15:1 on the light navbar.

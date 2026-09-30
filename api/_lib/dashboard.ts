@@ -86,7 +86,7 @@ export interface TodoPerson {
 }
 
 /**
- * Up to 5 open team to-dos (mine and everyone's first), plus counts, and the names of the
+ * Up to 5 open team to-dos (soonest due first), plus counts, and the names of the
  * people they're assigned to. `people` is [] if the team list couldn't be read: the widget
  * then shows logins instead of failing.
  */

@@ -325,7 +325,7 @@ describe('todos widget', () => {
     }
   }
 
-  it('shows every open team to-do: mine and unassigned first, then others, max 5', async () => {
+  it('shows every open team to-do, whoever it’s assigned to, soonest due first, max 5', async () => {
     const todos = [
       todo({ title: 'grace, overdue', assignees: ['grace'], dueDate: '2026-09-01' }),
       todo({ title: 'grace, due today', assignees: ['grace'], dueDate: TODAY }),
@@ -338,11 +338,12 @@ describe('todos widget', () => {
     const res = await getDashboard(ctx(), sources({ todos: vi.fn(async () => todos) }))
     if (isWidgetError(res.todos)) throw new Error('todos failed')
     expect(res.todos.items.map((t) => t.title)).toEqual([
+      'grace, overdue',
       'mine, overdue',
       'unassigned, overdue',
+      // Same due date: the older one first.
+      'grace, due today',
       'mine, due today',
-      'unassigned, no date',
-      'grace, overdue',
     ])
     expect(res.todos.counts).toEqual({
       open: 6,
@@ -360,16 +361,6 @@ describe('todos widget', () => {
     ])
   })
 
-  it('fills the slots with teammates’ to-dos when I have none', async () => {
-    const todos = [
-      todo({ title: 'alan, later', assignees: ['alan'], dueDate: '2026-10-20' }),
-      todo({ title: 'grace, soon', assignees: ['grace'], dueDate: '2026-10-01' }),
-    ]
-    const res = await getDashboard(ctx(), sources({ todos: vi.fn(async () => todos) }))
-    if (isWidgetError(res.todos)) throw new Error('todos failed')
-    expect(res.todos.items.map((t) => t.title)).toEqual(['grace, soon', 'alan, later'])
-  })
-
   it('still lists to-dos (without names) when the team list fails', async () => {
     const res = await getDashboard(
       ctx(),
@@ -385,7 +376,7 @@ describe('todos widget', () => {
     expect(res.todos.people).toEqual([])
   })
 
-  it('sorts by due date within a group (no date last)', async () => {
+  it('sorts by due date regardless of assignee (no date last)', async () => {
     const todos = [
       todo({ title: 'mine, no date', assignees: ['ada'] }),
       todo({ title: 'unassigned, due 10/05', dueDate: '2026-10-05' }),
@@ -400,11 +391,11 @@ describe('todos widget', () => {
     expect(isWidgetError(res.todos)).toBe(false)
     if (isWidgetError(res.todos)) return
     expect(res.todos.items.map((t) => t.title)).toEqual([
+      'someone else',
       'mine, overdue',
       'mine, due today',
       'unassigned, due 10/05',
       'unassigned, due 10/20',
-      'mine, no date',
     ])
   })
 

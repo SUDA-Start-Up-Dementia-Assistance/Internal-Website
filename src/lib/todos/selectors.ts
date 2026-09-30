@@ -49,8 +49,8 @@ export function compareTodos(a: TodoLike, b: TodoLike): number {
 
 export interface DashboardTodos<T> {
   /**
-   * Up to 5 open team to-dos, whoever they're assigned to. Mine and everyone's come first
-   * (they're the ones to act on), then other people's; soonest due first within each.
+   * Up to 5 open team to-dos, whoever they're assigned to: soonest due first, undated last
+   * (oldest first among ties).
    */
   items: T[]
   counts: {
@@ -79,11 +79,9 @@ export function selectDashboardTodos<T extends TodoLike>(
   today: string,
 ): DashboardTodos<T> {
   const open = todos.filter((t) => !t.done)
-  const byRelevance = (a: T, b: T) =>
-    Number(!isForLogin(a, login)) - Number(!isForLogin(b, login)) || compareTodos(a, b)
   const overdue = open.filter((t) => isTodoOverdue(t, today))
   return {
-    items: [...open].sort(byRelevance).slice(0, DASHBOARD_TODOS_LIMIT),
+    items: [...open].sort(compareTodos).slice(0, DASHBOARD_TODOS_LIMIT),
     counts: {
       open: open.length,
       overdue: overdue.length,
