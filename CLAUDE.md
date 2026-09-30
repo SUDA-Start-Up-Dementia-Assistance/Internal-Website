@@ -116,7 +116,8 @@ GitHub Project; the site reads and writes them through GitHub's API.
 - When a GitHub call fails because the app isn't installed on a repo, show: "The DAWN
   Team Site app isn't installed on <repo>. Ask an org owner to add it."
 - Frontend: src/lib/auth (AuthProvider + useAuth). Signed in: nav order is Dashboard,
-  Meetings, then the public pages and Tasks; avatar menu has Dashboard, My tasks,
+  Tasks, Meetings, then the public pages (Agendas, Artifacts). There is no "Home" nav item:
+  the logo always links to "/", signed in or not; avatar menu has Dashboard, My tasks,
   Sign out. Signed out: "Sign in with GitHub" button.
 
 ## Tasks: GitHub Projects v2
