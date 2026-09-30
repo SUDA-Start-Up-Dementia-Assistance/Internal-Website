@@ -1,5 +1,6 @@
 import { businessDaysInclusive } from '../../src/lib/businessTime.js'
 import { isUpcoming, meetingStart } from '../../src/lib/meetingTime.js'
+import { selectDashboardTodos, type DashboardTodos } from '../../src/lib/todos/selectors.js'
 import { aggregate } from './burndown.js'
 import { BURNDOWN_UNIT } from './config.js'
 import { addDays, findCurrentIteration, todayKey } from './dates.js'
@@ -16,6 +17,7 @@ import {
 import { listMyPrs, listReviewQueue, type MyPr, type ReviewQueuePr } from './github/pulls.js'
 import type { StatusOption, Task } from './github/types.js'
 import type { SessionUser } from './session.js'
+import { listTodos, type Todo } from './todos.js'
 
 /*
  * GET /api/dashboard: every widget's data in one response. Each widget is computed on its
@@ -76,6 +78,9 @@ export interface MeetingsWidget {
   meetings: Meeting[]
 }
 
+/** Open team to-dos assigned to me or to nobody: up to 5, soonest due first, plus counts. */
+export type TodosWidget = DashboardTodos<Todo>
+
 /** Mirrored for the browser with the dashboard UI. */
 export interface DashboardResponse {
   me: SessionUser
@@ -85,6 +90,7 @@ export interface DashboardResponse {
   reviewQueue: Widget<ReviewQueuePr[]>
   myPrs: Widget<MyPr[]>
   meetings: Widget<MeetingsWidget>
+  todos: Widget<TodosWidget>
   generatedAt: string
 }
 
@@ -95,6 +101,7 @@ export interface DashboardSources {
   reviewQueue(token: string, org: string, login: string, now: Date): Promise<ReviewQueuePr[]>
   myPrs(token: string, org: string): Promise<MyPr[]>
   meetings(fromKey: string, throughKey: string): Promise<Meeting[] | null>
+  todos(now: Date): Promise<Todo[]>
 }
 
 export const defaultSources: DashboardSources = {
@@ -103,6 +110,7 @@ export const defaultSources: DashboardSources = {
   reviewQueue: listReviewQueue,
   myPrs: listMyPrs,
   meetings: listMeetings,
+  todos: listTodos,
 }
 
 export interface DashboardContext {
@@ -219,6 +227,11 @@ async function meetingsWidget(
   return { connected: true, meetings }
 }
 
+async function todosWidget(ctx: DashboardContext, sources: DashboardSources): Promise<TodosWidget> {
+  const todos = await sources.todos(ctx.now)
+  return selectDashboardTodos(todos, ctx.user.login, todayKey(ctx.now))
+}
+
 // ─── Assembly ────────────────────────────────────────────────────────────────
 
 /** A failure as a widget's { error }: safe, client-facing codes and messages only. */
@@ -267,6 +280,7 @@ export async function buildDashboard(
     sources.reviewQueue(ctx.token, ctx.org, ctx.user.login, ctx.now),
     sources.myPrs(ctx.token, ctx.org),
     meetingsWidget(ctx, sources),
+    todosWidget(ctx, sources),
   ] as const)
 
   for (const result of settled) {
@@ -280,7 +294,7 @@ export async function buildDashboard(
   }
   const value = <T>(result: PromiseSettledResult<T>): Widget<T> =>
     result.status === 'fulfilled' ? result.value : toWidgetError(result.reason)
-  const [sprint, tasks, reviewQueue, myPrs, meetings] = settled
+  const [sprint, tasks, reviewQueue, myPrs, meetings, todos] = settled
 
   return {
     me: ctx.user,
@@ -289,6 +303,7 @@ export async function buildDashboard(
     reviewQueue: value(reviewQueue),
     myPrs: value(myPrs),
     meetings: value(meetings),
+    todos: value(todos),
     generatedAt: ctx.now.toISOString(),
   }
 }
@@ -319,6 +334,7 @@ export async function getDashboard(
     response.reviewQueue,
     response.myPrs,
     response.meetings,
+    response.todos,
   ]
   if (!widgets.some(isWidgetError)) {
     cache.delete(key)

@@ -5,6 +5,7 @@ import MyPrsWidget from '../components/dashboard/MyPrsWidget'
 import MyTasksWidget from '../components/dashboard/MyTasksWidget'
 import ReviewQueueWidget from '../components/dashboard/ReviewQueueWidget'
 import SprintCard from '../components/dashboard/SprintCard'
+import TodosWidget from '../components/dashboard/TodosWidget'
 import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
 import PageTitle from '../components/PageTitle'
@@ -62,11 +63,12 @@ function SignedInDashboard({ user }: { user: AuthUser }) {
         </div>
       ) : (
         // Two columns on large screens. The DOM order is the phone order: sprint, tasks,
-        // meetings, reviews, my PRs.
+        // team to-dos, meetings, reviews, my PRs.
         <div className="grid items-start gap-6 lg:grid-cols-2">
           <div className="grid gap-6">
             <SprintCard query={query} now={now} />
             <MyTasksWidget query={query} now={now} />
+            <TodosWidget query={query} now={now} />
           </div>
           <div className="grid gap-6">
             <MeetingsWidget query={query} now={now} />

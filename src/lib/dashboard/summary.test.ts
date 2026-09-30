@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import type { Task } from '../tasks/types'
-import { isAllCaughtUp, waitingCounts } from './summary'
-import type { DashboardResponse, MyPr, MyTasks, ReviewQueuePr } from './types'
+import type { Todo } from '../todos/types'
+import { isAllCaughtUp, todoCounts, waitingCounts } from './summary'
+import type { DashboardResponse, MyPr, MyTasks, ReviewQueuePr, TodosWidget } from './types'
 import { applyOverrides } from './useDashboard'
 
 const task = (itemId: string, fields: Partial<Task> = {}): Task => ({
@@ -37,6 +38,7 @@ function response(fields: Partial<DashboardResponse> = {}): DashboardResponse {
     reviewQueue: [],
     myPrs: [],
     meetings: { connected: true, meetings: [] },
+    todos: { items: [], counts: { open: 0, overdue: 0, mine: 0, unassigned: 0 } },
     generatedAt: '2026-09-30T14:00:00.000Z',
     ...fields,
   }
@@ -63,7 +65,42 @@ describe('waitingCounts', () => {
       }),
     )
     // 7 overdue on the server, one of the listed ones since checked off here.
-    expect(counts).toEqual({ reviews: 2, overdue: 6, blocked: 1, failingCi: 1 })
+    expect(counts).toEqual({ reviews: 2, overdue: 6, blocked: 1, failingCi: 1, overdueTodos: 0 })
+  })
+})
+
+describe('to-do counts', () => {
+  const todo = (id: string, fields: Partial<Todo> = {}): Todo => ({
+    id,
+    title: id,
+    done: false,
+    createdBy: 'ada',
+    createdAt: '2026-09-01T00:00:00Z',
+    updatedBy: 'ada',
+    updatedAt: '2026-09-01T00:00:00Z',
+    version: 1,
+    ...fields,
+  })
+  const NOW = new Date('2026-09-30T14:00:00Z')
+
+  it('counts overdue to-dos toward "Waiting on you", minus ones checked off here', () => {
+    const data = response({
+      todos: {
+        items: [
+          todo('a', { dueDate: '2026-09-28' }),
+          todo('b', { dueDate: '2026-09-29', done: true }),
+        ],
+        counts: { open: 4, overdue: 3, mine: 2, unassigned: 2 },
+      },
+    })
+    expect(waitingCounts(data, NOW).overdueTodos).toBe(2)
+    expect(isAllCaughtUp(waitingCounts(data, NOW))).toBe(false)
+    expect(todoCounts(data.todos as TodosWidget, NOW)).toEqual({ open: 3, overdue: 2 })
+  })
+
+  it('is unknown when the to-dos widget failed', () => {
+    const data = response({ todos: { error: { code: 'internal', message: 'x' } } })
+    expect(waitingCounts(data, NOW).overdueTodos).toBeNull()
   })
 })
 

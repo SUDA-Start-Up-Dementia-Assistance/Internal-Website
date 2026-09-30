@@ -1,7 +1,7 @@
-import { BlobPreconditionFailedError, get, list, put } from '@vercel/blob'
+import { BlobPreconditionFailedError, list, put } from '@vercel/blob'
+import { blobToken, readJsonBlob } from './blob.js'
 import { BURNDOWN_UNIT } from './config.js'
 import { addDays, findCurrentIteration, parseDateKey, todayKey } from './dates.js'
-import { ConfigError } from './env.js'
 import { getProjectMeta, listItems } from './github/project.js'
 import type { Iteration, Task } from './github/types.js'
 
@@ -109,14 +109,6 @@ export function blobPath(iterationId: string): string {
   return `${PREFIX}${iterationId}${FILE_SUFFIX}`
 }
 
-function blobToken(): string {
-  const token = process.env.BLOB_READ_WRITE_TOKEN?.trim()
-  if (!token) {
-    throw new ConfigError('Missing required environment variable(s): BLOB_READ_WRITE_TOKEN.')
-  }
-  return token
-}
-
 const isNumber = (n: unknown): n is number => typeof n === 'number' && Number.isFinite(n)
 
 /** A stored file, keeping only well-formed days in the burndown unit. Null if it isn't a burndown file. */
@@ -147,26 +139,14 @@ export function mergeDay(file: BurndownFile, iteration: Iteration, day: Burndown
 export async function readFile(
   iterationId: string,
 ): Promise<{ file: BurndownFile; etag: string } | null> {
-  const result = await get(blobPath(iterationId), {
-    access: 'private',
-    token: blobToken(),
-    // Read the latest write, not a cached copy: this is read-modify-write.
-    useCache: false,
-  })
-  if (!result || result.statusCode !== 200) return null
-  const text = await new Response(result.stream).text()
-  let raw: unknown
-  try {
-    raw = JSON.parse(text)
-  } catch {
-    raw = null
-  }
-  const file = parseFile(raw)
+  const result = await readJsonBlob(blobPath(iterationId))
+  if (!result) return null
+  const file = parseFile(result.data)
   if (!file) {
     console.error(`[burndown] ignoring malformed ${blobPath(iterationId)}`)
     return null
   }
-  return { file, etag: result.blob.etag }
+  return { file, etag: result.etag }
 }
 
 /** Two people viewing at once can race; a lost race re-reads and tries again. */

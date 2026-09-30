@@ -8,6 +8,8 @@ import { TasksError } from '../tasks/api'
 import { addDaysKey, isBlocked, isOverdue, selectMine } from '../tasks/selectors'
 import type { Task } from '../tasks/types'
 import { loadTasks, peekTasks } from '../tasks/useTasks'
+import { selectDashboardTodos } from '../todos/selectors'
+import { mockTodosApi } from '../todos/mock'
 import type { DashboardPr, DashboardResponse, MyPr, MyTasks, ReviewQueuePr } from './types'
 
 /*
@@ -201,6 +203,8 @@ export async function mockDashboard(now = new Date()): Promise<DashboardResponse
       connected: true,
       meetings: calendar.meetings.filter((m) => isUpcoming(m, now)).slice(0, LIMIT),
     },
+    // The same in-memory to-dos as /tasks, so a check-off here shows up there too.
+    todos: selectDashboardTodos(await mockTodosApi.list(now), MOCK_USER.login, today),
     generatedAt: now.toISOString(),
   }
 }

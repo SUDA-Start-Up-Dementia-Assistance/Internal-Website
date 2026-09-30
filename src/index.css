@@ -66,7 +66,7 @@
 
   /* Sunrise hero sky: brief night, then dusk → ember, apricot and gold below the text. */
   /* Soft dark scrim behind the hero text, on top of the sky (see hero-scrim). */
-  --hero-scrim: rgb(20 22 43 / 0.2);
+  --hero-scrim: rgb(20 22 43 / 0.28);
   --hero-sky: linear-gradient(
     to bottom,
     var(--brand-night) 0%,
@@ -118,7 +118,7 @@
   --card-lift: 0;
   --photo-shadow: 0 0 0 1px var(--border), 0 24px 48px -16px rgb(0 0 0 / 0.6);
 
-  --hero-scrim: rgb(10 11 26 / 0.4);
+  --hero-scrim: rgb(10 11 26 / 0.5);
   --hero-sky: linear-gradient(
     to bottom,
     #14162b 0%,
@@ -269,18 +269,31 @@
 }
 
 /*
- * Text scrim for the hero: a soft ellipse of shadow behind the text column, so the copy keeps
- * AA contrast where it crosses the dusk → ember band. Needs an isolated ancestor (the hero).
+ * Text scrim for the hero: a wide, soft ellipse of shadow behind the text column, so the copy
+ * keeps AA contrast where it crosses the dusk → ember band. It reaches well past the text and
+ * eases out gradually (many stops approximate an ease-out curve, avoiding the visible ring a
+ * two-stop gradient leaves), so it reads as dusk light rather than a box. Needs an isolated
+ * ancestor (the hero).
  */
 @utility hero-scrim {
   position: relative;
   &::before {
     content: '';
     position: absolute;
-    inset: -2.5rem -3rem;
+    inset: -6rem -9rem;
     z-index: -1;
     pointer-events: none;
-    background: radial-gradient(ellipse at center, var(--hero-scrim) 55%, transparent 100%);
+    background: radial-gradient(
+      closest-side,
+      var(--hero-scrim) 0%,
+      color-mix(in srgb, var(--hero-scrim) 97%, transparent) 30%,
+      color-mix(in srgb, var(--hero-scrim) 88%, transparent) 45%,
+      color-mix(in srgb, var(--hero-scrim) 72%, transparent) 58%,
+      color-mix(in srgb, var(--hero-scrim) 52%, transparent) 70%,
+      color-mix(in srgb, var(--hero-scrim) 30%, transparent) 81%,
+      color-mix(in srgb, var(--hero-scrim) 12%, transparent) 91%,
+      transparent 100%
+    );
   }
 }
 

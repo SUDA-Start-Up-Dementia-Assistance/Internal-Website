@@ -191,6 +191,36 @@ GitHub Project; the site reads and writes them through GitHub's API.
 - An expired/revoked session (401 session-expired or unauthenticated from any /api call)
   signs the user out app-wide (src/lib/auth/sessionEvents.ts) with a friendly message.
 
+## Team to-dos (small chores, NOT GitHub)
+- Small team chores ("Email Gerry…", "Set up St. Ann's visit") live in the private Vercel
+  Blob store, one JSON file per item: todos/<id>.json (id = crypto.randomUUID()). They
+  never touch the GitHub Project, the burndown, or GitHub at all.
+- Shape: { id, title, description?, dueDate? ("YYYY-MM-DD", America/New_York calendar
+  date), assignee? (GitHub login), done, doneBy?, doneAt?, createdBy, createdAt,
+  updatedBy, updatedAt, version }. createdBy/updatedBy/doneBy come from the session,
+  never from the request body.
+- Validation (server): title 1–200 chars (trimmed), description ≤ 2000, dueDate valid
+  YYYY-MM-DD, assignee must be a current org member login (from the team list).
+- Concurrency: one file per item so different items never collide. PATCH/DELETE must
+  send the item's current `version`; if it doesn't match what's stored, respond 409
+  "changed by someone else, reload" and change nothing. Writes bump version.
+- API: one function, /api/todos.ts, with a vercel.json rewrite /api/todos/:id →
+  /api/todos?id=:id (Vercel's non-Next functions treat [[...id]] like [...id], so the bare
+  /api/todos 404s; don't use it): GET (list), POST (create), PATCH /:id
+  (partial update, only changed fields), DELETE /:id. Signed-in only; mutating requests
+  require same-origin. GET returns open items + items done within the last 14 days
+  (older done items stay stored but aren't returned). In-memory list cache ≤ 15s per
+  function instance, invalidated by any write in that instance.
+- Blob: access "private", server-side only, never expose blob URLs. Reuse the Blob
+  helpers from /api/_lib (same store as burndown). Overwrites must be visible on the next
+  read (no stale CDN copy); use the smallest cache TTL the SDK allows for todos/.
+- Code: /api/_lib/todos.ts (storage + validation), src/lib/todos (types, useTodos hook
+  with optimistic updates + rollback, mock data).
+- UI: "To-dos" tab on /tasks and a "Team to-dos" dashboard widget (see below). Mock mode
+  and preview sample-data mode use src/lib/todos mock data, in-memory writes only.
+- Store nothing sensitive beyond what the team types; to-dos are team-internal and are
+  never shown to signed-out visitors.
+
 ## Burndown
 - Snapshots are VIEW-TRIGGERED: there is no scheduled job and no server-owned GitHub
   token. When a signed-in user loads /api/burndown for the CURRENT iteration, the server

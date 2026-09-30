@@ -13,6 +13,7 @@ import { GitHubApiError } from './github/errors.js'
 import type { ProjectMeta } from './github/project.js'
 import type { MyPr, ReviewQueuePr } from './github/pulls.js'
 import type { Task } from './github/types.js'
+import type { Todo } from './todos.js'
 
 // Wednesday 2026-09-30, 10am Eastern.
 const NOW = zonedInstant('2026-09-30', 10)
@@ -72,6 +73,7 @@ function sources(overrides: Partial<DashboardSources> = {}): DashboardSources {
     reviewQueue: vi.fn(async () => [] as ReviewQueuePr[]),
     myPrs: vi.fn(async () => [] as MyPr[]),
     meetings: vi.fn(async () => [] as Meeting[]),
+    todos: vi.fn(async () => [] as Todo[]),
     ...overrides,
   }
 }
@@ -297,5 +299,61 @@ describe('groupMyTasks', () => {
       'due in 7 days',
       'no date P0',
     ])
+  })
+})
+
+describe('todos widget', () => {
+  let n = 0
+  function todo(overrides: Partial<Todo>): Todo {
+    n += 1
+    return {
+      id: `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`,
+      title: `todo ${n}`,
+      done: false,
+      createdBy: 'grace',
+      createdAt: `2026-09-${String(n).padStart(2, '0')}T12:00:00Z`,
+      updatedBy: 'grace',
+      updatedAt: '2026-09-20T12:00:00Z',
+      version: 1,
+      ...overrides,
+    }
+  }
+
+  it('selects open to-dos for me or nobody, soonest due first (no date last), max 5', async () => {
+    const todos = [
+      todo({ title: 'mine, no date', assignee: 'ada' }),
+      todo({ title: 'unassigned, due 10/05', dueDate: '2026-10-05' }),
+      todo({ title: 'someone else', assignee: 'grace', dueDate: '2026-09-01' }),
+      todo({ title: 'mine, overdue', assignee: 'ADA', dueDate: '2026-09-28' }),
+      todo({ title: 'done', assignee: 'ada', dueDate: '2026-09-02', done: true }),
+      todo({ title: 'unassigned, no date' }),
+      todo({ title: 'mine, due today', assignee: 'ada', dueDate: TODAY }),
+      todo({ title: 'unassigned, due 10/20', dueDate: '2026-10-20' }),
+    ]
+    const res = await getDashboard(ctx(), sources({ todos: vi.fn(async () => todos) }))
+    expect(isWidgetError(res.todos)).toBe(false)
+    if (isWidgetError(res.todos)) return
+    expect(res.todos.items.map((t) => t.title)).toEqual([
+      'mine, overdue',
+      'mine, due today',
+      'unassigned, due 10/05',
+      'unassigned, due 10/20',
+      'mine, no date',
+    ])
+    expect(res.todos.counts).toEqual({ open: 6, overdue: 1, mine: 3, unassigned: 3 })
+  })
+
+  it('is isolated: a Blob failure only fails the todos widget', async () => {
+    const res = await getDashboard(
+      ctx(),
+      sources({
+        todos: vi.fn(async () => {
+          throw new Error('blob down')
+        }),
+      }),
+    )
+    expect(isWidgetError(res.todos)).toBe(true)
+    expect(isWidgetError(res.tasks)).toBe(false)
+    expect(isWidgetError(res.meetings)).toBe(false)
   })
 })

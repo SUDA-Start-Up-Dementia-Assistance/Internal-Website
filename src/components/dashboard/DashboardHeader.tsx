@@ -67,6 +67,11 @@ function WaitingOnYou({ query }: { query: DashboardQuery }) {
     { n: counts.overdue, text: (n: number) => `${plural(n, 'overdue task')}`, id: 'my-tasks' },
     { n: counts.blocked, text: (n: number) => `${plural(n, 'blocked task')}`, id: 'my-tasks' },
     {
+      n: counts.overdueTodos,
+      text: (n: number) => `${plural(n, 'overdue to-do')}`,
+      id: 'team-todos',
+    },
+    {
       n: counts.failingCi,
       text: (n: number) => `${plural(n, 'PR')} with failing CI`,
       id: 'my-prs',

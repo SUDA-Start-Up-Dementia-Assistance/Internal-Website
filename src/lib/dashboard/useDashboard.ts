@@ -2,9 +2,10 @@ import { useCallback, useEffect, useMemo, useSyncExternalStore } from 'react'
 import { isSampleMode } from '../sampleMode'
 import { TasksError } from '../tasks/api'
 import type { StatusKey, Task } from '../tasks/types'
+import type { Todo } from '../todos/types'
 import { fetchDashboard } from './api'
 import { mockDashboard } from './mock'
-import { isWidgetError, type DashboardResponse, type MyTasks } from './types'
+import { isWidgetError, type DashboardResponse, type MyTasks, type TodosWidget } from './types'
 
 /** Data older than this is refetched when the window regains focus (or the page mounts). */
 export const DASHBOARD_STALE_MS = 60_000
@@ -17,6 +18,12 @@ interface StatusOverride {
   at: number
 }
 
+/** A to-do changed here (checked off in the widget) that the server's copy may not show yet. */
+export interface TodoOverride {
+  todo: Todo
+  at: number
+}
+
 interface Snapshot {
   data: DashboardResponse | undefined
   /** The first load failed: nothing to show. */
@@ -26,6 +33,7 @@ interface Snapshot {
   fetching: boolean
   fetchedAt: number
   overrides: ReadonlyMap<string, StatusOverride>
+  todoOverrides: ReadonlyMap<string, TodoOverride>
 }
 
 /*
@@ -39,6 +47,7 @@ const EMPTY: Snapshot = {
   fetching: false,
   fetchedAt: 0,
   overrides: new Map(),
+  todoOverrides: new Map(),
 }
 let snapshot = EMPTY
 let inFlight: Promise<void> | null = null
@@ -100,6 +109,22 @@ export function setStatusOverride(
   update({ overrides })
 }
 
+/** Shows `todo` in the widget at once (optimistic check-off); null removes the override. */
+export function setTodoOverride(id: string, todo: Todo | null): void {
+  const todoOverrides = new Map(snapshot.todoOverrides)
+  if (todo) todoOverrides.set(id, { todo, at: Date.now() })
+  else todoOverrides.delete(id)
+  update({ todoOverrides })
+}
+
+/** The widget's copy of a to-do, including changes made here. */
+export function peekDashboardTodo(id: string): Todo | undefined {
+  const override = snapshot.todoOverrides.get(id)
+  if (override) return override.todo
+  const todos = snapshot.data?.todos
+  return todos && !isWidgetError(todos) ? todos.items.find((t) => t.id === id) : undefined
+}
+
 /** For tests. */
 export function resetDashboardCache(): void {
   snapshot = EMPTY
@@ -110,9 +135,20 @@ export function resetDashboardCache(): void {
 export function applyOverrides(
   data: DashboardResponse,
   overrides: ReadonlyMap<string, StatusOverride>,
+  todoOverrides: ReadonlyMap<string, TodoOverride> = new Map(),
 ): DashboardResponse {
-  if (overrides.size === 0 || isWidgetError(data.tasks)) return data
   const generated = Date.parse(data.generatedAt)
+  if (todoOverrides.size > 0 && !isWidgetError(data.todos)) {
+    const todos: TodosWidget = {
+      ...data.todos,
+      items: data.todos.items.map((t) => {
+        const o = todoOverrides.get(t.id)
+        return o && generated < o.at ? o.todo : t
+      }),
+    }
+    data = { ...data, todos }
+  }
+  if (overrides.size === 0 || isWidgetError(data.tasks)) return data
   const patch = (task: Task): Task => {
     const o = overrides.get(task.itemId)
     return o && generated < o.at ? { ...task, status: o.status, statusKey: o.statusKey } : task
@@ -165,8 +201,8 @@ export function useDashboard(enabled = true): DashboardQuery {
 
   const refetch = useCallback(() => void loadDashboard(), [])
   const data = useMemo(
-    () => current.data && applyOverrides(current.data, current.overrides),
-    [current.data, current.overrides],
+    () => current.data && applyOverrides(current.data, current.overrides, current.todoOverrides),
+    [current.data, current.overrides, current.todoOverrides],
   )
 
   return {

@@ -23,11 +23,13 @@ import SignInPanel from './SignInPanel'
 import SprintView from './sprint/SprintView'
 import TaskFilters from './TaskFilters'
 import TeamTasks from './TeamTasks'
+import TodosView from '../todos/TodosView'
 
 const TABS = [
   { id: 'mine', label: 'My tasks' },
   { id: 'team', label: 'Team' },
   { id: 'sprint', label: 'Sprint' },
+  { id: 'todos', label: 'To-dos' },
 ] as const
 
 type TabId = (typeof TABS)[number]['id']
@@ -48,7 +50,7 @@ export default function TasksView({ login }: { login: string }) {
 
   // "n" opens New task, unless the user is typing or another dialog is open.
   useEffect(() => {
-    if (!ready) return
+    if (!ready || tab === 'todos') return
     function onKeyDown(e: globalThis.KeyboardEvent) {
       if (e.key !== 'n' || e.metaKey || e.ctrlKey || e.altKey || e.repeat) return
       if (isTypingTarget(e.target) || document.querySelector('dialog[open]')) return
@@ -57,7 +59,32 @@ export default function TasksView({ login }: { login: string }) {
     }
     document.addEventListener('keydown', onKeyDown)
     return () => document.removeEventListener('keydown', onKeyDown)
-  }, [ready])
+  }, [ready, tab])
+
+  // To-dos don't come from GitHub: the tab works even while tasks load or fail.
+  if (tab === 'todos') {
+    return (
+      <div className="space-y-8">
+        <PreviewBanner />
+        <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-3 border-b border-border">
+          <Tabs selected={tab} onSelect={selectTab} />
+        </div>
+        <div
+          id="panel-todos"
+          role="tabpanel"
+          aria-labelledby="tab-todos"
+          tabIndex={0}
+          className="focus-visible:outline-offset-8"
+        >
+          <TodosView
+            login={login}
+            team={data?.team ?? []}
+            autoFocusAdd={params.get('add') === '1'}
+          />
+        </div>
+      </div>
+    )
+  }
 
   if (loading) return <TasksSkeleton />
   if (error) {

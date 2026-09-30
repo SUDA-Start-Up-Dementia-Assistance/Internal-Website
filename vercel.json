@@ -1,5 +1,8 @@
 {
-  "rewrites": [{ "source": "/((?!api/|@|.*\\.).*)", "destination": "/index.html" }],
+  "rewrites": [
+    { "source": "/api/todos/:id", "destination": "/api/todos?id=:id" },
+    { "source": "/((?!api/|@|.*\\.).*)", "destination": "/index.html" }
+  ],
   "headers": [
     {
       "source": "/(.*)",

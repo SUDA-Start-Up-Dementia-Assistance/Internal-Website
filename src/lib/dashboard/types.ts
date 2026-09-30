@@ -1,6 +1,8 @@
 import type { AuthUser } from '../auth'
 import type { Meeting } from '../meetings'
 import type { StatusOption, Task } from '../tasks/types'
+import type { DashboardTodos } from '../todos/selectors'
+import type { Todo } from '../todos/types'
 
 /**
  * The /api/dashboard response, as the browser sees it. Mirrors api/_lib/dashboard.ts and
@@ -58,6 +60,9 @@ export interface MeetingsWidget {
   meetings: Meeting[]
 }
 
+/** Open team to-dos assigned to me or to nobody: up to 5, soonest due first, plus counts. */
+export type TodosWidget = DashboardTodos<Todo>
+
 export type CiState = 'SUCCESS' | 'FAILURE' | 'PENDING'
 
 export interface PrReview {
@@ -110,6 +115,7 @@ export interface DashboardResponse {
   reviewQueue: Widget<ReviewQueuePr[]>
   myPrs: Widget<MyPr[]>
   meetings: Widget<MeetingsWidget>
+  todos: Widget<TodosWidget>
   /** ISO instant the server built this response. */
   generatedAt: string
 }
